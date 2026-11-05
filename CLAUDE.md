@@ -13,5 +13,11 @@
 - Kontrol: `onizleme.yml` oyunu bulutta açıp `onizleme/oyun/*.png` ekran görüntülerini depoya yazar.
   Görüntüleri mutlaka aç ve bak; derleme kaydında "SCRIPT ERROR" / "Parse Error" olmamalı.
   Yeni özellik eklersen `oyun.gd` içindeki `_onizleme()` akışına onu gösteren bir kare ekle.
+- Kalıcı veri `profil.gd` (user://profil.json). Yeni alan eklerken `VARSAYILAN`'a ekle; eski kayıtlar
+  otomatik tamamlanır. Var olan kayıtları bozacak değişiklik yapma (oyuncunun ilerlemesi gider).
+- İçerik tabloları `veri.gd` (silahlar, nadirlik, ekler, roller, özellikler, bölgeler), kartlar `kartlar.gd`.
+- **Performans kuralları (TASARIM.md §12):** oyun sırasında düğüm oluşturup silme yok, havuz kullan;
+  dizi dolaşırken silme yok; değişmeyeni her kare çizme; kalite ayarına (0/1/2) uy.
+- **Var olan özellikleri eksiltme.** Bir şeyi değiştirirken eskisinin yaptığı her şey çalışmaya devam etmeli.
 - Godot ipuçları için `.claude/skills/` altındaki becerilere bak (dalga döngüsü, kule savunma, roguelike,
   hayatta kalma, envanter, kayıt, parçacık, ses, tween, arayüz, mobil, performans).
