@@ -87,6 +87,9 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - [ ] (2026-11-05, sürekli) Var olan özellikleri **eksiltmeden** geliştir, kaliteli kod yaz.
 - [ ] (2026-11-05, sürekli) Her gece oyunda **henüz olmayan** özellikleri araştır, nasıl yapılacağını en ince
   ayrıntısına kadar araştırıp (oyun tasarımı + Godot tekniği) plana yaz ve ekle. Sadece **ücretsiz** kaynak kullan.
+- [ ] (2026-11-05, sürekli) **Her gece kuralı:** var olan özelliklerden **3'ünü geliştir** + **3 yeni özellik ekle**.
+  Kodlamadan önce oyun mekaniği üzerine **2 derinlemesine oyun analizi** yap, sonuçlarını `ANALIZ.md`'ye yaz
+  ve o geceki seçimleri bu analizlere göre yap.
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
