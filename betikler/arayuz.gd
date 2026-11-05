@@ -8,6 +8,8 @@ signal basla_istendi
 signal menu_istendi
 signal duraklat_istendi(duraklat: bool)
 signal yeniden_cek_istendi
+signal aktif_istendi
+signal kule_istendi(i: int)
 
 const Veri := preload("res://betikler/veri.gd")
 const Kartlar := preload("res://betikler/kartlar.gd")
@@ -37,6 +39,10 @@ var _tanitim: PanelContainer
 var _tanitim_baslik: Label
 var _tanitim_metin: Label
 var _uyari: Label
+var _aktif_dugme: Button
+var _aktif_ad := ""
+var _aktif_son := -1
+var _kule_dugmeler: Array[Button] = []
 
 
 func _ready() -> void:
@@ -47,6 +53,7 @@ func _ready() -> void:
 		_ust_bosluk += guvenli.position.y * get_viewport().get_visible_rect().size.y / pencere.y
 	_ust_cubuk_kur()
 	_onar_kur()
+	_aktif_kur()
 	_afis_kur()
 	_kart_paneli_kur()
 	_duraklat_kur()
@@ -139,6 +146,71 @@ func _onar_kur() -> void:
 	_onar_dugme.offset_right = -20
 	_onar_dugme.offset_bottom = -20
 	_onar_dugme.pressed.connect(func() -> void: onar_istendi.emit())
+
+
+## Aktif yetenek: sol altta, ONAR'ın karşısında. Başparmakla rahat ulaşılır.
+func _aktif_kur() -> void:
+	_aktif_dugme = Button.new()
+	_aktif_dugme.add_theme_font_size_override("font_size", 24)
+	var dolu := Color(0.6, 0.25, 0.12, 0.95)
+	_aktif_dugme.add_theme_stylebox_override("normal", _kutu_stili(dolu, Color(1, 0.75, 0.35), 14))
+	_aktif_dugme.add_theme_stylebox_override("hover", _kutu_stili(dolu, Color(1, 0.75, 0.35), 14))
+	_aktif_dugme.add_theme_stylebox_override("pressed", _kutu_stili(dolu.lightened(0.3), Color.WHITE, 14))
+	_aktif_dugme.add_theme_stylebox_override("disabled", _kutu_stili(Color(0.2, 0.2, 0.2, 0.7), Color(0.4, 0.4, 0.4), 14))
+	_aktif_dugme.focus_mode = Control.FOCUS_NONE
+	add_child(_aktif_dugme)
+	_aktif_dugme.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_aktif_dugme.offset_left = 20
+	_aktif_dugme.offset_right = 250
+	_aktif_dugme.offset_top = -86
+	_aktif_dugme.offset_bottom = -20
+	_aktif_dugme.pressed.connect(func() -> void: aktif_istendi.emit())
+
+
+func aktif_ayarla(ad: String) -> void:
+	_aktif_ad = ad
+	_aktif_son = -1
+	aktif_guncelle(0.0)
+
+
+## Yazı yalnızca saniye değişince güncellenir.
+func aktif_guncelle(kalan: float) -> void:
+	var sn := ceili(kalan)
+	if sn == _aktif_son:
+		return
+	_aktif_son = sn
+	_aktif_dugme.disabled = sn > 0
+	_aktif_dugme.text = _aktif_ad if sn <= 0 else "%s %d" % [_aktif_ad.split(" ")[0], sn]
+
+
+## Barikattaki yuvaların altında satın alma düğmeleri; yalnız para yetince görünür.
+func kule_dugmeleri_kur(konumlar: Array) -> void:
+	for i in konumlar.size():
+		var d := Button.new()
+		d.focus_mode = Control.FOCUS_NONE
+		d.add_theme_font_size_override("font_size", 22)
+		var st := _kutu_stili(Color(0.15, 0.2, 0.12, 0.88), Color(0.95, 0.8, 0.35), 12)
+		st.content_margin_top = 4
+		st.content_margin_bottom = 4
+		st.content_margin_left = 6
+		st.content_margin_right = 6
+		d.add_theme_stylebox_override("normal", st)
+		d.add_theme_stylebox_override("hover", st)
+		d.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.35, 0.4, 0.2), Color.WHITE, 12))
+		d.position = konumlar[i] + Vector2(-70, 48)
+		d.size = Vector2(140, 52)
+		var idx: int = i
+		d.pressed.connect(func() -> void: kule_istendi.emit(idx))
+		d.visible = false
+		add_child(d)
+		_kule_dugmeler.append(d)
+
+
+func kule_guncelle(fiyatlar: Array, altin: int, oyunda: bool) -> void:
+	for i in _kule_dugmeler.size():
+		var f: int = fiyatlar[i]
+		_kule_dugmeler[i].visible = oyunda and f > 0 and altin >= f
+		_kule_dugmeler[i].text = "TARET %d" % f
 
 
 func _afis_kur() -> void:
@@ -430,6 +502,7 @@ func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bo
 	var dolu := _can_cubugu.get_theme_stylebox("fill") as StyleBoxFlat
 	dolu.bg_color = Color(0.85, 0.2, 0.2).lerp(Color(0.3, 0.8, 0.35), can_orani)
 	_onar_dugme.visible = oyunda
+	_aktif_dugme.visible = oyunda
 	_onar_dugme.disabled = altin < onar_fiyat or can_orani >= 0.999
 
 

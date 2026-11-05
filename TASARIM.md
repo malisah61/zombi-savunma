@@ -117,22 +117,27 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - [x] (Gece 1) Zırhlı ve kusan zombi; ilk boss (Dev). Boss ganimeti: garanti Ender+ silah.
 - [ ] Görsel kalite v2: CC0 üstten görünüm karakter/zombi sprite'ları ve yürüme animasyon kareleri
   (GitHub'da CC0 paket ara; yoksa Actions ile OpenGameArt/Kenney'den indir), kan/patlama efektleri.
-- [ ] Ses v2: CC0 silah, zombi, menü sesleri ve arka plan müziği (assets/sesler/*.ogg).
+- [x] (Gündüz turu) Ses v2 ilk parça: Kenney CC0 para, kırılma, patlama, yerleştirme sesleri.
+- [ ] Ses v3: gerçek silah ve zombi sesleri, arka plan müziği (Kenney kitlerindeki blaster sesleri bilim kurgu olduğu için alınmadı).
 - [x] (Gece 1) Performans v2: zombi/leke atlası, zemin ve barikat dokuya pişirildi; uyarlamalı kalite; 120 zombilik yük testi karesi.
 - [ ] Performans v3: kahraman çizimini de pişir; parçacıkları tek düğümde topla; barikat tahtalarını sadeleştir.
 - [x] (Gece 1) FM v2 (bkz. §16): kişilik, sakatlık ve yorgunluk.
-- [ ] FM v3: mentorluk (30+ yaş, Liderlik 14+ → genç +%20 gelişim), koşu sonu ekip konuşması.
-- [ ] Keşif v2: gözlemci personeli (Yetenek / Potansiyel Değerlendirme), kısa liste, öneri yıldızı.
+- [x] (Gündüz turu) Mentorluk: 28+ yaş ve Liderlik 12+ kişi, 25 yaş altı gence bağlanır; gelişim +%20, koşu başına %3 kişilik geçişi.
+- [ ] FM v3: koşu sonu ekip konuşması, personel, tesisler.
+- [x] (Gündüz turu) Keşif v2 ilk parça: öneri yıldızı (3 + (değer − ekip en iyi)/6, bilgi azsa ±1.5 yanılır) ve kısa liste (raporu korur).
+- [ ] Keşif v3: gözlemci personeli (Yetenek / Potansiyel Değerlendirme).
 - [ ] Envanter v2: zırh + aksesuar yuvası, silah modları, set bonusları, kötü şans koruması.
 - [ ] Sıradaki zombiler: Patlayan (barikatta alan hasarı), Kalkanlı (önden mermi keser, 8. bölüm), Çağırıcı (boss olmayan kaynak).
 - [ ] Boss 2: Kraliçe (her 10. dalgada Dev ile sırayla; sürekli koşucu doğurur).
-- [ ] Kule yuvaları: makineli taret ve dikenli tel. (§18: altının 3. harcama yeri)
-- [ ] **Sıradaki gece öncelik:** Rol aktif yetenekleri + kule yuvaları (koşu içi karar eksikliği).
+- [x] (Gündüz turu) Kule yuvaları: 3 yuva, taret 60/96/154 altın, 8×1.5^(sv−1)×(1+0.05·dalga) hasar, 0.6 sn, menzil 520; Mühendis +%30 güç, %20 ucuz.
+- [ ] Kule v2: havan (alan) ve alev kulesi, 3. seviyede iki dal.
+- [ ] **Sıradaki öncelik:** Laboratuvar (hurdanın kalıcı harcama yeri) ve Patlayan zombi.
 - [ ] Kalıcı yetenek ağacı (Laboratuvar): Saldırı / Savunma / Ekonomi.
-- [ ] Rol aktif yetenekleri (Asker el bombası, Avcı ölümcül nişan, Mühendis taret, Doktor aşı).
+- [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
 - [ ] Bölümler ve zorluk seçimi; sonsuz mod.
-- [ ] Başarımlar ve günlük görevler.
+- [x] (Gündüz turu) Günlük görevler: 3 görev, gece yarısı yenilenir, biten ödül kaybolmaz, üçü alınınca bonus Nadir+ silah.
+- [ ] Başarımlar.
 - [ ] Bölüm 2: Orman.
 
 ## 3b. Zombi sayıları (Gece 1'de uygulandı)
@@ -217,6 +222,12 @@ Diken Kalesi (Sağlam Barikat 5 + Dikenli Tel 2). Kartlar bitince Altın Kesesi 
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-05 (Gündüz turu)
+- Kingdom Rush: kulelerin yanında hero/oyuncu büyüleri bekleme süreli; para kule yerine, zamanlama büyüye gider. — [Hero Spell](https://kingdomrushtd.fandom.com/wiki/Hero_Spell), [Call Reinforcements](https://kingdomrushtd.fandom.com/wiki/Call_Reinforcements), [Tower defense kuralları](https://gamedeveloper.com/design/tower-defense-game-rules-part-2-)
+- Günlük görevler angaryaya dönüşebilir; kısa ve cezasız tutuldu. — [Daily quests or daily pests](https://www.universityxp.com/research/2024/2/24/daily-quests-or-daily-pests-the-benefits-and-pitfalls-of-engagement-rewards-in-games), [Metriklere etkisi](https://www.indiehackers.com/post/designing-with-data-what-daily-quests-actually-do-to-your-game-metrics-926d83be10)
+- FM mentorluk: kişilik gence geçer. — [FM24 mentorluk](https://www.videogamer.com/guides/football-manager-2024-fm24-how-to-mentor-players), [FourFourTwo](https://www.fourfourtwo.com/features/football-manager-2016-how-nurture-hot-prospect-true-wonderkid)
+- Yeni araştırılan, yapılmadı: **Laboratuvar** (3 dal, düğüm fiyatı 100·1.5^n hurda, her düğüm +%3–5: meta gücü küçük tut), **Hava olayı** (dalga başına %20 şansla sis menzil −%20 veya yağmur yanma −%50; dalga afişinde söylenir).
+
 ### 2026-11-05 (Gece 1)
 - Survivor.io evrimi: silah 5. seviye + eş destek yeteneği, boss sandığıyla açılır. Örn. Kunai + Energy Cube → Spirit Shuriken. —
   [BlueStacks evrim rehberi](https://www.bluestacks.com/blog/game-guides/survivor-io/sio-skills-evolution-guide-en.html)

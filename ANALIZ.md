@@ -11,6 +11,31 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-05 — Gündüz turu (elle başlatılan 2. döngü)
+
+### Analiz 1 — Oynanış simülasyonu
+- **İlk 5 dakika:** Boss, zırhlı ve tanıtım paneli ilk koşuya olay getirdi. Ama parmağın tek işi hâlâ kaydırmak. Hedefi asker seçtiği için konum neredeyse etkisiz: oyuncu çoğu saniye izliyor.
+  Gece 1'in en büyük açığı bu: **ekonomi düzeldi, eylem düzelmedi.**
+- **5–15. dalga:** 10 dalgada ≈ 390 altın düşüyor; artan fiyatla bu ≈ 9 onarım eder (25+30+…+65). Yeniden çekme de altın istiyor, güzel. Yine de 2 harcama yeri aynı soruya cevap: "şu an ölüyor muyum?"
+  **Yatırım** kararı yok: şimdi harcayıp sonra kazanmak mümkün değil. 3 yuva × 3 seviyeli taret (60/96/154 = 930 altın) tam bu boşluğu dolduruyor: 15. dalgaya kadar kazanılan altının (≈ 900) neredeyse tamamını yutar.
+- **Geç oyun:** Bot verisi 15–35. dalga, ölümler boss dalgalarında. Boss, oyuncunun müdahale edemediği bir DPS sınavı: onarım dışında elinden gelen yok. Aktif yetenek bu anı oyuncunun anına çevirir.
+- **Koşu sonu/meta:** Yorgunluk rotasyon getirdi, ama yedeklerin gelişim kararı zayıf (mentor yok). Keşif raporu: 6 sayfa sayı var ama "bunu alayım mı?" sorusuna cevap vermiyor. Rapor 7. keşifte en eskisi siliniyor, beğendiğin adayı saklayamıyorsun.
+- **Geri dönüş:** Telefonu açmak için bir neden sadece keşif süresi. Günlük hedef yok.
+- **Ses/his:** Bütün sesler sentez; para ve kırılma sesleri zayıf. Kenney'in CC0 starter kit depolarında işe yarar sesler var.
+- **Performans riski:** Yeni taretler en fazla 3 düğüm + hedef arama, 0.2 sn'ye seyreltilirse ihmal edilebilir. El bombası yalnızca bir kere dolaşır.
+
+### Analiz 2 — Karşılaştırma ve psikoloji
+- **Kingdom Rush:** Oyuncu kuleleri kurar, ama asıl heyecan bekleme süreli büyüler (Rain of Fire, Reinforcements): **"tam zamanında bastım"** duygusu. Kule yeri + para = yatırım; büyü = beceri anı. İkisi ayrı döngü, ikisi de bizde eksik.
+- **Archero / Survivor.io:** Otomatik ateşli oyunlarda bile oyuncunun bir eylemi vardır (kaçmak). Bizde yok, aktif düğme bunun en ucuz karşılığı.
+- **Günlük görevler:** Araştırma iki yönlü: kısa ve seçenekli olunca geri dönüşü artırır, angarya olunca zarar verir. Kural: az görev (3), oynarken kendiliğinden biten hedefler, kaçırınca ceza yok.
+- **FM mentorluk:** Yaşlı oyuncu gence bağlanır, kişiliği zamanla gence geçer. Hikâye üretir ("Selin, Kerem'i profesyonel yaptı") ve yaşlılara kadro değeri verir. Bizde 35 yaşındaki biri işe yaramaz.
+- **FM gözlemci:** Rapor tek bir öneri notu verir, kısa liste saklar. Bilgi az olsa da oyuncuya kanaat verir.
+
+### Karar
+**3 geliştirme:** (1) **Ses v2:** Kenney CC0 sesleri (para, kırılma, darbe, yerleştirme). (2) **Ekip gelişimi:** mentorluk ile yaşlı personele yeni rol. (3) **Keşif v2:** gözlemci önerisi ve kısa liste.
+
+**3 yeni özellik:** (1) **Rol aktif yetenekleri:** oyuncuya beceri anı. Analizin 1 numaralı bulgusu. (2) **Kule yuvaları:** altının yatırım yeri. (3) **Günlük görevler:** geri dönüş hedefi.
+
 ## 2026-11-05 — Gece 1
 
 ### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)

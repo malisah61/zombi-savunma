@@ -21,6 +21,7 @@ const VARSAYILAN := {
 	"istatistik": {"kosu": 0, "oldurme": 0, "boss": 0},
 	"gorulen": [],  # tanıtımı yapılmış zombi türleri
 	"son_zaman": 0,  # gerçek zamanla dinlenme için
+	"gorevler": {"tarih": "", "liste": [], "bonus": false},
 }
 
 var veri: Dictionary = {}
@@ -47,6 +48,7 @@ func yukle() -> void:
 	if aktif_kahraman().is_empty():
 		veri["aktif"] = veri["ekip"][0]["uid"]
 	_hayatta_kalanlari_tamamla()
+	gorevleri_hazirla()
 
 
 ## Dizi içindeki kayıtları _tamamla göremez: eski hayatta kalanlara yeni alanları burada ekle.
@@ -106,6 +108,7 @@ func _yeni_profil() -> void:
 	veri = VARSAYILAN.duplicate(true)
 	_eski_rekoru_tasi()
 	_baslangic_ekibi()
+	gorevleri_hazirla()
 
 
 func _baslangic_ekibi() -> void:
@@ -203,6 +206,9 @@ func kosu_istatistigi() -> Dictionary:
 		"yanma": 0.0,
 		"yanma_yayilim": false,
 		"diken": 0.0,
+		"kule_hasar": 1.0,
+		"kule_fiyat": 1.0,
+		"rol": String(h["rol"]),
 	}
 	match String(h["rol"]):
 		"asker":
@@ -213,6 +219,8 @@ func kosu_istatistigi() -> Dictionary:
 		"muhendis":
 			st["onarim"] *= 1.6
 			st["onar_fiyat"] = 18
+			st["kule_hasar"] = 1.3
+			st["kule_fiyat"] = 0.8
 		"doktor":
 			st["yenilenme"] = 0.004
 	st["kritik"] = clampf(st["kritik"], 0.0, 0.75)
@@ -351,6 +359,12 @@ func zaman_dinlenmesi() -> void:
 ## Gelişim puanını özelliklere dağıtır. Yaş, moral ve potansiyel tavanı etkiler. Gelişen özellikleri döndürür.
 func _gelistir(h: Dictionary, puan: float) -> Array:
 	var yas := int(h["yas"])
+	var mentor := kahraman_bul(String(h.get("mentor", "")))
+	if not mentor.is_empty():
+		puan *= 1.2
+		# FM: mentorun kişiliği zamanla gence geçer
+		if String(mentor.get("kisilik", "")) in ["profesyonel", "kararli", "lider"] and randf() < 0.03:
+			h["kisilik"] = mentor["kisilik"]
 	var yas_carpan := 1.5 if yas < 21 else (1.25 if yas < 25 else (1.0 if yas < 30 else (0.6 if yas < 34 else 0.25)))
 	var moral_carpan := 0.75 + float(h["moral"]) / 200.0
 	var toplam := Veri.toplam_ozellik(h)
@@ -397,6 +411,22 @@ func odak_degistir(uid: String, ozellik: String) -> void:
 	var h := kahraman_bul(uid)
 	if not h.is_empty():
 		h["odak"] = ozellik
+		kaydet()
+
+
+## Mentor olabilenler: 28+ yaş ve Liderlik 12+.
+func mentor_adaylari(h: Dictionary) -> Array:
+	var liste: Array = []
+	for x in veri["ekip"]:
+		if x["uid"] != h["uid"] and int(x["yas"]) >= 28 and int(x["oz"]["liderlik"]) >= 12:
+			liste.append(x)
+	return liste
+
+
+func mentor_ata(uid: String, mentor_uid: String) -> void:
+	var h := kahraman_bul(uid)
+	if not h.is_empty():
+		h["mentor"] = mentor_uid
 		kaydet()
 
 
@@ -510,8 +540,13 @@ func kesif_kontrol() -> bool:
 	if randf() < 0.5:
 		silah = Veri.silah_uret("", Veri.nadirlik_sec(float(int(a["bolge"])) * 0.6))
 	veri["kesif"]["raporlar"].push_front({"uid": Veri._uid(), "bolge": b["ad"], "adaylar": adaylar, "silah": silah})
-	while veri["kesif"]["raporlar"].size() > 6:
-		veri["kesif"]["raporlar"].pop_back()
+	# Sınır aşılırsa kısa listedeki adayı olmayan en eski rapor gider
+	var raporlar: Array = veri["kesif"]["raporlar"]
+	var i := raporlar.size() - 1
+	while raporlar.size() > 6 and i >= 0:
+		if not _kisa_listeli(raporlar[i]):
+			raporlar.remove_at(i)
+		i -= 1
 	veri["kesif"]["aktif"] = {}
 	kaydet()
 	return true
@@ -578,6 +613,87 @@ func rapor_sil(rapor_uid: String) -> void:
 	if not r.is_empty():
 		veri["kesif"]["raporlar"].erase(r)
 		kaydet()
+
+
+func _kisa_listeli(r: Dictionary) -> bool:
+	for a in r["adaylar"]:
+		if bool(a.get("kisa", false)):
+			return true
+	return false
+
+
+func kisa_liste_degistir(rapor_uid: String, aday_idx: int) -> void:
+	var r := _rapor_bul(rapor_uid)
+	if r.is_empty():
+		return
+	var a: Dictionary = r["adaylar"][aday_idx]
+	a["kisa"] = not bool(a.get("kisa", false))
+	kaydet()
+
+
+func ekip_en_iyi() -> int:
+	var en := 0
+	for x in veri["ekip"]:
+		en = maxi(en, Veri.toplam_ozellik(x))
+	return en
+
+
+# ================================================================ GÜNLÜK GÖREVLER
+
+## Gün değişince yeni 3 görev. Bitmiş ama alınmamış ödül kaybolmaz, hurdaya eklenir.
+func gorevleri_hazirla() -> void:
+	var g: Dictionary = veri["gorevler"]
+	var bugun := Time.get_date_string_from_system()
+	if String(g["tarih"]) == bugun:
+		return
+	for x in g["liste"]:
+		if int(x["ilerleme"]) >= int(x["hedef"]) and not bool(x["alindi"]):
+			hurda_ekle(int(x["odul"]))
+	var havuz := Veri.GOREVLER.duplicate()
+	havuz.shuffle()
+	var liste: Array = []
+	for i in 3:
+		var t: Dictionary = havuz[i]
+		liste.append({"id": t["id"], "ad": t["ad"], "hedef": randi_range(int(t["min"]), int(t["max"])),
+			"ilerleme": 0, "odul": t["odul"], "alindi": false})
+	veri["gorevler"] = {"tarih": bugun, "liste": liste, "bonus": false}
+
+
+## Oyun sırasında çağrılır: dosyaya yazmaz, koşu sonunda kaydedilir.
+func gorev_ilerlet(id: String, miktar: int = 1) -> void:
+	for x in veri["gorevler"]["liste"]:
+		if x["id"] == id:
+			x["ilerleme"] = mini(int(x["ilerleme"]) + miktar, int(x["hedef"]))
+
+
+## "Şu seviyeye ulaş" türü görevler için en yüksek değeri tutar.
+func gorev_ulas(id: String, deger: int) -> void:
+	for x in veri["gorevler"]["liste"]:
+		if x["id"] == id:
+			x["ilerleme"] = mini(maxi(int(x["ilerleme"]), deger), int(x["hedef"]))
+
+
+## Ödülü alır. Üçü de alınınca bir kez bonus silah. Bonus silah varsa döndürür.
+func gorev_odulu_al(i: int) -> Dictionary:
+	var g: Dictionary = veri["gorevler"]
+	var x: Dictionary = g["liste"][i]
+	if bool(x["alindi"]) or int(x["ilerleme"]) < int(x["hedef"]):
+		return {}
+	x["alindi"] = true
+	hurda_ekle(int(x["odul"]))
+	var bonus := {}
+	var hepsi := true
+	for y in g["liste"]:
+		hepsi = hepsi and bool(y["alindi"])
+	if hepsi and not bool(g["bonus"]):
+		g["bonus"] = true
+		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
+			bonus = Veri.silah_uret("", maxi(1, Veri.nadirlik_sec(0.4)))
+			veri["envanter"].append(bonus)
+		else:
+			hurda_ekle(40)
+	kaydet()
+	return bonus
 
 
 func _rapor_bul(uid: String) -> Dictionary:

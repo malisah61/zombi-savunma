@@ -97,6 +97,7 @@ func goster() -> void:
 	visible = true
 	profil.zaman_dinlenmesi()
 	profil.kesif_kontrol()
+	profil.gorevleri_hazirla()
 	sekme_ac(_sekme)
 
 
@@ -305,6 +306,8 @@ func _oyna_sekmesi() -> void:
 	y.add_child(_etiket("Potansiyel", 24))
 	_yildizlar(y, Veri.yildiz(int(h["potansiyel"])), -1.0, Color(0.5, 0.8, 1.0))
 	k.add_child(_etiket("Pasif: " + String(rol["pasif"]), 24, Color(0.7, 0.9, 0.6)))
+	var ak: Dictionary = Veri.AKTIFLER[h["rol"]]
+	k.add_child(_etiket("Aktif: %s (%d sn) · %s" % [ak["ad"], int(ak["bekleme"]), ak["aciklama"]], 24, Color(1, 0.75, 0.45)))
 	var yorgun := float(h.get("yorgunluk", 0.0))
 	if yorgun >= 15.0:
 		k.add_child(_etiket("%s: güç -%%%d. Ekip sekmesinden rotasyon yap." % [Veri.yorgunluk_metni(yorgun),
@@ -323,11 +326,41 @@ func _oyna_sekmesi() -> void:
 	b.add_child(_etiket("En iyi: %d. dalga · Toplam %d zombi" % [int(profil.veri["rekor"]),
 		int(profil.veri["istatistik"]["oldurme"])], 24, Color(1, 0.85, 0.4)))
 
+	_gorev_karti()
+
 	var kk := _kart()
 	kk.add_child(_etiket("KEŞİF", 22, Color(0.7, 0.7, 0.65)))
 	_kesif_etiket = _etiket("", 26)
 	kk.add_child(_kesif_etiket)
 	_kesif_guncelle()
+
+
+func _gorev_karti() -> void:
+	var g: Dictionary = profil.veri["gorevler"]
+	var k := _kart(Color(0.85, 0.7, 0.3))
+	k.add_child(_etiket("GÜNLÜK GÖREVLER", 22, Color(1, 0.85, 0.45)))
+	var liste: Array = g["liste"]
+	for i in liste.size():
+		var x: Dictionary = liste[i]
+		var bitti := int(x["ilerleme"]) >= int(x["hedef"])
+		var satir := _satir(k)
+		var e := _etiket("%s  %d/%d" % [String(x["ad"]) % int(x["hedef"]), int(x["ilerleme"]), int(x["hedef"])], 24,
+			Color(0.6, 0.6, 0.55) if bool(x["alindi"]) else Color.WHITE)
+		e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		satir.add_child(e)
+		var idx := i
+		var d := _dugme("Alındı" if bool(x["alindi"]) else "+%d" % int(x["odul"]), Color(0.75, 0.6, 0.2), func() -> void:
+			var bonus: Dictionary = profil.gorev_odulu_al(idx)
+			if bonus.is_empty():
+				bildir("+%d hurda" % int(x["odul"]), Color(1, 0.85, 0.4))
+			else:
+				var n: Dictionary = Veri.NADIRLIK[int(bonus["nadirlik"])]
+				bildir("Üç görev bitti! %s %s" % [n["ad"], Veri.SILAHLAR[bonus["taban"]]["ad"]], n["renk"])
+			_yenile(), 22, bitti and not bool(x["alindi"]))
+		d.size_flags_horizontal = Control.SIZE_SHRINK_END
+		d.custom_minimum_size.x = 130
+		satir.add_child(d)
+	k.add_child(_etiket("Üçünü de al: bonus silah. Görevler gece yarısı yenilenir.", 22, Color(0.75, 0.75, 0.7)))
 
 
 func _kesif_guncelle() -> void:
@@ -373,6 +406,9 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 	k.add_child(_etiket("Kişilik: %s (%s)" % [ks["ad"], ks["etki"]], 22, Color(0.8, 0.75, 1.0)))
 	var yorgun := float(h.get("yorgunluk", 0.0))
 	var sakat := int(h.get("sakat", 0))
+	var mentor: Dictionary = profil.kahraman_bul(String(h.get("mentor", "")))
+	if not mentor.is_empty():
+		k.add_child(_etiket("Mentor: %s (gelişim +%%20)" % mentor["ad"], 22, Color(0.6, 0.9, 1.0)))
 	var durum := "Durum: %s" % Veri.yorgunluk_metni(yorgun)
 	if yorgun >= 1.0:
 		durum += " (güç -%%%d)" % int(round(yorgun * 0.15))
@@ -407,6 +443,17 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 			var sira := (ids.find(h.get("odak", ids[0])) + 1) % ids.size()
 			profil.odak_degistir(uid, ids[sira])
 			_yenile(), 24))
+		var adaylar: Array = profil.mentor_adaylari(h)
+		if int(h["yas"]) < 25 and not adaylar.is_empty():
+			d = _satir(k)
+			d.add_child(_dugme("Mentor değiştir", Color(0.3, 0.6, 0.65), func() -> void:
+				# sırayla: yok → aday1 → aday2 → yok
+				var uidler: Array = [""]
+				for x in adaylar:
+					uidler.append(x["uid"])
+				var sira := (uidler.find(String(h.get("mentor", ""))) + 1) % uidler.size()
+				profil.mentor_ata(uid, uidler[sira])
+				_yenile(), 24))
 		if not aktif:
 			d.add_child(_dugme("Gönder", Color(0.7, 0.25, 0.2), func() -> void:
 				if profil.kov(uid):
@@ -487,7 +534,7 @@ func _silah_karti(s: Dictionary) -> void:
 # ---------------------------------------------------------------- KEŞİF
 
 func _kesif_sekmesi() -> void:
-	_icerik.add_child(_etiket("Gözlemcini bir bölgeye gönder. Döndüğünde bulduğu hayatta kalanları rapor eder. Football Manager'daki gibi gözlemci her şeyi bilemez: özellikler aralık olarak görünür. Emin olmak için 15 hurdaya ayrıntılı incele.", 22, Color(0.75, 0.75, 0.7)))
+	_icerik.add_child(_etiket("Gözlemcini bir bölgeye gönder. Döndüğünde bulduğu hayatta kalanları rapor eder. Football Manager'daki gibi gözlemci her şeyi bilemez: özellikler aralık olarak görünür. Emin olmak için 15 hurdaya ayrıntılı incele. Kısa listedeki adayların raporu silinmez.", 22, Color(0.75, 0.75, 0.7)))
 	var aktif: Dictionary = profil.kesif_aktif()
 	var k := _kart(Color(0.35, 0.6, 0.8))
 	if not aktif.is_empty():
@@ -546,6 +593,9 @@ func _rapor_karti(r: Dictionary) -> void:
 			toplam_alt += ar.x
 			toplam_ust += ar.y
 			_ozellik_cubugu(k, String(o["ad"]), ar.x, ar.y)
+		var on := _satir(k)
+		on.add_child(_etiket("Gözlemci önerisi", 22, Color(0.85, 0.85, 0.75)))
+		_yildizlar(on, Veri.oneri(h, profil.ekip_en_iyi(), float(aday["bilgi"])), -1.0, Color(0.6, 1.0, 0.5))
 		var y := _satir(k)
 		y.add_child(_etiket("Yetenek", 22))
 		var pot := int(h["potansiyel"])
@@ -560,6 +610,10 @@ func _rapor_karti(r: Dictionary) -> void:
 			_yildizlar(y, Veri.yildiz(pot_ar.x * 6), Veri.yildiz(pot_ar.y * 6), Color(0.5, 0.8, 1.0))
 		var d := _satir(k)
 		var idx := i
+		var kisa: bool = bool(aday.get("kisa", false))
+		d.add_child(_dugme("Listede" if kisa else "Kısa liste", Color(0.8, 0.65, 0.25) if kisa else Color(0.4, 0.42, 0.38), func() -> void:
+			profil.kisa_liste_degistir(ruid, idx)
+			_yenile(), 22))
 		if not kesin:
 			d.add_child(_dugme("İncele 15", Color(0.3, 0.55, 0.8), func() -> void:
 				if not profil.aday_incele(ruid, idx):

@@ -114,7 +114,7 @@ func _process(delta: float) -> void:
 	if cizim_gerek or _yakilmis:
 		_renk_guncelle()
 	if position.y < _durus_y:
-		position.y = minf(position.y + hiz * delta, _durus_y)
+		position.y = minf(position.y + hiz * oyun.zombi_hizi * delta, _durus_y)
 		position.x += sin(_zaman * 2.3 + _faz) * 14.0 * delta
 		position.x = clampf(position.x, 40.0, oyun.genislik - 40.0)
 		# yürüme karesi: yalnızca değişince yeniden çiz

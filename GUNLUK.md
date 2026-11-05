@@ -2,6 +2,15 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-05 — Gündüz turu (elle başlatıldı, Gece 1'den birkaç saat sonra)
+- **Analizler:** (1) Ekonomi düzeldi ama oyuncunun eylemi yok, altının yatırım yeri yok, keşif raporu kanaat vermiyor. (2) KR'deki büyü + kule ayrımı, FM mentorluk ve gözlemci notu, cezasız günlük hedef eksik.
+- **Araştırılanlar:** KR büyü ve kule döngüsü, günlük görev riskleri, FM mentorluk, Kenney CC0 sesleri; ek olarak Laboratuvar ve hava olayı sayılarıyla plana yazıldı.
+- **3 geliştirme:** Ses v2 (4 CC0 ses), Mentorluk, Keşif v2 (öneri yıldızı, kısa liste).
+- **3 yeni özellik:** Rol aktif yetenekleri, 3 yuvalı taretler, günlük görevler.
+- **Bot:** taret ve aktif yetenek kullanan bot 3 koşuda 30–35. dalga. Yüksek geliştirilmiş kayıtla ölçüldü, yeni oyuncu değeri değil.
+- **Bilinen sorunlar:** Taret düğmesi görünürken tam üstünden başlayan sürükleme askeri oynatmaz. Gerçek telefonda FPS hâlâ ölçülmedi.
+- **Sıradaki:** Laboratuvar, Patlayan zombi, Ses v3.
+
 ## 2026-11-05 — Gece 1
 - **Analizler:** (1) Altın tek yere gidiyor, onarım bedava can gibi; oyuncu kararı az; 28. dalgada kartlar bitiyor, geç oyun bitmiyor; ekipte gerçek karar yok.
   (2) Evrim planı, tanıtılan düşman, boss anı, reroll ve FM kişilik/rotasyon eksik. Ölçüm: asıl çizim yükü çokgenlermiş.

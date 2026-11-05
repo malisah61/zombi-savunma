@@ -42,20 +42,7 @@ func _process(delta: float) -> void:
 
 
 func _hedef_bul():
-	# Puan: barikata yakınlık + türün önceliği (Kusan ve Dev öne alınır)
-	var en_iyi = null
-	var en_iyi_puan := -INF
-	var menzil: float = oyun.st["menzil"]
-	for z in oyun.zombiler:
-		if z.olu or z.position.y < -10.0:
-			continue
-		if position.distance_to(z.position) > menzil:
-			continue
-		var puan: float = z.position.y + z.oncelik
-		if puan > en_iyi_puan:
-			en_iyi_puan = puan
-			en_iyi = z
-	return en_iyi
+	return oyun.hedef_bul(position, float(oyun.st["menzil"]))
 
 
 func _ates() -> void:

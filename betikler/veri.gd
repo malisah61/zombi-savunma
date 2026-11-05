@@ -57,7 +57,7 @@ const ROLLER: Dictionary = {
 		"anahtar": ["nisancilik", "refleks"], "silah": "tufek"},
 	"avci": {"ad": "Avcı", "renk": Color("8a6d3b"), "pasif": "Kritik şansı +%8, kritik hasarı +%50",
 		"anahtar": ["sogukkanlilik", "nisancilik"], "silah": "keskin"},
-	"muhendis": {"ad": "Mühendis", "renk": Color("c9902a"), "pasif": "Onarım %60 daha etkili, onarım %30 ucuz",
+	"muhendis": {"ad": "Mühendis", "renk": Color("c9902a"), "pasif": "Onarım %60 daha etkili ve ucuz, taretler +%30 güçlü ve %20 ucuz",
 		"anahtar": ["muhendislik", "dayaniklilik"], "silah": "pompali"},
 	"doktor": {"ad": "Doktor", "renk": Color("3f9e9e"), "pasif": "Barikat her saniye canının %0.4'ünü yeniler",
 		"anahtar": ["dayaniklilik", "liderlik"], "silah": "tabanca"},
@@ -80,6 +80,26 @@ const KISILIKLER: Dictionary = {
 	"tembel": {"ad": "Tembel", "gelisim": 0.75, "kayip": 1.0, "kazanc": 1.0, "agirlik": 12.0,
 		"etki": "Gelişimi -%25"},
 }
+
+# Rol aktif yetenekleri. bekleme: saniye. Koşu başında dolu başlar.
+const AKTIFLER: Dictionary = {
+	"asker": {"ad": "EL BOMBASI", "bekleme": 22.0, "aciklama": "En tehlikeli zombinin çevresine büyük hasar"},
+	"avci": {"ad": "ÖLÜMCÜL NİŞAN", "bekleme": 25.0, "aciklama": "5 saniye her mermi kritik"},
+	"muhendis": {"ad": "ACİL ONARIM", "bekleme": 30.0, "aciklama": "Barikat %30 onarılır"},
+	"doktor": {"ad": "AŞI", "bekleme": 28.0, "aciklama": "6 saniye zombiler %40 yavaş"},
+}
+
+# Günlük görevler: oynarken kendiliğinden biter, kaçırmanın cezası yoktur.
+const GOREVLER: Array[Dictionary] = [
+	{"id": "oldur", "ad": "%d zombi öldür", "min": 80, "max": 160, "odul": 30},
+	{"id": "zirhli", "ad": "%d zırhlı zombi öldür", "min": 12, "max": 20, "odul": 35},
+	{"id": "kusan", "ad": "%d kusan zombi öldür", "min": 8, "max": 14, "odul": 35},
+	{"id": "boss", "ad": "%d Dev öldür", "min": 1, "max": 1, "odul": 60},
+	{"id": "dalga", "ad": "%d. dalgaya ulaş", "min": 8, "max": 12, "odul": 40},
+	{"id": "kule", "ad": "%d taret kur veya yükselt", "min": 2, "max": 3, "odul": 30},
+	{"id": "aktif", "ad": "Aktif yeteneği %d kez kullan", "min": 3, "max": 5, "odul": 30},
+	{"id": "evrim", "ad": "%d kart evrimleştir", "min": 1, "max": 1, "odul": 60},
+]
 
 const ISIMLER := ["Ali", "Ayşe", "Mehmet", "Zeynep", "Mustafa", "Elif", "Emre", "Selin", "Burak", "Deniz",
 	"Kerem", "Ece", "Murat", "Derya", "Okan", "Gizem", "Cem", "Nazlı", "Tolga", "İrem", "Serkan", "Pınar",
@@ -247,6 +267,19 @@ static func toplam_ozellik(h: Dictionary) -> int:
 	for k in h["oz"]:
 		t += int(h["oz"][k])
 	return t
+
+
+## Gözlemci önerisi (1-5 yıldız): aday ekibin en iyisinden ne kadar iyi? Gençlerde potansiyel de sayılır.
+## Bilgi azsa kanaat yanılabilir (FM'deki gibi); aynı aday için hep aynı sonuç çıkar.
+static func oneri(h: Dictionary, ekip_en_iyi: int, bilgi: float) -> float:
+	var ca := toplam_ozellik(h)
+	var deger := float(ca)
+	if int(h["yas"]) < 25:
+		deger = (float(ca) + float(h["potansiyel"])) / 2.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(String(h["uid"]) + "oneri")
+	var hata := rng.randf_range(-1.0, 1.0) * (1.0 - clampf(bilgi, 0.0, 1.0)) * 1.5
+	return clampf(snappedf(3.0 + (deger - ekip_en_iyi) / 6.0 + hata, 0.5), 1.0, 5.0)
 
 
 ## Yetenek (FM'deki CA) ve potansiyel (PA) yıldızları: 0.5 - 5 arası.

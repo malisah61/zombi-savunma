@@ -19,6 +19,9 @@ func _ready() -> void:
 	_ekle("asit", 0.3, -12.0, 3)
 	_ekle("boss", 0.9, -5.0, 2)
 	_ekle("evrim", 0.7, -7.0, 1)
+	_ekle("bomba", 0.5, -5.0, 2)
+	_ekle("kule", 0.2, -8.0, 2)
+	_ekle("yetenek", 0.4, -8.0, 1)
 
 
 func cal(ad: String) -> void:
@@ -88,6 +91,12 @@ func _uret(tur: String, sure: float) -> AudioStreamWAV:
 				faz += TAU * (62.0 + sin(t * 26.0) * 16.0) / ORAN
 				suz += (g - suz) * 0.06
 				s = (signf(sin(faz)) * 0.45 + suz * 2.0) * minf(t / 0.1, 1.0) * clampf((sure - t) / 0.3, 0.0, 1.0)
+			"bomba", "kule":
+				suz += (g - suz) * 0.2
+				s = (suz * 1.8 + sin(TAU * 60.0 * t) * 0.8) * exp(-t * 9.0)
+			"yetenek":
+				faz += TAU * (440.0 + t * 1400.0) / ORAN
+				s = sin(faz) * 0.45 * exp(-t * 5.0)
 			"evrim":
 				var nota := 523.0 if t < 0.12 else (784.0 if t < 0.24 else 1047.0)
 				faz += TAU * nota / ORAN
