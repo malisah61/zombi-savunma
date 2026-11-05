@@ -7,6 +7,16 @@ var _renk := Color(0.38, 0.04, 0.04, 0.85)
 
 
 func _ready() -> void:
+	yenile()
+
+
+## Havuzdan yeniden kullanırken yeni bir şekil üretir.
+func yenile() -> void:
+	omur = 18.0
+	modulate.a = 1.0
+	visible = true
+	set_process(true)
+	_noktalar.clear()
 	var n := randi_range(5, 9)
 	for i in n:
 		var a := randf() * TAU
@@ -17,6 +27,7 @@ func _ready() -> void:
 		var d := randf_range(18.0, 30.0)
 		_noktalar.append(Vector3(cos(a) * d, sin(a) * d, randf_range(2.0, 4.0)))
 	rotation = randf() * TAU
+	queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -24,7 +35,9 @@ func _process(delta: float) -> void:
 	if omur < 4.0:
 		modulate.a = maxf(omur / 4.0, 0.0)
 	if omur <= 0.0:
-		queue_free()
+		# silinmez, gizlenir: oyun.gd bu lekeyi havuzdan tekrar kullanır
+		visible = false
+		set_process(false)
 
 
 func _draw() -> void:

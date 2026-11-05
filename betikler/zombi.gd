@@ -29,8 +29,23 @@ var _hamle := 0.0  # barikata vurma animasyonu
 
 
 func kur(o, t: String, can_carpani: float) -> void:
+	# havuzdan yeniden kullanılabilir: önceki ölüm animasyonunu durdur, her şeyi sıfırla
+	if has_meta("tw"):
+		var eski: Tween = get_meta("tw")
+		if eski and eski.is_valid():
+			eski.kill()
+		remove_meta("tw")
 	oyun = o
 	tur = t
+	olu = false
+	scale = Vector2.ONE
+	modulate = Color(1, 1, 1, 0)
+	visible = true
+	set_process(true)
+	_zaman = 0.0
+	_parlama = 0.0
+	_hamle = 0.0
+	create_tween().tween_property(self, "modulate:a", 1.0, 0.6)
 	var veri: Dictionary = TURLER[t]
 	max_can = float(veri["can"]) * can_carpani
 	can = max_can

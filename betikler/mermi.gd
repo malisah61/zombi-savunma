@@ -1,5 +1,6 @@
 extends Node2D
 ## Kahramanın mermisi. Düz gider, zombilere çarpar, delme hakkı kadar içinden geçer.
+## Havuzdan yeniden kullanılır: oluşturmak yerine baslat() çağrılır, bitince oyuna geri verilir.
 
 var oyun  # oyun.gd
 var yon := Vector2.UP
@@ -10,10 +11,24 @@ var delme_kalan := 0
 var _vurulanlar: Array = []
 
 
+func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int) -> void:
+	position = konum
+	yon = y
+	rotation = y.angle() + PI / 2
+	hiz = h
+	hasar = hs
+	kritik = k
+	delme_kalan = delme
+	_vurulanlar.clear()
+	visible = true
+	set_process(true)
+	queue_redraw()
+
+
 func _process(delta: float) -> void:
 	position += yon * hiz * delta
-	if position.y < -60.0 or position.x < -60.0 or position.x > oyun.genislik + 60.0:
-		queue_free()
+	if position.y < -60.0 or position.y > oyun.yukseklik + 60.0 or position.x < -60.0 or position.x > oyun.genislik + 60.0:
+		oyun.mermi_birak(self)
 		return
 	for z in oyun.zombiler:
 		if z.olu or _vurulanlar.has(z):
@@ -23,7 +38,7 @@ func _process(delta: float) -> void:
 			oyun.isabet(z, hasar, kritik, position)
 			delme_kalan -= 1
 			if delme_kalan < 0:
-				queue_free()
+				oyun.mermi_birak(self)
 				return
 
 

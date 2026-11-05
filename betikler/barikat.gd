@@ -7,9 +7,15 @@ var max_can := 300.0
 var _parlama := 0.0
 var _sarsinti := 0.0
 var _rng := RandomNumberGenerator.new()
+var _son_oran := -1.0
 
 
 func _process(delta: float) -> void:
+	# yalnızca bir şey değiştiğinde yeniden çiz (performans)
+	var oran := snappedf(can / max_can, 0.02)
+	if _parlama <= 0.0 and _sarsinti <= 0.0 and oran == _son_oran:
+		return
+	_son_oran = oran
 	_parlama = maxf(_parlama - delta * 5.0, 0.0)
 	_sarsinti = maxf(_sarsinti - delta * 40.0, 0.0)
 	position.x = randf_range(-_sarsinti, _sarsinti)

@@ -1,4 +1,5 @@
 extends Node2D
+const Veri := preload("res://betikler/veri.gd")
 ## Barikatın arkasındaki kahraman. Parmakla sağa sola gider, menzildeki en tehlikeli
 ## zombiye (barikata en yakın olana) otomatik ateş eder.
 
@@ -9,6 +10,16 @@ var _atis_sayac := 0.0
 var _parlama := 0.0
 var _geri_tepme := 0.0
 var _zaman := 0.0
+var _silah_boy := 34.0
+var _silah_kalin := 12.0
+var _silah_renk := Color("2b2b2b")
+
+
+## Kuşanılan silaha göre namlunun görünüşü değişir.
+func silah_ayarla(taban: String) -> void:
+	_silah_boy = float(Veri.SILAHLAR.get(taban, Veri.SILAHLAR["tabanca"])["boy"])
+	_silah_kalin = 16.0 if taban == "pompali" or taban == "makineli" else 12.0
+	_silah_renk = Color("3a3226") if taban == "keskin" else Color("2b2b2b")
 
 
 func _process(delta: float) -> void:
@@ -45,9 +56,12 @@ func _hedef_bul():
 
 func _ates() -> void:
 	var namlu := int(oyun.st["namlu"])
-	var ucu := position + Vector2.from_angle(aci) * 44.0
+	var yayilim := float(oyun.st.get("yayilim", 0.09))
+	if namlu > 1 and yayilim <= 0.0:
+		yayilim = 0.06
+	var ucu := position + Vector2.from_angle(aci) * (_silah_boy + 18.0) * scale.x
 	for i in namlu:
-		var sapma := (float(i) - float(namlu - 1) / 2.0) * 0.09
+		var sapma := (float(i) - float(namlu - 1) / 2.0) * yayilim
 		oyun.mermi_at(ucu, Vector2.from_angle(aci + sapma))
 	_parlama = 1.0
 	_geri_tepme = 5.0
@@ -64,12 +78,13 @@ func _draw() -> void:
 	draw_set_transform(geri, aci, Vector2.ONE)
 	draw_line(Vector2(6, -14), Vector2(30, -3), Color("c99b76"), 9.0, true)
 	draw_line(Vector2(6, 14), Vector2(22, 4), Color("c99b76"), 9.0, true)
-	draw_rect(Rect2(14, -6, 34, 12), Color("2b2b2b"))
+	var uc := 14.0 + _silah_boy
+	draw_rect(Rect2(14, -_silah_kalin / 2, _silah_boy, _silah_kalin), _silah_renk)
 	draw_rect(Rect2(10, -5, 12, 10), Color("5a3d24"))
-	draw_rect(Rect2(46, -3, 8, 6), Color("444444"))
+	draw_rect(Rect2(uc - 2, -3, 8, 6), Color("444444"))
 	if _parlama > 0.0:
-		draw_circle(Vector2(60, 0), 10.0 * _parlama, Color(1.0, 0.85, 0.3, _parlama))
-		draw_circle(Vector2(56, 0), 5.0 * _parlama, Color(1, 1, 1, _parlama))
+		draw_circle(Vector2(uc + 12, 0), 12.0 * _parlama, Color(1.0, 0.85, 0.3, _parlama * 0.8))
+		draw_circle(Vector2(uc + 8, 0), 6.0 * _parlama, Color(1, 1, 1, _parlama))
 
 	# gövde (yelek) ve kask
 	draw_set_transform(Vector2.ZERO, aci + PI / 2, Vector2.ONE)

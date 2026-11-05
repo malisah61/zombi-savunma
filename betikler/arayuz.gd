@@ -5,8 +5,12 @@ extends CanvasLayer
 signal kart_secildi(id: String)
 signal onar_istendi
 signal basla_istendi
+signal menu_istendi
+signal duraklat_istendi(duraklat: bool)
 
-const ONAR_FIYAT := 25
+const Veri := preload("res://betikler/veri.gd")
+
+var onar_fiyat := 25
 
 var _dalga_etiket: Label
 var _altin_etiket: Label
@@ -16,14 +20,18 @@ var _onar_dugme: Button
 var _afis: Label
 var _kart_paneli: Control
 var _kart_kutusu: VBoxContainer
-var _baslangic: Control
-var _baslangic_rekor: Label
+var _duraklat_dugme: Button
+var _duraklat_paneli: Control
+var _fps_etiket: Label
+var _ipucu: Label
+var _odul_kutusu: VBoxContainer
 var _bitis: Control
 var _bitis_metin: Label
 var _ust_bosluk := 30.0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	var guvenli := DisplayServer.get_display_safe_area()
 	var pencere := DisplayServer.window_get_size()
 	if pencere.y > 0:
@@ -32,7 +40,7 @@ func _ready() -> void:
 	_onar_kur()
 	_afis_kur()
 	_kart_paneli_kur()
-	_baslangic_kur()
+	_duraklat_kur()
 	_bitis_kur()
 
 
@@ -106,7 +114,7 @@ func _ust_cubuk_kur() -> void:
 
 func _onar_kur() -> void:
 	_onar_dugme = Button.new()
-	_onar_dugme.text = "ONAR  %d altın" % ONAR_FIYAT
+	_onar_dugme.text = "ONAR  %d altın" % onar_fiyat
 	_onar_dugme.add_theme_font_size_override("font_size", 26)
 	_onar_dugme.add_theme_stylebox_override("normal", _kutu_stili(Color(0.35, 0.22, 0.1, 0.92), Color(0.9, 0.7, 0.35), 14))
 	_onar_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.5, 0.32, 0.15), Color(1, 0.85, 0.5), 14))
@@ -167,34 +175,79 @@ func _tam_ekran_panel(renk: Color) -> Control:
 	return p
 
 
-func _baslangic_kur() -> void:
-	_baslangic = _tam_ekran_panel(Color(0.02, 0.03, 0.02, 0.7))
-	var baslik := _etiket(96, Color(0.75, 0.95, 0.4))
-	baslik.text = "ZOMBİ\nSAVUNMA"
+func _duraklat_kur() -> void:
+	_duraklat_dugme = Button.new()
+	_duraklat_dugme.text = "II"
+	_duraklat_dugme.focus_mode = Control.FOCUS_NONE
+	_duraklat_dugme.add_theme_font_size_override("font_size", 34)
+	var st := _kutu_stili(Color(0, 0, 0, 0.5), Color(1, 1, 1, 0.6), 14)
+	_duraklat_dugme.add_theme_stylebox_override("normal", st)
+	_duraklat_dugme.add_theme_stylebox_override("hover", st)
+	_duraklat_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.3, 0.3, 0.3, 0.7), Color.WHITE, 14))
+	add_child(_duraklat_dugme)
+	_duraklat_dugme.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_duraklat_dugme.offset_left = -40
+	_duraklat_dugme.offset_right = 40
+	_duraklat_dugme.offset_top = _ust_bosluk + 4
+	_duraklat_dugme.offset_bottom = _ust_bosluk + 80
+	_duraklat_dugme.pressed.connect(func() -> void: duraklat_istendi.emit(true))
+
+	_duraklat_paneli = _tam_ekran_panel(Color(0, 0, 0, 0.7))
+	var baslik := _etiket(80, Color(0.9, 0.9, 0.9))
+	baslik.text = "DURAKLATILDI"
 	baslik.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_baslangic.add_child(baslik)
+	_duraklat_paneli.add_child(baslik)
 	baslik.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	baslik.offset_left = -360
 	baslik.offset_right = 360
-	baslik.offset_top = 260
-	_baslangic_rekor = _etiket(34, Color(1, 0.85, 0.4))
-	_baslangic_rekor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_baslangic.add_child(_baslangic_rekor)
-	_baslangic_rekor.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_baslangic_rekor.offset_left = -360
-	_baslangic_rekor.offset_right = 360
-	_baslangic_rekor.offset_top = -40
-	var nasil := _etiket(28, Color(0.9, 0.9, 0.9))
-	nasil.text = "Parmağını sağa sola kaydırarak askerini yönet.\nAsker en yakın zombiye kendisi ateş eder.\nBarikatı düşürme!"
-	nasil.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	nasil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_baslangic.add_child(nasil)
-	nasil.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	nasil.offset_left = -320
-	nasil.offset_right = 320
-	nasil.offset_top = 30
-	nasil.offset_bottom = 200
-	_baslangic.add_child(_buyuk_dugme("BAŞLA", Color(0.25, 0.55, 0.2), func() -> void: basla_istendi.emit(), 250))
+	baslik.offset_top = 330
+	_duraklat_paneli.add_child(_buyuk_dugme("DEVAM", Color(0.25, 0.55, 0.2), func() -> void: duraklat_istendi.emit(false), 560))
+	_duraklat_paneli.add_child(_buyuk_dugme("MENÜYE DÖN", Color(0.5, 0.25, 0.2), func() -> void: menu_istendi.emit(), 400))
+	var uyari := _etiket(24, Color(0.8, 0.8, 0.8))
+	uyari.text = "Menüye dönersen bu koşunun ödülleri yine verilir."
+	uyari.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_duraklat_paneli.add_child(uyari)
+	uyari.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	uyari.offset_left = -340
+	uyari.offset_right = 340
+	uyari.offset_top = -270
+	_duraklat_paneli.visible = false
+
+	_fps_etiket = _etiket(22, Color(0.6, 1, 0.6))
+	add_child(_fps_etiket)
+	_fps_etiket.position = Vector2(24, _ust_bosluk + 104)
+	_fps_etiket.visible = false
+
+	_ipucu = _etiket(30, Color(1, 1, 0.85))
+	_ipucu.text = "Parmağını sağa sola kaydır.\nAsker en yakın zombiye kendisi ateş eder."
+	_ipucu.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_ipucu)
+	_ipucu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_ipucu.offset_left = -340
+	_ipucu.offset_right = 340
+	_ipucu.offset_top = 40
+	_ipucu.offset_bottom = 160
+	_ipucu.modulate.a = 0.0
+
+
+func ipucu_goster() -> void:
+	var tw := create_tween()
+	tw.tween_property(_ipucu, "modulate:a", 1.0, 0.4)
+	tw.tween_interval(3.0)
+	tw.tween_property(_ipucu, "modulate:a", 0.0, 0.6)
+
+
+func duraklat_goster(acik: bool) -> void:
+	_duraklat_paneli.visible = acik
+
+
+func fps_goster(acik: bool) -> void:
+	_fps_etiket.visible = acik
+
+
+func _process(_delta: float) -> void:
+	if _fps_etiket.visible:
+		_fps_etiket.text = "%d FPS" % Engine.get_frames_per_second()
 
 
 func _bitis_kur() -> void:
@@ -206,16 +259,31 @@ func _bitis_kur() -> void:
 	baslik.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	baslik.offset_left = -360
 	baslik.offset_right = 360
-	baslik.offset_top = 240
-	_bitis_metin = _etiket(36)
+	baslik.offset_top = 150
+	_bitis_metin = _etiket(34)
 	_bitis_metin.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bitis.add_child(_bitis_metin)
 	_bitis_metin.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_bitis_metin.offset_left = -360
 	_bitis_metin.offset_right = 360
-	_bitis_metin.offset_top = -80
-	_bitis_metin.offset_bottom = 120
-	_bitis.add_child(_buyuk_dugme("TEKRAR OYNA", Color(0.6, 0.2, 0.15), func() -> void: basla_istendi.emit(), 250))
+	_bitis_metin.offset_top = -260
+	_bitis_metin.offset_bottom = -60
+	_odul_kutusu = VBoxContainer.new()
+	_odul_kutusu.add_theme_constant_override("separation", 6)
+	_bitis.add_child(_odul_kutusu)
+	_odul_kutusu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_odul_kutusu.offset_left = -330
+	_odul_kutusu.offset_right = 330
+	_odul_kutusu.offset_top = -40
+	_odul_kutusu.offset_bottom = 300
+	var tekrar := _buyuk_dugme("TEKRAR", Color(0.6, 0.2, 0.15), func() -> void: basla_istendi.emit(), 230)
+	tekrar.offset_left = -330
+	tekrar.offset_right = -10
+	_bitis.add_child(tekrar)
+	var menu := _buyuk_dugme("MENÜ", Color(0.3, 0.4, 0.3), func() -> void: menu_istendi.emit(), 230)
+	menu.offset_left = 10
+	menu.offset_right = 330
+	_bitis.add_child(menu)
 	_bitis.visible = false
 
 
@@ -238,7 +306,11 @@ func _buyuk_dugme(metin: String, renk: Color, eylem: Callable, alttan_ust: float
 
 # ---------------------------------------------------------------- güncelleme
 
-func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bool) -> void:
+func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bool, fiyat: int = 25) -> void:
+	if fiyat != onar_fiyat:
+		onar_fiyat = fiyat
+		_onar_dugme.text = "ONAR  %d altın" % onar_fiyat
+	_duraklat_dugme.visible = oyunda
 	_dalga_etiket.text = "DALGA %d" % dalga
 	_altin_etiket.text = "%d ALTIN" % altin
 	_oldurme_etiket.text = "%d zombi" % oldurme
@@ -246,7 +318,7 @@ func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bo
 	var dolu := _can_cubugu.get_theme_stylebox("fill") as StyleBoxFlat
 	dolu.bg_color = Color(0.85, 0.2, 0.2).lerp(Color(0.3, 0.8, 0.35), can_orani)
 	_onar_dugme.visible = oyunda
-	_onar_dugme.disabled = altin < ONAR_FIYAT or can_orani >= 0.999
+	_onar_dugme.disabled = altin < onar_fiyat or can_orani >= 0.999
 
 
 func dalga_afisi(metin: String) -> void:
@@ -288,24 +360,55 @@ func _kart_tiklandi(id: String) -> void:
 	kart_secildi.emit(id)
 
 
-func baslangic_goster(rekor: int) -> void:
-	_baslangic_rekor.text = "En iyi: %d. dalga" % rekor if rekor > 0 else ""
-	_baslangic.visible = true
-	_bitis.visible = false
-
-
 func oyun_basladi() -> void:
-	_baslangic.visible = false
+	_duraklat_paneli.visible = false
 	_bitis.visible = false
 	_kart_paneli.visible = false
 
 
-func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool) -> void:
-	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün\n\nEn iyi: %d. dalga" % [dalga, oldurme, rekor]
+func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: Dictionary) -> void:
+	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün · En iyi: %d" % [dalga, oldurme, rekor]
 	if yeni_rekor:
 		metin += "\nYENİ REKOR!"
 	_bitis_metin.text = metin
+	for c in _odul_kutusu.get_children():
+		c.queue_free()
+	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 32)
+	_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 30)
+	for sl in ozet.get("silahlar", []):
+		var n: Dictionary = Veri.NADIRLIK[int(sl["nadirlik"])]
+		_odul_ekle("Silah: %s %s" % [n["ad"], Veri.SILAHLAR[sl["taban"]]["ad"]], n["renk"], 28)
+	var gelisen: Array = ozet.get("gelisim", [])
+	if not gelisen.is_empty():
+		var sayim := {}
+		for g in gelisen:
+			sayim[g] = int(sayim.get(g, 0)) + 1
+		var parcalar: Array[String] = []
+		for o in Veri.OZELLIKLER:
+			if sayim.has(o["id"]):
+				parcalar.append("%s +%d" % [o["ad"], sayim[o["id"]]])
+		_odul_ekle("Gelişim: " + ", ".join(parcalar), Color(0.55, 0.85, 1.0), 26)
+	if bool(ozet.get("seviye_atladi", false)):
+		_odul_ekle("Seviye atladı!", Color(0.6, 1, 0.5), 28)
+	var m := int(ozet.get("moral", 0))
+	if m != 0:
+		_odul_ekle("Moral %s%d" % ["+" if m > 0 else "", m], Color(0.6, 1, 0.5) if m > 0 else Color(1, 0.55, 0.45), 26)
 	_kart_paneli.visible = false
+	_duraklat_paneli.visible = false
 	_bitis.visible = true
 	_bitis.modulate.a = 0.0
 	create_tween().tween_property(_bitis, "modulate:a", 1.0, 0.6)
+
+
+func bitis_gizle() -> void:
+	_bitis.visible = false
+	_kart_paneli.visible = false
+	_duraklat_paneli.visible = false
+
+
+func _odul_ekle(metin: String, renk: Color, boyut: int) -> void:
+	var l := _etiket(boyut, renk)
+	l.text = metin
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_odul_kutusu.add_child(l)
