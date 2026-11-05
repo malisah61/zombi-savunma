@@ -180,7 +180,7 @@ func aktif_guncelle(kalan: float) -> void:
 		return
 	_aktif_son = sn
 	_aktif_dugme.disabled = sn > 0
-	_aktif_dugme.text = _aktif_ad if sn <= 0 else "%s %d" % [_aktif_ad.split(" ")[0], sn]
+	_aktif_dugme.text = _aktif_ad if sn <= 0 else "Bekle: %d sn" % sn
 
 
 ## Barikattaki yuvaların altında satın alma düğmeleri; yalnız para yetince görünür.
