@@ -9,6 +9,8 @@ var renk := Color(1.0, 0.8, 0.2)
 
 func _init() -> void:
 	custom_minimum_size = Vector2(150, 30)
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 

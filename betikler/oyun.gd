@@ -132,6 +132,7 @@ func _ready() -> void:
 	barikat.max_can = float(st["barikat_max"])
 	barikat.can = barikat.max_can
 	_arayuz_guncelle()
+	arayuz.visible = false
 	menu.goster()
 
 	for a in OS.get_cmdline_user_args():
@@ -153,8 +154,8 @@ func _gorsel_katman_kur() -> void:
 	var vinyet := TextureRect.new()
 	var g := Gradient.new()
 	g.set_color(0, Color(0, 0, 0, 0))
-	g.set_color(1, Color(0, 0, 0, 0.6))
-	g.set_offset(0, 0.55)
+	g.set_color(1, Color(0, 0, 0, 0.45))
+	g.set_offset(0, 0.62)
 	var dok := GradientTexture2D.new()
 	dok.gradient = g
 	dok.fill = GradientTexture2D.FILL_RADIAL
@@ -247,6 +248,7 @@ func _yeni_oyun() -> void:
 	oldurme = 0
 	_kosu_odullendi = false
 	menu.gizle()
+	arayuz.visible = true
 	arayuz.oyun_basladi()
 	arayuz.bitis_gizle()
 	if int(profil.veri["istatistik"]["kosu"]) < 3:
@@ -301,6 +303,7 @@ func _menuye_don() -> void:
 	durum = Durum.MENU
 	arayuz.bitis_gizle()
 	_arayuz_guncelle()
+	arayuz.visible = false
 	menu.goster()
 
 

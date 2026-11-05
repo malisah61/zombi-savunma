@@ -34,7 +34,7 @@ func _ready() -> void:
 		_ust_bosluk += guvenli.position.y * get_viewport().get_visible_rect().size.y / pencere.y
 
 	var arka := ColorRect.new()
-	arka.color = Color(0.05, 0.07, 0.05, 0.93)
+	arka.color = Color(0.05, 0.07, 0.05, 0.97)
 	add_child(arka)
 	arka.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -127,9 +127,23 @@ func _etiket(metin: String, boyut: int, renk: Color = Color.WHITE) -> Label:
 	l.add_theme_color_override("font_color", renk)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	l.add_theme_constant_override("outline_size", 6)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.autowrap_mode = TextServer.AUTOWRAP_OFF
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
+
+
+## Dikey kutulardaki yazılar satır kaydırır; yan yana dizilen (satır) yazılar kaydırmaz,
+## yoksa dar alanda harf harf alt alta kırılırlar.
+func _etiketleri_duzenle(n: Node) -> void:
+	for c in n.get_children():
+		if c is Label:
+			var l := c as Label
+			if n is VBoxContainer:
+				l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			else:
+				l.autowrap_mode = TextServer.AUTOWRAP_OFF
+		_etiketleri_duzenle(c)
 
 
 func _stil(renk: Color, kenar: Color, yaricap: int = 16, kenar_kalinlik: int = 3) -> StyleBoxFlat:
@@ -263,6 +277,7 @@ func sekme_ac(i: int) -> void:
 		2: _envanter_sekmesi()
 		3: _kesif_sekmesi()
 		4: _ayarlar_sekmesi()
+	_etiketleri_duzenle(_icerik)
 	_kaydirma.scroll_vertical = 0
 
 

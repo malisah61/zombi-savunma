@@ -69,6 +69,10 @@ func _ates() -> void:
 
 
 func _draw() -> void:
+	# oyuncunun askerini kolay görmesi için ayak altında hafif ışık halkası
+	draw_set_transform(Vector2(0, 6), 0.0, Vector2(1.35, 0.75))
+	draw_circle(Vector2.ZERO, 34, Color(1.0, 0.95, 0.6, 0.12))
+	draw_arc(Vector2.ZERO, 34, 0.0, TAU, 32, Color(1.0, 0.95, 0.6, 0.35), 2.0)
 	# gölge
 	draw_set_transform(Vector2(4, 10), 0.0, Vector2(1.3, 0.6))
 	draw_circle(Vector2.ZERO, 26, Color(0, 0, 0, 0.3))
