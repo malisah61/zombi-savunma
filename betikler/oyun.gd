@@ -73,6 +73,7 @@ func _ready() -> void:
 	kahraman.oyun = self
 	kahraman.position = Vector2(genislik / 2, barikat_y + 120)
 	kahraman.hedef_x = genislik / 2
+	kahraman.scale = Vector2(1.3, 1.3)
 	add_child(kahraman)
 	_mermi_katmani = _katman()
 	_efekt_katmani = _katman()

@@ -3,9 +3,9 @@ extends Node2D
 ## Yeni tür eklemek için TURLER sözlüğüne bir kayıt ekle; çizim renkleri de oradan gelir.
 
 const TURLER := {
-	"yuruyen": {"can": 30.0, "hiz": 52.0, "hasar": 6.0, "yaricap": 24.0, "altin": 2,
+	"yuruyen": {"can": 30.0, "hiz": 52.0, "hasar": 6.0, "yaricap": 30.0, "altin": 2,
 		"gomlek": [Color("5d6b7a"), Color("7a5c4d"), Color("4f6b4a"), Color("6b4f6b")], "ten": Color("8fae6b")},
-	"kosucu": {"can": 15.0, "hiz": 135.0, "hasar": 4.0, "yaricap": 19.0, "altin": 3,
+	"kosucu": {"can": 15.0, "hiz": 135.0, "hasar": 4.0, "yaricap": 24.0, "altin": 3,
 		"gomlek": [Color("8c3b3b"), Color("a35a2a")], "ten": Color("a7b86d")},
 }
 

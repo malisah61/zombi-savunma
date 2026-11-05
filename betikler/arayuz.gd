@@ -305,6 +305,7 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool) -> voi
 	if yeni_rekor:
 		metin += "\nYENİ REKOR!"
 	_bitis_metin.text = metin
+	_kart_paneli.visible = false
 	_bitis.visible = true
 	_bitis.modulate.a = 0.0
 	create_tween().tween_property(_bitis, "modulate:a", 1.0, 0.6)

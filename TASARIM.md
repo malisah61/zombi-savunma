@@ -79,6 +79,9 @@ iki dallı uzmanlık (Kingdom Rush gibi).
   kaynak `assets/KAYNAKLAR.md`'ye yazılır.
 - Bulunamayan şeyler kodla çizilir / sesler kodla üretilir.
 
+## 0. Oyuncu İstekleri (önce bunlar yapılır)
+- (Şimdilik yok. Mehmet Ali'nin istek ve hata bildirimleri buraya yazılır.)
+
 ## 10. Fikir Havuzu (her gece büyür)
 - Gündüz/gece döngüsü: gece zombiler güçlü, gündüz kaynak toplama.
 - Kurtarılan hayatta kalanlar üste yardımcı olur.
@@ -86,8 +89,8 @@ iki dallı uzmanlık (Kingdom Rush gibi).
 
 ## 11. Yol Haritası
 (Gece görevi her çalışmada en üstteki yapılmamış maddeleri alır, bitirince işaretler.)
-- [ ] **Gün 0:** Temel oyun: barikat, kahraman, otomatik ateş, yürüyen + koşucu zombi, dalgalar, can/altın, bitiş ekranı.
-- [ ] Dalga sonu 3 kartlık yetenek seçimi (ilk 8 kart).
+- [x] **Gün 0:** Temel oyun: barikat, kahraman, otomatik ateş, yürüyen + koşucu zombi, dalgalar, can/altın, bitiş ekranı.
+- [x] Dalga sonu 3 kartlık yetenek seçimi (ilk 8 kart).
 - [ ] Zırhlı ve kusan zombi; ilk boss (Dev).
 - [ ] Kule yuvaları: makineli taret ve dikenli tel.
 - [ ] Ana menü, zorluk seçimi, kayıt sistemi.
