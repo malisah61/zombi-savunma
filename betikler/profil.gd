@@ -5,7 +5,7 @@ extends Node
 
 const Veri := preload("res://betikler/veri.gd")
 const DOSYA := "user://profil.json"
-const SURUM := 1
+const SURUM := 2
 
 signal degisti
 
@@ -16,9 +16,11 @@ const VARSAYILAN := {
 	"envanter": [],
 	"aktif": "",
 	"kesif": {"aktif": {}, "raporlar": []},
-	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false},
+	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true},
 	"rekor": 0,
-	"istatistik": {"kosu": 0, "oldurme": 0},
+	"istatistik": {"kosu": 0, "oldurme": 0, "boss": 0},
+	"gorulen": [],  # tanıtımı yapılmış zombi türleri
+	"son_zaman": 0,  # gerçek zamanla dinlenme için
 }
 
 var veri: Dictionary = {}
@@ -44,6 +46,18 @@ func yukle() -> void:
 		_baslangic_ekibi()
 	if aktif_kahraman().is_empty():
 		veri["aktif"] = veri["ekip"][0]["uid"]
+	_hayatta_kalanlari_tamamla()
+
+
+## Dizi içindeki kayıtları _tamamla göremez: eski hayatta kalanlara yeni alanları burada ekle.
+func _hayatta_kalanlari_tamamla() -> void:
+	for h in veri["ekip"]:
+		if not h.has("kisilik"):
+			h["kisilik"] = Veri.kisilik_sec()
+		if not h.has("yorgunluk"):
+			h["yorgunluk"] = 0.0
+		if not h.has("sakat"):
+			h["sakat"] = 0
 
 
 func kaydet() -> void:
@@ -166,6 +180,8 @@ func kosu_istatistigi() -> Dictionary:
 	var si := Veri.silah_istatistik(s) if not s.is_empty() else Veri.silah_istatistik(Veri.silah_uret("tabanca", 0))
 	var oz: Dictionary = h["oz"]
 	var moral := 1.0 + (float(h["moral"]) - 50.0) / 50.0 * 0.05
+	var yorgun := Veri.yorgunluk_carpani(float(h.get("yorgunluk", 0.0)))
+	moral *= yorgun
 	var st := {
 		"silah_taban": s.get("taban", "tabanca"),
 		"hasar": float(si["hasar"]) * (1.0 + (float(oz["nisancilik"]) - 10.0) * 0.035) * moral,
@@ -182,6 +198,11 @@ func kosu_istatistigi() -> Dictionary:
 		"onarim": 0.25 * (1.0 + (float(oz["muhendislik"]) - 10.0) * 0.05),
 		"onar_fiyat": 25,
 		"yenilenme": 0.0,
+		"zirh_delme": 0.0,
+		"zirh_yok": false,
+		"yanma": 0.0,
+		"yanma_yayilim": false,
+		"diken": 0.0,
 	}
 	match String(h["rol"]):
 		"asker":
@@ -200,9 +221,9 @@ func kosu_istatistigi() -> Dictionary:
 
 
 ## Koşu bitince çağrılır: ödüller, ganimet, gelişim (FM tarzı), moral. Özet sözlüğü döndürür.
-func kosu_bitti(dalga: int, oldurme: int) -> Dictionary:
-	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0}
-	var kazanc := dalga * 6 + int(oldurme / 2.0)
+func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false) -> Dictionary:
+	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0, "sakat": {}, "yorgunluk": ""}
+	var kazanc := dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25
 	hurda_ekle(kazanc)
 	ozet["hurda"] = kazanc
 
@@ -214,6 +235,16 @@ func kosu_bitti(dalga: int, oldurme: int) -> Dictionary:
 			ozet["silahlar"].append(s)
 		else:
 			hurda_ekle(silah_satis_degeri(s))
+
+	# Boss ganimeti: öldürülen her Dev için garanti Ender veya üstü silah
+	for i in boss_sayisi:
+		var s := Veri.silah_uret("", maxi(2, Veri.nadirlik_sec(0.3 + dalga * 0.05)))
+		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
+			veri["envanter"].append(s)
+			ozet["silahlar"].append(s)
+		else:
+			hurda_ekle(silah_satis_degeri(s))
+	veri["istatistik"]["boss"] = int(veri["istatistik"]["boss"]) + boss_sayisi
 
 	var h := aktif_kahraman()
 	var onceki_en_iyi := int(h.get("en_iyi_dalga", 0))
@@ -234,8 +265,14 @@ func kosu_bitti(dalga: int, oldurme: int) -> Dictionary:
 		degisim += 6
 	elif dalga <= 3:
 		degisim -= 8
+	var ks := Veri.kisilik(h)
+	if degisim > 0:
+		degisim = int(round(degisim * float(ks["kazanc"])))
+	elif degisim < 0:
+		degisim = int(round(degisim * float(ks["kayip"])))
 	h["moral"] = clampi(eski_moral + degisim, 5, 100)
 	ozet["moral"] = int(h["moral"]) - eski_moral
+	_ekip_kosu_sonu(h, dalga, barikat_dustu, ozet)
 
 	# Gelişim: oynayan hayatta kalan maç deneyimiyle, diğerleri antrenmanla (daha az) gelişir
 	ozet["gelisim"] = _gelistir(h, 0.5 + dalga * 0.22)
@@ -254,6 +291,63 @@ func kosu_bitti(dalga: int, oldurme: int) -> Dictionary:
 	return ozet
 
 
+## Koşu sonu rotasyon etkileri: oynayan yorulur, yedekler dinlenir, sakatlıklar iyileşir, kişilik moralleri.
+func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dictionary) -> void:
+	var tek_kisi: bool = veri["ekip"].size() <= 1
+	var lider := String(Veri.kisilik(h).get("ad", "")) == "Lider ruhlu"
+	for x in veri["ekip"]:
+		if x["uid"] == h["uid"]:
+			continue
+		x["sakat"] = maxi(int(x.get("sakat", 0)) - 1, 0)
+		x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - 35.0, 0.0)
+		if lider:
+			x["moral"] = mini(int(x["moral"]) + 2, 100)
+		if String(x.get("kisilik", "")) == "hirsli":
+			x["moral"] = maxi(int(x["moral"]) - 2, 5)
+	# Tek kişilik ekip rotasyon yapamaz: yarım yorulur, sakatlanmaz
+	var yorgun_artis := (10.0 + dalga * 1.6) * (0.5 if tek_kisi else 1.0)
+	var yorgunluk := minf(float(h.get("yorgunluk", 0.0)) + yorgun_artis, 100.0)
+	h["yorgunluk"] = yorgunluk
+	ozet["yorgunluk"] = Veri.yorgunluk_metni(yorgunluk)
+	if barikat_dustu and not tek_kisi and randf() < 0.05 + yorgunluk * 0.002:
+		var sure := randi_range(1, 3)
+		h["sakat"] = sure
+		ozet["sakat"] = {"ad": h["ad"], "sure": sure}
+		var yedek := _en_iyi_saglam(String(h["uid"]))
+		if not yedek.is_empty():
+			veri["aktif"] = yedek["uid"]
+			ozet["sakat"]["yedek"] = yedek["ad"]
+
+
+func _en_iyi_saglam(haric: String) -> Dictionary:
+	var en_iyi := {}
+	for x in veri["ekip"]:
+		if x["uid"] == haric or int(x.get("sakat", 0)) > 0:
+			continue
+		if en_iyi.is_empty() or Veri.toplam_ozellik(x) > Veri.toplam_ozellik(en_iyi):
+			en_iyi = x
+	return en_iyi
+
+
+## Gerçek zamanla dinlenme: saatte 12 yorgunluk gider, 4 saatte 1 sakatlık koşusu iyileşir.
+## Oyuncu geri döndüğünde ekibini dinç bulur (cezasız geri dönüş).
+func zaman_dinlenmesi() -> void:
+	var simdi := int(Time.get_unix_time_from_system())
+	var son := int(veri["son_zaman"])
+	veri["son_zaman"] = simdi
+	if son <= 0 or simdi <= son:
+		return
+	var saat := float(simdi - son) / 3600.0
+	for x in veri["ekip"]:
+		x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - saat * 12.0, 0.0)
+		x["sakat"] = maxi(int(x.get("sakat", 0)) - int(saat / 4.0), 0)
+	var aktif := aktif_kahraman()
+	if int(aktif.get("sakat", 0)) > 0:
+		var y := _en_iyi_saglam(String(aktif["uid"]))
+		if not y.is_empty():
+			veri["aktif"] = y["uid"]
+
+
 ## Gelişim puanını özelliklere dağıtır. Yaş, moral ve potansiyel tavanı etkiler. Gelişen özellikleri döndürür.
 func _gelistir(h: Dictionary, puan: float) -> Array:
 	var yas := int(h["yas"])
@@ -266,7 +360,7 @@ func _gelistir(h: Dictionary, puan: float) -> Array:
 		h["ilerleme"] = {}
 	var ilerleme: Dictionary = h["ilerleme"]
 	if toplam < pot:
-		puan *= yas_carpan * moral_carpan
+		puan *= yas_carpan * moral_carpan * float(Veri.kisilik(h)["gelisim"])
 		var anahtar: Array = Veri.ROLLER[h["rol"]]["anahtar"]
 		var odak := String(h.get("odak", anahtar[0]))
 		for o in Veri.OZELLIKLER:
@@ -293,7 +387,8 @@ func _gelistir(h: Dictionary, puan: float) -> Array:
 # ================================================================ EKİP
 
 func aktif_yap(uid: String) -> void:
-	if not kahraman_bul(uid).is_empty():
+	var h := kahraman_bul(uid)
+	if not h.is_empty() and int(h.get("sakat", 0)) <= 0:
 		veri["aktif"] = uid
 		kaydet()
 
@@ -456,6 +551,7 @@ func aday_al(rapor_uid: String, aday_idx: int) -> String:
 	hurda_ekle(-int(aday["fiyat"]))
 	var h: Dictionary = aday["h"]
 	veri["ekip"].append(h)
+	_hayatta_kalanlari_tamamla()
 	r["adaylar"].remove_at(aday_idx)
 	if r["adaylar"].is_empty() and r["silah"] == null:
 		veri["kesif"]["raporlar"].erase(r)

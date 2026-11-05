@@ -37,7 +37,7 @@ jobs:
       - name: Ekran görüntüleri
         run: |
           rm -rf onizleme/oyun
-          timeout 120 xvfb-run -a -s "-screen 0 720x1280x24" ./godot --path . --rendering-driver opengl3 --resolution 720x1280 -- --onizleme=onizleme/oyun 2>&1 | grep -vE "^\s*$" | tail -40
+          timeout 200 xvfb-run -a -s "-screen 0 720x1280x24" ./godot --path . --rendering-driver opengl3 --resolution 720x1280 -- --onizleme=onizleme/oyun 2>&1 | grep -vE "^\s*$" | tail -40
           ls -la onizleme/oyun
 
       - name: Depoya kaydet

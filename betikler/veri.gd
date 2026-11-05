@@ -63,6 +63,24 @@ const ROLLER: Dictionary = {
 		"anahtar": ["dayaniklilik", "liderlik"], "silah": "tabanca"},
 }
 
+# Kişilik (FM): gelisim: gelişim çarpanı, kayip/kazanc: moral değişimi çarpanı, agirlik: çıkma olasılığı.
+const KISILIKLER: Dictionary = {
+	"profesyonel": {"ad": "Profesyonel", "gelisim": 1.25, "kayip": 0.8, "kazanc": 1.0, "agirlik": 10.0,
+		"etki": "Gelişimi +%25"},
+	"kararli": {"ad": "Kararlı", "gelisim": 1.15, "kayip": 0.5, "kazanc": 1.0, "agirlik": 12.0,
+		"etki": "Gelişimi +%15, moral kaybı yarım"},
+	"lider": {"ad": "Lider ruhlu", "gelisim": 1.0, "kayip": 1.0, "kazanc": 1.0, "agirlik": 8.0,
+		"etki": "Sahadayken tüm ekibin morali +2"},
+	"hirsli": {"ad": "Hırslı", "gelisim": 1.1, "kayip": 1.0, "kazanc": 1.5, "agirlik": 10.0,
+		"etki": "Gelişimi +%10, moral kazancı +%50, yedekte morali düşer"},
+	"dengeli": {"ad": "Dengeli", "gelisim": 1.0, "kayip": 1.0, "kazanc": 1.0, "agirlik": 30.0,
+		"etki": "Sıradan, sürprizsiz"},
+	"asabi": {"ad": "Asabi", "gelisim": 1.0, "kayip": 1.5, "kazanc": 1.25, "agirlik": 12.0,
+		"etki": "Morali hızlı iner, hızlı çıkar"},
+	"tembel": {"ad": "Tembel", "gelisim": 0.75, "kayip": 1.0, "kazanc": 1.0, "agirlik": 12.0,
+		"etki": "Gelişimi -%25"},
+}
+
 const ISIMLER := ["Ali", "Ayşe", "Mehmet", "Zeynep", "Mustafa", "Elif", "Emre", "Selin", "Burak", "Deniz",
 	"Kerem", "Ece", "Murat", "Derya", "Okan", "Gizem", "Cem", "Nazlı", "Tolga", "İrem", "Serkan", "Pınar",
 	"Hakan", "Seda", "Kaan", "Buse", "Volkan", "Esra", "Barış", "Melis"]
@@ -188,7 +206,40 @@ static func hayatta_kalan_uret(kalite: float = 7.0, pot_bonus: float = 0.0, rol:
 		"uid": _uid(), "ad": "%s %s" % [ISIMLER.pick_random(), SOYISIMLER.pick_random()],
 		"rol": rol, "yas": yas, "oz": oz, "potansiyel": pot, "moral": 60, "xp": 0, "seviye": 1,
 		"odak": anahtar[0], "kosu": 0, "en_iyi_dalga": 0,
+		"kisilik": kisilik_sec(), "yorgunluk": 0.0, "sakat": 0,
 	}
+
+
+static func kisilik_sec() -> String:
+	var toplam := 0.0
+	for k in KISILIKLER:
+		toplam += float(KISILIKLER[k]["agirlik"])
+	var r := randf() * toplam
+	for k in KISILIKLER:
+		r -= float(KISILIKLER[k]["agirlik"])
+		if r <= 0.0:
+			return k
+	return "dengeli"
+
+
+## Eski kayıtlarda kişilik olmayabilir: güvenli erişim.
+static func kisilik(h: Dictionary) -> Dictionary:
+	return KISILIKLER.get(String(h.get("kisilik", "dengeli")), KISILIKLER["dengeli"])
+
+
+static func yorgunluk_metni(y: float) -> String:
+	if y >= 70.0:
+		return "Bitkin"
+	if y >= 40.0:
+		return "Yorgun"
+	if y >= 15.0:
+		return "Hafif yorgun"
+	return "Dinç"
+
+
+## Yorgunluk güç cezası: 100 yorgunlukta hasar ve ateş hızı -%15.
+static func yorgunluk_carpani(y: float) -> float:
+	return 1.0 - clampf(y, 0.0, 100.0) * 0.0015
 
 
 static func toplam_ozellik(h: Dictionary) -> int:

@@ -7,8 +7,10 @@ signal onar_istendi
 signal basla_istendi
 signal menu_istendi
 signal duraklat_istendi(duraklat: bool)
+signal yeniden_cek_istendi
 
 const Veri := preload("res://betikler/veri.gd")
+const Kartlar := preload("res://betikler/kartlar.gd")
 
 var onar_fiyat := 25
 
@@ -28,6 +30,13 @@ var _odul_kutusu: VBoxContainer
 var _bitis: Control
 var _bitis_metin: Label
 var _ust_bosluk := 30.0
+var _cek_dugme: Button
+var _boss_ad: Label
+var _boss_cubugu: ProgressBar
+var _tanitim: PanelContainer
+var _tanitim_baslik: Label
+var _tanitim_metin: Label
+var _uyari: Label
 
 
 func _ready() -> void:
@@ -42,6 +51,8 @@ func _ready() -> void:
 	_kart_paneli_kur()
 	_duraklat_kur()
 	_bitis_kur()
+	_boss_kur()
+	_tanitim_kur()
 
 
 # ---------------------------------------------------------------- kurulum
@@ -164,7 +175,108 @@ func _kart_paneli_kur() -> void:
 	_kart_kutusu.offset_top = -330
 	_kart_kutusu.offset_bottom = 330
 	_kart_kutusu.alignment = BoxContainer.ALIGNMENT_CENTER
+	_cek_dugme = Button.new()
+	_cek_dugme.focus_mode = Control.FOCUS_NONE
+	_cek_dugme.add_theme_font_size_override("font_size", 26)
+	_cek_dugme.add_theme_stylebox_override("normal", _kutu_stili(Color(0.2, 0.25, 0.32), Color(0.5, 0.7, 0.9), 14))
+	_cek_dugme.add_theme_stylebox_override("hover", _kutu_stili(Color(0.2, 0.25, 0.32), Color(0.5, 0.7, 0.9), 14))
+	_cek_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.3, 0.38, 0.48), Color.WHITE, 14))
+	_cek_dugme.add_theme_stylebox_override("disabled", _kutu_stili(Color(0.17, 0.17, 0.17), Color(0.35, 0.35, 0.35), 14))
+	_kart_paneli.add_child(_cek_dugme)
+	_cek_dugme.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_cek_dugme.offset_left = -220
+	_cek_dugme.offset_right = 220
+	_cek_dugme.offset_top = -170
+	_cek_dugme.offset_bottom = -96
+	_cek_dugme.pressed.connect(func() -> void: yeniden_cek_istendi.emit())
 	_kart_paneli.visible = false
+
+
+func _boss_kur() -> void:
+	_boss_ad = _etiket(26, Color(1, 0.45, 0.35))
+	_boss_ad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_boss_ad)
+	_boss_ad.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_boss_ad.offset_top = _ust_bosluk + 96
+	_boss_cubugu = ProgressBar.new()
+	_boss_cubugu.show_percentage = false
+	_boss_cubugu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var arka := StyleBoxFlat.new()
+	arka.bg_color = Color(0.1, 0.02, 0.02, 0.9)
+	arka.set_corner_radius_all(6)
+	var dolu := StyleBoxFlat.new()
+	dolu.bg_color = Color(0.9, 0.18, 0.12)
+	dolu.set_corner_radius_all(6)
+	_boss_cubugu.add_theme_stylebox_override("background", arka)
+	_boss_cubugu.add_theme_stylebox_override("fill", dolu)
+	add_child(_boss_cubugu)
+	_boss_cubugu.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_boss_cubugu.offset_left = 60
+	_boss_cubugu.offset_right = -60
+	_boss_cubugu.offset_top = _ust_bosluk + 134
+	_boss_cubugu.offset_bottom = _ust_bosluk + 156
+	boss_gizle()
+
+
+func boss_goster(ad: String, oran: float) -> void:
+	_boss_ad.text = ad
+	_boss_ad.visible = true
+	_boss_cubugu.visible = true
+	_boss_cubugu.value = oran * 100.0
+
+
+func boss_gizle() -> void:
+	if _boss_ad:
+		_boss_ad.visible = false
+		_boss_cubugu.visible = false
+
+
+## Yeni zombi tanıtımı (Kingdom Rush): oyunu durdurmadan üstte birkaç saniye kalır.
+func _tanitim_kur() -> void:
+	_tanitim = PanelContainer.new()
+	_tanitim.add_theme_stylebox_override("panel", _kutu_stili(Color(0.08, 0.1, 0.08, 0.92), Color(0.9, 0.75, 0.3), 16))
+	_tanitim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_tanitim)
+	_tanitim.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_tanitim.offset_left = 24
+	_tanitim.offset_right = -24
+	_tanitim.offset_top = _ust_bosluk + 170
+	_tanitim.offset_bottom = _ust_bosluk + 290
+	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tanitim.add_child(v)
+	_tanitim_baslik = _etiket(28, Color(1, 0.85, 0.4))
+	v.add_child(_tanitim_baslik)
+	_tanitim_metin = _etiket(24)
+	_tanitim_metin.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tanitim_metin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(_tanitim_metin)
+	_tanitim.visible = false
+	_uyari = _etiket(26, Color(1, 0.9, 0.6))
+	_uyari.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_uyari)
+	_uyari.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_uyari.offset_top = _ust_bosluk + 300
+	_uyari.modulate.a = 0.0
+
+
+func tanitim_goster(ad: String, metin: String) -> void:
+	_tanitim_baslik.text = "YENİ ZOMBİ: " + ad
+	_tanitim_metin.text = metin
+	_tanitim.visible = true
+	_tanitim.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(5.0)
+	tw.tween_property(_tanitim, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(func() -> void: _tanitim.visible = false)
+
+
+func uyari_goster(metin: String) -> void:
+	_uyari.text = metin
+	_uyari.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(2.5)
+	tw.tween_property(_uyari, "modulate:a", 0.0, 0.5)
 
 
 func _tam_ekran_panel(renk: Color) -> Control:
@@ -252,29 +364,29 @@ func _process(_delta: float) -> void:
 
 func _bitis_kur() -> void:
 	_bitis = _tam_ekran_panel(Color(0.12, 0.0, 0.0, 0.78))
-	var baslik := _etiket(88, Color(1, 0.3, 0.25))
-	baslik.text = "BARİKAT\nDÜŞTÜ"
+	var baslik := _etiket(70, Color(1, 0.3, 0.25))
+	baslik.text = "BARİKAT DÜŞTÜ"
 	baslik.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bitis.add_child(baslik)
 	baslik.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	baslik.offset_left = -360
 	baslik.offset_right = 360
-	baslik.offset_top = 150
+	baslik.offset_top = 90
 	_bitis_metin = _etiket(34)
 	_bitis_metin.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bitis.add_child(_bitis_metin)
 	_bitis_metin.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_bitis_metin.offset_left = -360
 	_bitis_metin.offset_right = 360
-	_bitis_metin.offset_top = -260
-	_bitis_metin.offset_bottom = -60
+	_bitis_metin.offset_top = -440
+	_bitis_metin.offset_bottom = -270
 	_odul_kutusu = VBoxContainer.new()
 	_odul_kutusu.add_theme_constant_override("separation", 6)
 	_bitis.add_child(_odul_kutusu)
 	_odul_kutusu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_odul_kutusu.offset_left = -330
 	_odul_kutusu.offset_right = 330
-	_odul_kutusu.offset_top = -40
+	_odul_kutusu.offset_top = -270
 	_odul_kutusu.offset_bottom = 300
 	var tekrar := _buyuk_dugme("TEKRAR", Color(0.6, 0.2, 0.15), func() -> void: basla_istendi.emit(), 230)
 	tekrar.offset_left = -330
@@ -333,26 +445,42 @@ func dalga_afisi(metin: String) -> void:
 	tw.tween_property(_afis, "modulate:a", 0.0, 0.5)
 
 
-func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary) -> void:
+func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme_fiyat: int = 15, altin: int = 0) -> void:
+	_tanitim.visible = false
 	for c in _kart_kutusu.get_children():
 		c.queue_free()
+	_cek_dugme.text = "Yeniden çek  %d altın  (%d var)" % [cekme_fiyat, altin]
+	_cek_dugme.disabled = altin < cekme_fiyat
 	for k in secenekler:
 		var renk: Color = k["renk"]
 		var sv := int(seviyeler.get(k["id"], 0))
+		var evrim: bool = k.has("evrim")
 		var d := Button.new()
 		d.focus_mode = Control.FOCUS_NONE
 		d.custom_minimum_size = Vector2(600, 170)
-		d.text = "%s   (Sv %d → %d)\n%s" % [k["ad"], sv, sv + 1, k["aciklama"]]
-		d.add_theme_font_size_override("font_size", 32)
-		d.add_theme_stylebox_override("normal", _kutu_stili(renk.darkened(0.55), renk, 22))
-		d.add_theme_stylebox_override("hover", _kutu_stili(renk.darkened(0.55), renk, 22))
+		d.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var ipucu: String = Kartlar.evrim_ipucu(k["id"], seviyeler)
+		if evrim:
+			d.text = "EVRİM: %s\n%s" % [k["ad"], k["aciklama"]]
+		elif int(k["max"]) > 1000:
+			d.text = "%s\n%s" % [k["ad"], k["aciklama"]]
+		else:
+			d.text = "%s   %s\n%s" % [k["ad"], "●".repeat(sv) + "○".repeat(int(k["max"]) - sv), k["aciklama"]]
+		if ipucu != "":
+			d.text += "\n" + ipucu
+		d.add_theme_font_size_override("font_size", 34 if evrim else 28)
+		var dolgu := renk.darkened(0.25 if evrim else 0.55)
+		d.add_theme_stylebox_override("normal", _kutu_stili(dolgu, Color.WHITE if evrim else renk, 22))
+		d.add_theme_stylebox_override("hover", _kutu_stili(dolgu, Color.WHITE if evrim else renk, 22))
 		d.add_theme_stylebox_override("pressed", _kutu_stili(renk.darkened(0.2), Color.WHITE, 22))
 		var id: String = k["id"]
 		d.pressed.connect(func() -> void: _kart_tiklandi(id))
 		_kart_kutusu.add_child(d)
-	_kart_paneli.visible = true
-	_kart_paneli.modulate.a = 0.0
-	create_tween().tween_property(_kart_paneli, "modulate:a", 1.0, 0.25)
+	if not _kart_paneli.visible:
+		_kart_paneli.visible = true
+		_kart_paneli.modulate.a = 0.0
+		create_tween().tween_property(_kart_paneli, "modulate:a", 1.0, 0.25)
 
 
 func _kart_tiklandi(id: String) -> void:
@@ -390,6 +518,13 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 		_odul_ekle("Gelişim: " + ", ".join(parcalar), Color(0.55, 0.85, 1.0), 26)
 	if bool(ozet.get("seviye_atladi", false)):
 		_odul_ekle("Seviye atladı!", Color(0.6, 1, 0.5), 28)
+	var sakat: Dictionary = ozet.get("sakat", {})
+	if not sakat.is_empty():
+		_odul_ekle("SAKATLIK: %s %d koşu oynayamaz" % [sakat["ad"], int(sakat["sure"])], Color(1, 0.45, 0.4), 26)
+		if sakat.has("yedek"):
+			_odul_ekle("Sahaya %s çıkıyor" % sakat["yedek"], Color(0.8, 0.85, 0.75), 24)
+	elif String(ozet.get("yorgunluk", "")) in ["Yorgun", "Bitkin"]:
+		_odul_ekle("Durum: %s. Rotasyon yap, gücü düşüyor." % ozet["yorgunluk"], Color(1, 0.75, 0.4), 24)
 	var m := int(ozet.get("moral", 0))
 	if m != 0:
 		_odul_ekle("Moral %s%d" % ["+" if m > 0 else "", m], Color(0.6, 1, 0.5) if m > 0 else Color(1, 0.55, 0.45), 26)

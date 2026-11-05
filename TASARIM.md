@@ -102,6 +102,11 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - Silah modları: dürbün (menzil), uzatılmış şarjör (ateş hızı), susturucu (kritik).
 - Efsanevi silahların benzersiz özelliği (ör. her 10. mermi zincir elektrik).
 
+- **Yeni araştırılan (Gece 1):**
+  - **Kule yuvaları (altının 3. harcama yeri):** barikatta 3 yuva; taret 60 altın, 8 hasar/0.6 sn, 3 seviye (+%50, fiyat ×1.6). Kingdom Rush'ta oyuncu parayı konuma harcar; kararı "şimdi onar mı kule mi" yapar. Teknik: yuva başına 1 Node2D, ortak mermi havuzu.
+  - **Rol aktif yetenekleri:** sağ altta 25 sn bekleme süreli düğme. Asker el bombası (150 px yarıçap, hasar×6), Avcı ölümcül nişan (5 sn kritik %100), Mühendis acil onarım (%30), Doktor aşı (6 sn zombiler −%40 hız). Oyuncunun koşu içi becerisini artırır (İzleme sorununa ilaç).
+  - **Günlük görevler:** 3 görev, gece yarısı yenilenir (ör. "10 zırhlı öldür: 30 hurda"); `Time.get_date_string_from_system()` ile sıfırlama.
+
 ## 11. Yol Haritası
 (Gece görevi her çalışmada önce Oyuncu İstekleri'ni, sonra en üstteki yapılmamış maddeleri alır.)
 - [x] **Gün 0:** Temel oyun: barikat, kahraman, otomatik ateş, yürüyen + koşucu zombi, dalgalar, can/altın, bitiş ekranı.
@@ -109,22 +114,45 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - [x] Ana menü, kalıcı profil (JSON + yedek + sürüm göçü), ayarlar, duraklatma.
 - [x] FM tarzı ekip v1, keşif v1, silah envanteri v1 (nadirlik, ek özellik, geliştir, birleştir, sat, kuşan).
 - [x] Performans v1: nesne havuzları, güvenli zombi silme, kalite ayarı, FPS sınırı, kısmi yeniden çizim.
-- [ ] Zırhlı ve kusan zombi; ilk boss (Dev). Boss ganimeti: garanti Ender+ silah.
+- [x] (Gece 1) Zırhlı ve kusan zombi; ilk boss (Dev). Boss ganimeti: garanti Ender+ silah.
 - [ ] Görsel kalite v2: CC0 üstten görünüm karakter/zombi sprite'ları ve yürüme animasyon kareleri
   (GitHub'da CC0 paket ara; yoksa Actions ile OpenGameArt/Kenney'den indir), kan/patlama efektleri.
 - [ ] Ses v2: CC0 silah, zombi, menü sesleri ve arka plan müziği (assets/sesler/*.ogg).
-- [ ] Performans v2: zombi çizimlerini bir kez dokuya çevirip (SubViewport → ImageTexture) Sprite2D ile çiz;
-  uyarlamalı kalite (FPS 3 sn boyunca hedefin %80'i altındaysa kaliteyi bir düşür); 120 zombilik yük testi karesi.
-- [ ] FM v2 (bkz. §16): kişilik (Kararlılık, Profesyonellik), sakatlık ve yorgunluk, mentorluk.
+- [x] (Gece 1) Performans v2: zombi/leke atlası, zemin ve barikat dokuya pişirildi; uyarlamalı kalite; 120 zombilik yük testi karesi.
+- [ ] Performans v3: kahraman çizimini de pişir; parçacıkları tek düğümde topla; barikat tahtalarını sadeleştir.
+- [x] (Gece 1) FM v2 (bkz. §16): kişilik, sakatlık ve yorgunluk.
+- [ ] FM v3: mentorluk (30+ yaş, Liderlik 14+ → genç +%20 gelişim), koşu sonu ekip konuşması.
 - [ ] Keşif v2: gözlemci personeli (Yetenek / Potansiyel Değerlendirme), kısa liste, öneri yıldızı.
 - [ ] Envanter v2: zırh + aksesuar yuvası, silah modları, set bonusları, kötü şans koruması.
-- [ ] Kule yuvaları: makineli taret ve dikenli tel.
+- [ ] Sıradaki zombiler: Patlayan (barikatta alan hasarı), Kalkanlı (önden mermi keser, 8. bölüm), Çağırıcı (boss olmayan kaynak).
+- [ ] Boss 2: Kraliçe (her 10. dalgada Dev ile sırayla; sürekli koşucu doğurur).
+- [ ] Kule yuvaları: makineli taret ve dikenli tel. (§18: altının 3. harcama yeri)
+- [ ] **Sıradaki gece öncelik:** Rol aktif yetenekleri + kule yuvaları (koşu içi karar eksikliği).
 - [ ] Kalıcı yetenek ağacı (Laboratuvar): Saldırı / Savunma / Ekonomi.
 - [ ] Rol aktif yetenekleri (Asker el bombası, Avcı ölümcül nişan, Mühendis taret, Doktor aşı).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
 - [ ] Bölümler ve zorluk seçimi; sonsuz mod.
 - [ ] Başarımlar ve günlük görevler.
 - [ ] Bölüm 2: Orman.
+
+## 3b. Zombi sayıları (Gece 1'de uygulandı)
+| Tür | Can | Hız | Hasar | Altın | Özel | İlk dalga |
+|---|---|---|---|---|---|---|
+| Yürüyen | 30 | 52 | 6 | 2 | — | 1 |
+| Koşucu | 15 | 135 | 4 | 3 | oran %15+3·n, en çok %45 | 3 |
+| Zırhlı | 46 | 40 | 9 | 5 | zırh 4 + 0.35·dalga; oran %10+1.5·(n−4), en çok %25 | 4 |
+| Kusan | 26 | 44 | 9 | 5 | 330 px'te durur, 2.8 sn'de bir asit; öncelik +260; oran %8+1·(n−6), en çok %16 | 6 |
+| Dev (boss) | 480 | 27 | 32 | 40 | zırh 2; 1.3 sn işaretli vuruş; %50 canda 2+2k koşucu; her k. Dev can ×(1+0.6(k−1)), hasar ×(1+0.35(k−1)) | 5, 10, 15… |
+- **Zırh formülü:** son hasar = max(hasar − zırh, hasar × 0.2). Düz çıkarma bilerek seçildi: Makineli (5.5) zırha çok takılır, Keskin Nişancı (34) neredeyse etkilenmez;
+  böylece silah ve kart seçimi anlam kazanır. Zırh Delici kartı 4 puan siler, Titanyum evrimi tümünü.
+- **Can eğrisi:** çarpan = 1 + 0.12(n−1) + 0.03·max(0, n−15)², 25. dalgadan sonra ×1.08^(n−25). Hasar çarpanı 1 + 0.02n.
+- **Dalga ritmi:** boss dalgasında normal sayı yarıya iner + n koşucu (yoğun saldırı korunur) + Dev; boss sonrası dalga %60 (nefes).
+- **Ekonomi:** onarım fiyatı her kullanımda +5 altın; yeniden çekme 15, +10 artar.
+
+## 3c. Kart evrimleri (Gece 1'de uygulandı)
+Ana kart en üst seviye + eş kart gereken seviye → sonraki kart ekranında altın evrim kartı (Survivor.io: silah 5. seviye + eş destek):
+Minigun (Seri Ateş 5 + Çift Namlu 2), Napalm (Yanıcı Mermi 3 + Ağır Mermi 3), Titanyum Çekirdek (Delici Mermi 3 + Zırh Delici 2),
+Diken Kalesi (Sağlam Barikat 5 + Dikenli Tel 2). Kartlar bitince Altın Kesesi ve Tam Onarım dolgu kartları çıkar.
 
 ## 12. Performans ve Görüntü Kalitesi Kuralları (uygulandı / uyulacak)
 - Oyun sırasında **düğüm oluşturup silme yok**: mermi, zombi, hasar yazısı, parçacık, kan lekesi havuzdan gelir.
@@ -137,6 +165,12 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - Görsel: vinyet, barikat zayıfken kırmızı nabız, zombiler sisten belirerek doğar, asker ayak altı ışık halkası,
   silaha göre namlu görünüşü, namlu alevi, kritikte titreşim.
 - Profil kaydı: önce `.tmp`'ye yazılır sonra yerine taşınır (yarım yazılmış dosya olmaz), önceki sürüm `.bak`.
+
+- **GL Compatibility dersi (Gece 1 ölçümü):** `draw_circle`/çokgen ve yumuşatılmış çizgiler **birleşmez**, her biri ayrı çizim çağrısıdır; `draw_rect`,
+  yumuşatmasız `draw_line` ve aynı dokudan `draw_texture_rect_region` birleşir. Bu yüzden: statik şekiller SubViewport ile dokuya pişirilir, oyun içi yeni çizimlerde daire yerine dikdörtgen/doku.
+  Yük testi (120 zombi, yazılım ekranı): yalnız zombi atlası ≈ 1570, zemin+barikat+leke de pişince ≈ 230 çizim çağrısı. 2D MSAA GLES3'te desteklenmiyor (uyarı zararsız).
+- Atlas başarısız olursa yedek yol doğrudan çizimdir; `--headless` çalıştırmada bu yol kullanılır.
+- Denge aracı: `godot --headless --fixed-fps 60 -- --bot=6` rastgele kartlı bot koşuları yazar.
 
 ## 13. Ekip — Football Manager tarzı (v1 uygulandı)
 - Her hayatta kalan: ad, rol, yaş, 6 özellik (1–20): Nişancılık (hasar), Refleks (ateş hızı), Soğukkanlılık
@@ -165,6 +199,12 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - Birleştirme: 3 kullanılmayan aynı nadirlik → 1 üst nadirlik. Satış: hurda.
 - Ganimet: her 5 dalgada 1 silah; nadirlik şansı dalgayla artar. Envanter sınırı 40 (dolarsa hurdaya çevrilir).
 
+## 16a. FM v2 (Gece 1'de uygulandı)
+- **Kişilik (7):** Profesyonel (gelişim +%25), Kararlı (+%15, moral kaybı ½), Lider ruhlu (sahadayken ekip moral +2), Hırslı (+%10, moral kazancı ×1.5, yedekte moral −2),
+  Dengeli, Asabi (kayıp ×1.5, kazanç ×1.25), Tembel (−%25). Keşifte bilgi ≥ 0.6 ise görünür, yoksa İncele gerekir. Eski kayıtlara rastgele atanır.
+- **Yorgunluk (0–100):** oynayan +10 + 1.6·dalga (tek kişilik ekipte yarısı), yedek −35/koşu, gerçek zamanla −12/saat. Etki: hasar ve ateş hızı −%0.15/puan (100'de −%15).
+- **Sakatlık:** barikat düşünce şans = %5 + yorgunluk×%0.2 (en çok %25), 1–3 koşu; sakat sahaya çıkamaz, en iyi sağlam yedek otomatik çıkar. Tek kişilik ekipte olmaz.
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -177,6 +217,17 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-05 (Gece 1)
+- Survivor.io evrimi: silah 5. seviye + eş destek yeteneği, boss sandığıyla açılır. Örn. Kunai + Energy Cube → Spirit Shuriken. —
+  [BlueStacks evrim rehberi](https://www.bluestacks.com/blog/game-guides/survivor-io/sio-skills-evolution-guide-en.html)
+- Kingdom Rush: Dark Knight yavaş, dayanıklı, ağır zırhlı; karşı hamle zırh yarılayan/ büyü hasarı. Sayısal zırh tablosu bu sayfada yok, formülü kendimiz seçtik. —
+  [Dark Knight](https://kingdomrushtd.fandom.com/wiki/Dark_Knight)
+- FM kişilikleri: Profesyonellik ve Hırs antrenman gelişimini artırır, düşük Profesyonellik (Tembel/Slack) ve Tartışmacılık düşürür. —
+  [FM Scout: kişilikler](https://www.fmscout.com/a-guide-to-player-personalities-football-manager.html)
+- Meta gelişim: kalıcı güç koşu becerisini güçlendirmeli, gereksizleştirmemeli. —
+  [Bugnet](https://bugnet.io/blog/how-to-design-a-roguelite-meta-progression)
+- Godot: `SubViewport` tek seferlik render (`UPDATE_ONCE`) ve doku. — [Viewports](https://docs.godotengine.org/en/4.2/tutorials/rendering/viewports.html)
+
 ### 2026-11-05
 - FM gözlemcileri: Yetenek Değerlendirme (rapor hızı/doğruluğu), Potansiyel Değerlendirme (genç raporları);
   görev kapsamı ülke/lig/oyuncu/kulüp, sonuç rapor merkezinde toplanır. —

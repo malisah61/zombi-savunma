@@ -1,12 +1,41 @@
 extends Node2D
 ## Oyun alanının zemini: ortada çatlak asfalt yol, kenarlarda kuru çim ve toprak.
-## Bir kez çizilir (Godot çizim komutlarını önbelleğe alır).
+## Bir kez dokuya pişirilir: yüzlerce daire her kare ayrı çizim çağrısı olmasın diye (GL Compatibility'de
+## çokgenler birleşmez). Pişirme olmazsa yedek olarak doğrudan çizilir.
+
+const OLCEK := 1.25
 
 var genislik := 720.0
 var yukseklik := 1280.0
+var _doku: Texture2D
+
+
+func pisir() -> void:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(ceili(genislik * OLCEK), ceili(yukseklik * OLCEK))
+	vp.disable_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	var kopya := Node2D.new()
+	kopya.set_script(get_script())
+	kopya.genislik = genislik
+	kopya.yukseklik = yukseklik
+	kopya.scale = Vector2(OLCEK, OLCEK)
+	vp.add_child(kopya)
+	add_child(vp)
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img: Image = vp.get_texture().get_image()
+	if img != null and not img.is_empty():
+		img.convert(Image.FORMAT_RGB8)
+		_doku = ImageTexture.create_from_image(img)
+		queue_redraw()
+	vp.queue_free()
 
 
 func _draw() -> void:
+	if _doku:
+		draw_texture_rect(_doku, Rect2(0, 0, genislik, yukseklik), false)
+		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2026
 	var w := genislik

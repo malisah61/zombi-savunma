@@ -95,6 +95,7 @@ func _ready() -> void:
 
 func goster() -> void:
 	visible = true
+	profil.zaman_dinlenmesi()
 	profil.kesif_kontrol()
 	sekme_ac(_sekme)
 
@@ -304,6 +305,10 @@ func _oyna_sekmesi() -> void:
 	y.add_child(_etiket("Potansiyel", 24))
 	_yildizlar(y, Veri.yildiz(int(h["potansiyel"])), -1.0, Color(0.5, 0.8, 1.0))
 	k.add_child(_etiket("Pasif: " + String(rol["pasif"]), 24, Color(0.7, 0.9, 0.6)))
+	var yorgun := float(h.get("yorgunluk", 0.0))
+	if yorgun >= 15.0:
+		k.add_child(_etiket("%s: güç -%%%d. Ekip sekmesinden rotasyon yap." % [Veri.yorgunluk_metni(yorgun),
+			int(round(yorgun * 0.15))], 22, Color(1, 0.75, 0.4)))
 
 	var s: Dictionary = profil.kahraman_silahi(h)
 	if not s.is_empty():
@@ -364,6 +369,16 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 	y.add_child(_etiket("Pot.", 22))
 	_yildizlar(y, Veri.yildiz(int(h["potansiyel"])), -1.0, Color(0.5, 0.8, 1.0))
 	k.add_child(_etiket("Moral: %s · Pasif: %s" % [Veri.moral_metni(int(h["moral"])), rol["pasif"]], 22, Color(0.7, 0.9, 0.6)))
+	var ks := Veri.kisilik(h)
+	k.add_child(_etiket("Kişilik: %s (%s)" % [ks["ad"], ks["etki"]], 22, Color(0.8, 0.75, 1.0)))
+	var yorgun := float(h.get("yorgunluk", 0.0))
+	var sakat := int(h.get("sakat", 0))
+	var durum := "Durum: %s" % Veri.yorgunluk_metni(yorgun)
+	if yorgun >= 1.0:
+		durum += " (güç -%%%d)" % int(round(yorgun * 0.15))
+	k.add_child(_etiket(durum, 22, Color(1, 0.75, 0.4) if yorgun >= 40.0 else Color(0.75, 0.85, 0.75)))
+	if sakat > 0:
+		k.add_child(_etiket("SAKAT: %d koşu daha oynayamaz" % sakat, 24, Color(1, 0.45, 0.4)))
 
 	var acik := _acik_kart == String(h["uid"])
 	if acik:
@@ -383,7 +398,7 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 		d.add_child(_dugme("Sahaya sür", Color(0.35, 0.65, 0.25), func() -> void:
 			profil.aktif_yap(uid)
 			bildir("%s sahada!" % h["ad"], Color(0.5, 1, 0.5))
-			_yenile(), 24))
+			_yenile(), 24, sakat <= 0))
 	if acik:
 		d.add_child(_dugme("Odak değiştir", Color(0.3, 0.55, 0.8), func() -> void:
 			var ids: Array = []
@@ -520,6 +535,9 @@ func _rapor_karti(r: Dictionary) -> void:
 		var kesin := float(aday["bilgi"]) >= 0.99
 		k.add_child(HSeparator.new())
 		k.add_child(_etiket("%s · %s · %d yaş" % [h["ad"], rol["ad"], int(h["yas"])], 28, rol["renk"].lightened(0.3)))
+		# Kişiliği gözlemci ancak yakından tanıyınca bilir: İncele'nin ek değeri
+		var ks := Veri.kisilik(h)
+		k.add_child(_etiket("Kişilik: %s (%s)" % [ks["ad"], ks["etki"]] if float(aday["bilgi"]) >= 0.6 else "Kişilik: ? (incele)", 22, Color(0.8, 0.75, 1.0)))
 		var toplam_alt := 0
 		var toplam_ust := 0
 		for o in Veri.OZELLIKLER:
@@ -598,6 +616,14 @@ func _ayarlar_sekmesi() -> void:
 			profil.ayar_degistir(anahtar, not bool(profil.ayar(anahtar)))
 			ayarlar_degisti.emit()
 			_yenile(), 26))
+
+	var oto := _kart()
+	var oto_acik: bool = bool(profil.ayar("oto_kalite"))
+	oto.add_child(_dugme("Otomatik kalite: %s" % ("AÇIK" if oto_acik else "KAPALI"), Color(0.45, 0.7, 0.3) if oto_acik else Color(0.45, 0.3, 0.3), func() -> void:
+		profil.ayar_degistir("oto_kalite", not bool(profil.ayar("oto_kalite")))
+		ayarlar_degisti.emit()
+		_yenile(), 26))
+	oto.add_child(_etiket("Koşuda FPS düşerse grafiği kendiliğinden bir kademe azaltır.", 22, Color(0.75, 0.75, 0.7)))
 
 	var bilgi := _kart()
 	bilgi.add_child(_etiket("Zombi Savunma · Her gece otomatik olarak geliştirilir. İlerlemen telefonunda saklanır.", 22, Color(0.75, 0.75, 0.7)))

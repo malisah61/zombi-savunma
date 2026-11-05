@@ -15,6 +15,10 @@ func _ready() -> void:
 	_ekle("kart", 0.35, -8.0, 1)
 	_ekle("bitis", 1.6, -6.0, 1)
 	_ekle("altin", 0.18, -14.0, 3)
+	_ekle("zirh", 0.1, -13.0, 4)
+	_ekle("asit", 0.3, -12.0, 3)
+	_ekle("boss", 0.9, -5.0, 2)
+	_ekle("evrim", 0.7, -7.0, 1)
 
 
 func cal(ad: String) -> void:
@@ -74,6 +78,20 @@ func _uret(tur: String, sure: float) -> AudioStreamWAV:
 			"bitis":
 				faz += TAU * (220.0 - t * 70.0) / ORAN
 				s = (sin(faz) * 0.5 + sin(faz * 0.5) * 0.3) * minf(t / 0.05, 1.0) * clampf((sure - t) / 0.6, 0.0, 1.0)
+			"zirh":
+				faz += TAU * 2100.0 / ORAN
+				s = (sin(faz) * 0.5 + sin(faz * 1.47) * 0.3) * exp(-t * 45.0)
+			"asit":
+				suz += (g - suz) * 0.3
+				s = suz * 1.6 * sin(t * 60.0) * sin(t * 60.0) * exp(-t * 7.0)
+			"boss":
+				faz += TAU * (62.0 + sin(t * 26.0) * 16.0) / ORAN
+				suz += (g - suz) * 0.06
+				s = (signf(sin(faz)) * 0.45 + suz * 2.0) * minf(t / 0.1, 1.0) * clampf((sure - t) / 0.3, 0.0, 1.0)
+			"evrim":
+				var nota := 523.0 if t < 0.12 else (784.0 if t < 0.24 else 1047.0)
+				faz += TAU * nota / ORAN
+				s = (sin(faz) * 0.4 + sin(faz * 2.0) * 0.15) * exp(-fmod(t, 0.24) * 5.0)
 			"altin":
 				faz += TAU * (1320.0 if t < 0.06 else 1760.0) / ORAN
 				s = sin(faz) * 0.4 * exp(-t * 18.0)

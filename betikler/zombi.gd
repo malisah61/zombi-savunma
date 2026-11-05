@@ -1,13 +1,28 @@
 extends Node2D
-## Tek bir zombi. Yukarıdan aşağı yürür, barikata varınca vurur.
-## Yeni tür eklemek için TURLER sözlüğüne bir kayıt ekle; çizim renkleri de oradan gelir.
+## Tek bir zombi. Yukarıdan aşağı yürür, barikata varınca vurur. Kusan uzakta durup asit atar,
+## boss (Dev) vuruşunu önceden işaret eder ve yarı canda yardım çağırır.
+## Yeni tür eklemek için TURLER sözlüğüne bir kayıt ekle; görünüşü zombi_cizim.gd içinde.
+## Çizim: açılışta pişirilen atlastan tek bölge (Performans v2); yalnızca kare değişince yeniden çizilir.
 
+const ZombiCizim := preload("res://betikler/zombi_cizim.gd")
+
+# zirh: mermi başına düşülen düz hasar (dalgayla artar, en az %20 hasar geçer).
+# oncelik: kahramanın hedef seçiminde "barikata bu kadar piksel daha yakınmış" gibi sayılır.
 const TURLER := {
 	"yuruyen": {"can": 30.0, "hiz": 52.0, "hasar": 6.0, "yaricap": 30.0, "altin": 2,
 		"gomlek": [Color("5d6b7a"), Color("7a5c4d"), Color("4f6b4a"), Color("6b4f6b")], "ten": Color("8fae6b")},
 	"kosucu": {"can": 15.0, "hiz": 135.0, "hasar": 4.0, "yaricap": 24.0, "altin": 3,
 		"gomlek": [Color("8c3b3b"), Color("a35a2a")], "ten": Color("a7b86d")},
+	"zirhli": {"can": 46.0, "hiz": 40.0, "hasar": 9.0, "yaricap": 32.0, "altin": 5, "zirh": 4.0, "zirh_artis": 0.35,
+		"gomlek": [Color("2f3a4a"), Color("3a3f35")], "ten": Color("86a06a")},
+	"kusan": {"can": 26.0, "hiz": 44.0, "hasar": 9.0, "yaricap": 30.0, "altin": 5, "oncelik": 260.0, "durus": 330.0,
+		"gomlek": [Color("5c6b2c"), Color("6b5a2c")], "ten": Color("9cc25a")},
+	"dev": {"can": 480.0, "hiz": 27.0, "hasar": 32.0, "yaricap": 76.0, "altin": 40, "oncelik": 140.0, "boss": true,
+		"zirh": 2.0, "zirh_artis": 0.1, "gomlek": [Color("4d4436")], "ten": Color("7d9a58")},
 }
+const DEV_HAZIRLIK := 1.3  # Dev'in vuruşunu işaret ettiği süre: oyuncu görür, onarıma koşar
+const DEV_ARA := 1.5
+const KUSMA_ARA := 2.8
 
 var oyun  # oyun.gd
 var tur := "yuruyen"
@@ -17,18 +32,31 @@ var hiz := 52.0
 var hasar := 6.0
 var yaricap := 24.0
 var altin_degeri := 2
+var zirh := 0.0
+var oncelik := 0.0
+var boss := false
 var olu := false
 
 var _gomlek := Color.GRAY
 var _ten := Color.GREEN
+var _varyant := 0
+var _kare := 0
+var _taban_renk := Color.WHITE
+var _yakilmis := false
 var _zaman := 0.0
 var _faz := 0.0
 var _parlama := 0.0
 var _saldiri_sayac := 0.0
 var _hamle := 0.0  # barikata vurma animasyonu
+var _durus_y := 0.0
+var _hazirlik := 0.0  # Dev: vuruş işareti
+var _cagirdi := false
+var _yanma_kalan := 0.0
+var _yanma_dps := 0.0
+var _yanma_sayac := 0.0
 
 
-func kur(o, t: String, can_carpani: float) -> void:
+func kur(o, t: String, can_carpani: float, hasar_carpani: float = 1.0) -> void:
 	# havuzdan yeniden kullanılabilir: önceki ölüm animasyonunu durdur, her şeyi sıfırla
 	if has_meta("tw"):
 		var eski: Tween = get_meta("tw")
@@ -45,89 +73,155 @@ func kur(o, t: String, can_carpani: float) -> void:
 	_zaman = 0.0
 	_parlama = 0.0
 	_hamle = 0.0
+	_hazirlik = 0.0
+	_cagirdi = false
+	_yanma_kalan = 0.0
+	_yakilmis = false
 	create_tween().tween_property(self, "modulate:a", 1.0, 0.6)
 	var veri: Dictionary = TURLER[t]
 	max_can = float(veri["can"]) * can_carpani
 	can = max_can
 	hiz = float(veri["hiz"]) * randf_range(0.9, 1.12)
-	hasar = float(veri["hasar"])
+	hasar = float(veri["hasar"]) * hasar_carpani
 	yaricap = float(veri["yaricap"])
 	altin_degeri = int(veri["altin"])
+	zirh = float(veri.get("zirh", 0.0)) + float(veri.get("zirh_artis", 0.0)) * oyun.dalga
+	oncelik = float(veri.get("oncelik", 0.0))
+	boss = bool(veri.get("boss", false))
 	var gomlekler: Array = veri["gomlek"]
-	_gomlek = gomlekler.pick_random()
+	_varyant = randi() % gomlekler.size()
+	_gomlek = gomlekler[_varyant]
 	_ten = (veri["ten"] as Color).lerp(Color(randf(), randf(), randf()), 0.08)
+	var parlaklik := randf_range(0.88, 1.06)
+	_taban_renk = Color(parlaklik, parlaklik, parlaklik)
+	self_modulate = _taban_renk
 	_faz = randf() * TAU
-	_saldiri_sayac = randf_range(0.2, 0.8)
+	_saldiri_sayac = randf_range(0.2, 0.8) if not veri.has("durus") else randf_range(0.5, 1.5)
+	_durus_y = oyun.barikat_y - float(veri["durus"]) + randf_range(-50.0, 50.0) if veri.has("durus") else oyun.barikat_y - yaricap - 6.0
+	if boss:
+		_durus_y = oyun.barikat_y - yaricap - 24.0
+	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	if olu:
 		return
 	_zaman += delta
+	var cizim_gerek := _parlama > 0.0 or _hamle > 0.0 or _hazirlik > 0.0
 	_parlama = maxf(_parlama - delta * 7.0, 0.0)
 	_hamle = maxf(_hamle - delta * 4.0, 0.0)
-	var hedef_y: float = oyun.barikat_y - yaricap - 6.0
-	if position.y < hedef_y:
-		position.y = minf(position.y + hiz * delta, hedef_y)
+	_yanma_isle(delta)
+	if cizim_gerek or _yakilmis:
+		_renk_guncelle()
+	if position.y < _durus_y:
+		position.y = minf(position.y + hiz * delta, _durus_y)
 		position.x += sin(_zaman * 2.3 + _faz) * 14.0 * delta
 		position.x = clampf(position.x, 40.0, oyun.genislik - 40.0)
+		# yürüme karesi: yalnızca değişince yeniden çiz
+		var evre := fposmod(_zaman * (hiz / 9.0) + _faz, TAU)
+		var yeni_kare := int(evre / TAU * 4.0) % 4
+		if yeni_kare != _kare:
+			_kare = yeni_kare
+			cizim_gerek = true
+	elif boss:
+		_boss_saldir(delta)
+	elif tur == "kusan":
+		_saldiri_sayac -= delta
+		if _saldiri_sayac <= 0.0:
+			_saldiri_sayac = KUSMA_ARA * randf_range(0.85, 1.15)
+			_hamle = 1.0
+			oyun.asit_at(position + Vector2(0, yaricap), hasar)
 	else:
 		_saldiri_sayac -= delta
 		if _saldiri_sayac <= 0.0:
 			_saldiri_sayac = 1.0
 			_hamle = 1.0
-			oyun.barikat_vuruldu(hasar, position.x)
-	queue_redraw()
+			oyun.barikat_vuruldu(hasar, position.x, self)
+	if cizim_gerek or oyun.atlas == null or not oyun.atlas.hazir:
+		queue_redraw()
 
 
+func _boss_saldir(delta: float) -> void:
+	if _hazirlik > 0.0:
+		_hazirlik -= delta
+		if _hazirlik <= 0.0:
+			_hazirlik = 0.0
+			_hamle = 1.6
+			_saldiri_sayac = DEV_ARA
+			oyun.boss_vurdu(self)
+		return
+	_saldiri_sayac -= delta
+	if _saldiri_sayac <= 0.0:
+		_hazirlik = DEV_HAZIRLIK
+		oyun.ses("boss")
+
+
+func _yanma_isle(delta: float) -> void:
+	if _yanma_kalan <= 0.0:
+		return
+	_yanma_kalan -= delta
+	_yanma_sayac -= delta
+	if _yanma_sayac <= 0.0:
+		_yanma_sayac = 0.5
+		oyun.yanma_tik(self, _yanma_dps * 0.5)
+	if _yanma_kalan <= 0.0:
+		_yakilmis = false
+		_renk_guncelle()
+
+
+func tutustur(saniye_hasar: float, sure: float) -> void:
+	if olu:
+		return
+	_yanma_dps = maxf(_yanma_dps if _yanma_kalan > 0.0 else 0.0, saniye_hasar)
+	_yanma_kalan = sure
+	if not _yakilmis:
+		_yakilmis = true
+		_yanma_sayac = 0.5
+		_renk_guncelle()
+
+
+func _renk_guncelle() -> void:
+	var r := _taban_renk
+	if _yakilmis:
+		r = r * Color(1.25, 0.72, 0.45)
+	if _hazirlik > 0.0:
+		r = r.lerp(Color(1.6, 0.5, 0.4), 0.6)
+	self_modulate = r.lerp(Color(2.4, 2.4, 2.4), _parlama * 0.7)
+
+
+## Atış hasarı: zırh oyun.gd içinde hesaplanır.
 func vurul(miktar: float) -> void:
 	if olu:
 		return
 	can -= miktar
 	_parlama = 1.0
-	position.y -= 5.0  # geri tepme
+	if not boss:
+		position.y -= 5.0  # geri tepme
+	_renk_guncelle()
+	if boss and not _cagirdi and can < max_can * 0.5 and can > 0.0:
+		_cagirdi = true
+		oyun.boss_cagirdi(self)
 	if can <= 0.0:
 		olu = true
 		oyun.zombi_oldu(self)
 
 
 func _draw() -> void:
-	var r := yaricap
-	var yurume := sin(_zaman * (hiz / 9.0) + _faz)
-	var beyaz := Color(1, 1, 1)
-	var ten := _ten.lerp(beyaz, _parlama * 0.7)
-	var gomlek := _gomlek.lerp(beyaz, _parlama * 0.7)
-	var ileri := _hamle * 10.0
+	var at = oyun.atlas if oyun else null
+	var ileri := _hamle * (10.0 if not boss else 16.0)
+	if _hazirlik > 0.0:
+		_isaret_ciz()
+	if at != null and at.hazir:
+		var boy: float = at.HUCRE_DEV if boss else at.HUCRE
+		var bolge: Rect2 = at.bolge(tur, _varyant, _kare)
+		draw_texture_rect_region(at.doku, Rect2(-boy / 2.0, -boy / 2.0 + ileri * 0.7, boy, boy), bolge)
+	else:
+		# yedek yol: atlas hazır değilken doğrudan çizim
+		ZombiCizim.ciz(self, tur, yaricap, _gomlek, _ten, sin(_zaman * (hiz / 9.0) + _faz), ileri)
 
-	# gölge
-	draw_set_transform(Vector2(3, 8), 0.0, Vector2(1.25, 0.55))
-	draw_circle(Vector2.ZERO, r, Color(0, 0, 0, 0.28))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# kollar (öne uzanmış, sallanıyor)
-	var omuz_sol := Vector2(-r * 0.72, 0)
-	var omuz_sag := Vector2(r * 0.72, 0)
-	var el_sol := omuz_sol + Vector2(-2 + yurume * 3.0, r * 1.15 + yurume * 5.0 + ileri)
-	var el_sag := omuz_sag + Vector2(2 - yurume * 3.0, r * 1.15 - yurume * 5.0 + ileri)
-	draw_line(omuz_sol, el_sol, gomlek.darkened(0.15), r * 0.42, true)
-	draw_line(omuz_sag, el_sag, gomlek.darkened(0.15), r * 0.42, true)
-	draw_circle(el_sol, r * 0.22, ten)
-	draw_circle(el_sag, r * 0.22, ten)
-
-	# gövde (yırtık gömlek)
-	draw_circle(Vector2(0, -2), r * 0.78, gomlek)
-	draw_circle(Vector2(-r * 0.3, r * 0.15), r * 0.22, gomlek.darkened(0.3))
-	draw_circle(Vector2(r * 0.35, -r * 0.35), r * 0.15, Color(0.45, 0.05, 0.05, 0.8))
-
-	# kafa (öne eğik)
-	var kafa := Vector2(yurume * 1.5, r * 0.28 + ileri * 0.4)
-	draw_circle(kafa, r * 0.5, ten)
-	draw_circle(kafa + Vector2(-r * 0.12, -r * 0.18), r * 0.2, ten.darkened(0.25))
-	draw_circle(kafa + Vector2(-r * 0.18, r * 0.2), r * 0.09, Color(0.9, 0.1, 0.05))
-	draw_circle(kafa + Vector2(r * 0.18, r * 0.2), r * 0.09, Color(0.9, 0.1, 0.05))
-
-	# can çubuğu
-	if can < max_can:
-		var w := r * 1.8
-		draw_rect(Rect2(-w / 2, -r - 12, w, 6), Color(0, 0, 0, 0.6))
-		draw_rect(Rect2(-w / 2, -r - 12, w * maxf(can / max_can, 0.0), 6), Color(0.85, 0.2, 0.2))
+func _isaret_ciz() -> void:
+	# Dev'in vuruşu: büyüyen kırmızı halka, dolduğunda vurur
+	var oran := 1.0 - _hazirlik / DEV_HAZIRLIK
+	draw_arc(Vector2.ZERO, 125.0, 0.0, TAU, 36, Color(1, 0.2, 0.1, 0.75), 6.0)
+	draw_circle(Vector2.ZERO, 125.0 * oran, Color(1, 0.15, 0.05, 0.3))

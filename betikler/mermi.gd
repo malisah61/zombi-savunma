@@ -45,6 +45,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var renk := Color(1.0, 0.55, 0.2) if kritik else Color(1.0, 0.9, 0.45)
 	var kuyruk := Vector2(0, 26)  # düğüm uçuş yönüne döndürülür; kuyruk arkada kalır
-	draw_line(Vector2.ZERO, kuyruk, Color(renk, 0.25), 9.0, true)
-	draw_line(Vector2.ZERO, kuyruk * 0.7, renk, 4.0, true)
-	draw_circle(Vector2.ZERO, 3.0, Color(1, 1, 1))
+	# yumuşatmasız çizgiler tek partiye sığar; çok mermide çizim çağrısı patlamaz
+	draw_line(Vector2.ZERO, kuyruk, Color(renk, 0.25), 9.0)
+	draw_line(Vector2.ZERO, kuyruk * 0.7, renk, 4.0)
+	draw_rect(Rect2(-2.5, -3, 5, 6), Color(1, 1, 1))
