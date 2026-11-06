@@ -2,6 +2,17 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-06 — Gündüz ek turu 1/3 (Mehmet Ali uçaktayken elle başlatıldı)
+- **Analizler:** (1) Tek mod 10–15 dakikalık koşu; kısa oturum yok. Altın koşu bitince sıfırlanıyor, kalıcı yeri yok. Yuva sayısı 2'de sabit. Nöbetçi silahı değiştirilemiyor. Boss'un son %30'u tek düze. Kampanya eğrisi hesaplandı: tek kartla Hayatta Kalma can eğrisi kaldırılamaz, yumuşak eğri + kalıcı güç gerekiyor. (2) Grow Castle kısa savaş + yükselt + tekrar döngüsü, iki modun birbirini yememesi, boss aşamalarında uyarılı saldırı, kilidi açılan hız = hedef.
+- **Araştırılanlar:** Grow Castle (wiki açılamadı, sayılar bizim), boss aşama tasarımı, Sur fiyat eğrisi (taslak 33 bin hurdaydı, 6.7 bine çekildi). Fikir Havuzu'na sayılarıyla **Kampanya yıldızları** ve **Kasaba okçuları** eklendi.
+- **3 geliştirme:** Güç seviyesi (kampanya altınıyla, +%10 hasar/sv, lider ve nöbetçi); nöbetçiye silah verme (Envanter'de "Sura: Ad", takaslı); boss aşamaları (Dev %66 öfke, %33 işaretli sıçrama; Kraliçe %66 sık doğum, %33 saldırı).
+- **3 yeni özellik:** Kampanya modu (kalıcı dalga, tek dalga savaş, 1 kart, ZAFER ekranı, her 10. dalga boss, yenilgide teselli); Sur yükseltmesi (50 seviye, +%8 can/sv, 9/17/25/33. seviyede yeni yuva, menüde büyüyen sur çizimi); x3 hız kilidi (kampanya 10. dalga ya da rekor 10; eski kayıtta x3 seçiliyse açık).
+- **Doğrulama (bulut):** derleme ve önizleme başarılı, "SCRIPT ERROR / Parse Error" yok. Yük testi 120 zombi + 6 nöbetçi 26.4 FPS, 244 çağrı (değişmedi). Kampanya önizlemesi 7. dalgayı kazandı, ZAFER ekranı ve ödüller doğru. Ekran görüntüsünde boss aşama yazısı "YARDIM ÇAĞIRDI" ile üst üste bindi; aşama yazısı üst uyarı şeridine taşındı.
+- **Kampanya botu (60 savaş, tek kişilik ekip, Lab yok):** 10 savaşta 11. dalga, 20'de 19, 30'da 20 (Kraliçe 10 denemede geçildi), 40'ta 27, 50 ve 60'ta 30. dalga (Dev duvarı, Sur 19, Güç 19). Duvarlar boss dalgalarında, bilerek; nöbetçi ve Lab'lı gerçek oyuncu daha hızlı geçer. 30. dalga duvarı izlenecek.
+- **Hayatta Kalma botu:** 35/45 ve 35/44. dalga (Sur ve Güç sıfır olduğu için önceki turla aynı aralık).
+- **Bilinen sorunlar:** Kampanyada geçilmiş dalgayı tekrar oynama yok (B4 otomatik tekrarla gelecek). Güç seviyesinin altını yalnız kampanyadan gelir. Gerçek telefonda FPS hâlâ ölçülmedi.
+- **Sıradaki (ek tur 2):** §0 Gece C kalanı: A2 zayıf nokta hedefleme, A3 sürü davranışı; Gece D: B4 otomatik savaş + çevrimdışı kazanç, A6 akıllı kart.
+
 ## 2026-11-06 — Gece 3
 - **Analizler:** (1) Ekip derinliği savaşa hiç çıkmıyor: 8 kişilik ekipten sahada 1 kişi var; dalga içinde doğum tekdüze; kalabalıkta lider + taretler aynı zombiye ateş edip atışların ≈ %45'ini boşa harcıyor; her boss dalgası aynı (Dev). (2) Grow Castle kale yuvaları, Bloons hedefleme modları, aşırı öldürme önleme, L4D yönetmeni, FM maç puanı/form, PvZ Zomboss'un çağırıcı boss dersi.
 - **Araştırılanlar:** yukarıdakiler + FM takım uyumu ve başarım/ödül tasarımı; Fikir Havuzu'na sayılarıyla **Takım kimyası** ve **Başarımlar** yazıldı. Bazı kaynak sayfaları (Bloons wiki, SpringRTS) bot korumasıyla açılamadı; formüller bizim tasarımımız, TASARIM §17'de belirtildi.

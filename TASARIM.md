@@ -114,13 +114,13 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
   Zorluk seviyesi (§8) yönetmenin tavanını belirler.
 
 **Gece B: Grow Castle kalesi ve kampanya**
-- [ ] **B2 Sur (kale) kalıcı yükseltme:** Sur seviyesi 1→50; can +%8/sv; her 8 seviyede +1 nöbetçi yuvası;
+- [x] **B2 Sur (kale) kalıcı yükseltme** (2026-11-06, gündüz ek turu 1 — fiyat 30·1.10^(sv−1) olarak ucuzlatıldı; bkz. §16d): Sur seviyesi 1→50; can +%8/sv; her 8 seviyede +1 nöbetçi yuvası;
   maliyet ≈ 40·1.16^(sv−1) hurda. Menüde görsel olarak büyüyen barikat.
-- [ ] **B3 Kampanya modu (Grow Castle dalga ilerlemesi):** Menüde iki mod: "Hayatta Kalma" (bugünkü koşu) ve
+- [x] **B3 Kampanya modu (Grow Castle dalga ilerlemesi)** (2026-11-06, gündüz ek turu 1; bkz. §16d): Menüde iki mod: "Hayatta Kalma" (bugünkü koşu) ve
   "Kampanya". Kampanyada dalga sayacı kalıcıdır; her SAVAŞ tek dalga; kazanınca sıradaki açılır, kaybedince aynı
   dalga tekrar (ceza yok); her 10. dalga boss; dalga başına altın + hurda. Kartlar kampanyada kalıcı değil, dalga
   başı 1 kart seçilir.
-- [ ] **B5 Altınla seviye (geliştirme: ekip):** Grow Castle'daki kahraman yükseltmesi gibi her hayatta kalanın
+- [x] **B5 Altınla seviye (geliştirme: ekip)** (2026-11-06, gündüz ek turu 1 — altın = kalıcı kampanya altını; bkz. §16d): Grow Castle'daki kahraman yükseltmesi gibi her hayatta kalanın
   "Güç seviyesi" altınla artar (hasar +%10/sv, maliyet 50·1.18^sv). FM özellikleri (antrenman) ayrı eksen kalır.
 
 **Gece C: akıllı zombiler**
@@ -129,7 +129,7 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] **A3 Sürü davranışı:** hafif boids (ayrılma + hizalanma, komşu araması ızgara ile, O(n)); koşucular askerin
   baktığı tarafın tersinden kanat açar; kusan menzilde kalır, hedef alınınca yana kayar; zırhlılar önde sıra olur,
   arkalarına koşucular saklanır (zırhlı ölünce dağılırlar).
-- [ ] **A4 Boss aşamaları:** can %66 / %33'te davranış değişir (hızlanma, çağırma, barikata sıçrama + uyarı işareti).
+- [x] **A4 Boss aşamaları** (2026-11-06, gündüz ek turu 1; bkz. §16d): can %66 / %33'te davranış değişir (hızlanma, çağırma, barikata sıçrama + uyarı işareti).
 
 **Gece D: rahat oyun (Grow Castle hissi)**
 - [ ] **B4 Otomatik savaş + çevrimdışı kazanç:** Kampanyada geçilmiş dalgayı otomatik tekrarla (ekip yapay zekâsıyla,
@@ -138,7 +138,7 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] **A6 Akıllı otomatik kart seçimi:** oto modda kartı yapay zekâ seçer: karşılaşılan zombi karışımına göre
   (zırhlı oranı yüksek → Zırh Delici), evrim yoluna ve ekonomiye göre puanlar. Oyuncu kapatabilir.
 - [ ] **B6 Kasaba sekmesi:** Atölye, Antrenman Sahası, Revir, Gözcü Kulesi, Maden (§16'daki tesislerle birleşir).
-- [ ] **B7 Hız kilitleri:** x2 baştan açık, x3 kampanyada 10. dalgayı geçince açılır (hedef duygusu).
+- [x] **B7 Hız kilitleri** (2026-11-06, gündüz ek turu 1 — Hayatta Kalma rekoru 10 da açar; eski kayıtta x3 seçiliyse açık kalır): x2 baştan açık, x3 kampanyada 10. dalgayı geçince açılır (hedef duygusu).
 - [x] (2026-11-05) Telefon performansı ve görüntü kalitesi: kasma, hata, donma olmasın. → v1 yapıldı (bkz. §12).
 - [x] (2026-11-05) Ana menü. → Oyna / Ekip / Envanter / Keşif / Ayarlar.
 - [x] (2026-11-05) FM tarzı gelişim, scout (keşif), envanter, silah, RPG özellikleri. → v1 yapıldı (bkz. §13–15).
@@ -151,6 +151,9 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
+- **Yeni araştırılan (gündüz ek turu 1):**
+  - **Kampanya yıldızları (Kingdom Rush gibi):** her kampanya dalgasına 1–3 yıldız: barikat %100 → 3, %50+ → 2, geçti → 1. Toplam yıldız eşiklerinde (30/60/100) kalıcı ödül (Destansı silah, +1 Lab düğüm sınırı). Geçilmiş dalgayı yeniden oynamaya sebep verir ve B4 otomatik tekrarla birleşir: oto tekrar yalnız 3 yıldızlı dalgalarda açılır. Teknik: `kampanya.yildiz` sözlüğü (dalga → 0–3), zafer ekranında yıldız çizimi.
+  - **Kasaba okçuları (Grow Castle "town archers"):** surun önünde nöbetçi olmayan, altınla seviye alan tek bir okçu birliği: 3 okçu, her biri 4 hasar × 1.2 atış/sn, seviye başı +%12 (fiyat 80·1.2^sv altın). Ekibi olmayan yeni oyuncuya erken güç verir, ekip büyüyünce önemi azalır. Teknik: nöbetçi düğüm havuzu kullanılır (yuva dışı), ayrı kaynak no −3.
 - **Yeni araştırılan (Gece 3):**
   - **Takım kimyası (FM "team cohesion" / "tight-knit"):** FM'de birlikte oynayan ve aynı dili konuşan oyuncuların uyumu zamanla artar, kadroya çok kişi birden katılınca düşer. Bizde: aynı koşuda birlikte (lider + sur) oynayan her çift için `kimya[uid_a|uid_b]` +1 (en çok 20). Sur ekibinin ortalama kimyası k ise nöbetçi ateş hızı +%0.5·k (en çok +%10). Yeni gelen kişi 0'dan başlar → rotasyon ile kimya arasında gerçek karar. Kişilik: Lider ruhlu kimyayı ×1.5 artırır, Asabi ×0.5. Ekip kartında "Uyum: Ali ile iyi" satırı. Teknik: profil sözlüğü, VARSAYILAN'a `kimya: {}`; koşu sonu tek döngü.
   - **Başarımlar (kalıcı hedef zinciri):** 3 kademeli (bronz/gümüş/altın) 12 başarım: "Dev avcısı 1/5/20", "Kraliçe 1/5/15", "Dalga 15/25/40", "Evrim 1/5/15", "Ekip 3/5/8 kişi", "Sur 1/2 dolu", "Taret uzmanlığı 1/10/30", "Yük: 1000/10000/50000 zombi"… Ödül kademe başına 40/100/250 hurda + profil rozeti. Mobil araştırmalarına göre ödül hemen ve görünür verilmeli, kademeler hedefi her zaman "bir sonraki"ne taşır; angarya olmaması için hepsi normal oynarken dolar. Teknik: `Veri.BASARIMLAR` tablosu, `profil.basarim_ilerlet(id, deger)` (gorev_ilerlet ile aynı yerden), menüde OYNA sekmesinde "en yakın başarım" satırı.
@@ -204,7 +207,8 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [x] (Gündüz turu) Kule yuvaları: 3 yuva, taret 60/96/154 altın, 8×1.5^(sv−1)×(1+0.05·dalga) hasar, 0.6 sn, menzil 520; Mühendis +%30 güç, %20 ucuz.
 - [x] (Gece 2) Kule v2: 3. seviyeden sonra 240 altına iki dal: Havan (45×güç alan, 105 px, 2.6 sn, zırhı aşar), Ağır Taret (43×güç, 1.2 sn, zırh yok sayar, 1 delme). Seçim oyunu durdurur, Vazgeç var.
 - [ ] Kule v3: alev kulesi, onarım istasyonu.
-- [ ] **Sıradaki öncelik:** §0 Gece B (Sur kalıcı yükseltmesi → yuva 2→6, Kampanya, altınla seviye), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
+- [x] (Gündüz ek turu 1) §0 Gece B: Kampanya, Sur, Güç seviyesi; A4 boss aşamaları; B7 x3 kilidi; nöbetçiye silah verme.
+- [ ] **Sıradaki öncelik:** §0 Gece C kalanı (A2 zayıf nokta, A3 sürü), Gece D (B4 otomatik savaş + çevrimdışı, A6 akıllı kart, B6 kasaba), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
 - [x] (Gece 2) Laboratuvar: bkz. §7b.
 - [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
@@ -311,6 +315,17 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Maç puanı:** 6.0 + clamp((hasar payı / beklenen pay − 1) × 1.5, −1.5, +2) (beklenen pay ağırlıkla: lider 2, nöbetçi 1; kart alan lider haksız öne geçmesin) + min(öldürme / 25, 1.2) + (iyi sonuç +0.8, kötü −0.8), 3.0–10.0. Puan ≥ 7.5 moral +3, ≤ 5.0 moral −3.
   Son 5 puan "form" olarak saklanır (Ekip kartında). En yüksek puan "koşunun yıldızı" (★). Bomba lidere, havan taretlere sayılır.
 
+## 16d. Kampanya, Sur, Güç seviyesi, boss aşamaları (gündüz ek turu 1'de uygulandı)
+- **Kampanya:** `profil.kampanya` = {dalga, en_yuksek, zafer, yenilgi}. Savaş = tek dalga; başta 1 kart; başlangıç altını Lab + 30 + 6n (taret/onarım için).
+  Can çarpanı 1 + 0.09(n−1) + 0.002(n−1)² (20. dalga 3.43, 40. 7.6, 50. 10.2). Boss her 10. dalga: 10 Dev, 20 Kraliçe, 30 Dev…; boss gücü sırası n/10. Nefes dalgası yok, yönetmen çalışır.
+  Zafer: altın (20 + 6n, boss ×3), hurda 4 + n (+25 boss), boss → garanti Ender+ silah, sıradaki dalga açılır. Yenilgi: aynı dalga, %25 altın + yarım hurda (ceza yok).
+  Ekip: lider 0.15 + 0.02n gelişim, +3 yorgunluk; nöbetçi 0.08 + 0.01n, +2 yorgunluk; maç puanı ve form işler. Menüye dönmek ödülsüz, cezasız. Rekor ve koşu sayısı değişmez.
+- **Sur:** seviye 1–50, barikat canı +%8/sv (iki modda), yuva = 2 + ⌊(sv−1)/8⌋ (en çok 6: 9, 17, 25, 33. seviyede). Fiyat 30·1.10^(sv−1) hurda: 9. seviyeye ≈ 410, 33'e ≈ 6.7 bin, 50'ye ≈ 35 bin.
+  Menüde kat sayısı seviye/6 ile artan, ahşap → taş (17) → çelik (33) çizim; kuleler yuva sayısı kadar.
+- **Güç seviyesi:** hayatta kalan başına 0–30, +%10 hasar/sv (lider ve nöbetçi, iki modda). Fiyat 50·1.18^sv kampanya altını (0→10 ≈ 1175).
+- **Boss aşamaları:** Dev %66 öfke (hız ×1.5), %33 iniş yerini 0.9 sn işaretleyip 240 px ileri sıçrar (barikata inerse yarım vuruş hasarı; zaten barikattaysa vuruşu hemen gelir). Kraliçe %66'da 2.5 sn'de bir doğurur, %33'te doğurmayı bırakıp hız ×1.6 saldırır. %50 çağrısı sürer.
+- **Bot:** `--bot_kampanya=60` (önizleme iş akışında): her savaştan sonra Sur ve lider Gücü alınabildiğince yükseltilir, 10 savaşta bir durum yazılır.
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -323,6 +338,11 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-06 (gündüz ek turu 1)
+- Grow Castle rehber sayfaları (fandom Guide/Basics) bu oturumdan açılamadı; kale, kahraman yuvası ve altınla yükseltme döngüsü genel oyun bilgisi, sayılar bizim. — [Grow Castle Wiki: Guide](https://grow-castle.fandom.com/wiki/Guide), [LDPlayer başlangıç rehberi](https://www.ldplayer.net/blog/grow-castle-guide-for-all-the-beginners.html)
+- Boss aşama tasarımı: can eşiklerinde davranış değişimi, büyük saldırıdan önce görünür uyarı, son aşamada artan baskı ama adil okunabilirlik. — [Boss Phase Transitions](https://starship-survivors-wiki.pages.dev/gameplay/concepts/boss-phase-transitions), [Wayline: boss savaşları](https://www.wayline.io/blog/crafting-legendary-boss-battles)
+- Sur fiyat eğrisi hesabı: §0 taslağındaki 40·1.16^(sv−1) ile 6. yuvaya (33. seviye) ≈ 33 bin hurda gerekiyordu (Hayatta Kalma koşusu ≈ 190 hurda); 30·1.10^(sv−1) ile ≈ 6.7 bin, Laboratuvar'ın tamamıyla aynı ölçekte.
+
 ### 2026-11-06 (Gece 3)
 - Grow Castle: kale yuvalarına kahraman yerleştirme, kahramanlar kendiliğinden saldırır, altınla seviye; kesin yuva sayıları kaynaklarda yok, 2 → 6 bizim tasarımımız. — [App Store](https://apps.apple.com/au/app/grow-castle/id1133478462)
 - Bloons TD hedefleme seçenekleri (First / Last / Close / Strong): oyuncu kule yapay zekâsını tek düğmeyle yönlendirir. Wiki sayfası bu oturumdan açılamadı; seçenek adları bilinen oyun bilgisi. — [Bloons Wiki: Targeting option](https://www.bloonswiki.com/Targeting_option)

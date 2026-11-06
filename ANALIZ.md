@@ -11,6 +11,34 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-06 — Gündüz ek turu 1/3
+
+### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)
+- **İlk açılış:** Tek mod var: Hayatta Kalma koşusu. 10–15 dakikalık koşu, telefonda "2 dakikam var" anına uymuyor. Grow Castle'ın gücü kısa savaş: bir dalga ≈ 30–60 sn, kaybetsen de bir şey yükseltip hemen tekrar.
+- **Kalıcı güç kaynakları:** Laboratuvar (toplam ≈ ×1.3 DPS, ≈ 6250 hurda) ve silah geliştirme. Barikat canını kalıcı büyütmenin tek yolu Lab'ın %4'lük düğümü (en çok +%20). Surdaki ekipte yuva sayısı 2'de sabit; yeni ekip üyesinin bir sınırı var ama bu sınırı açan bir hedef yok.
+- **Altın:** Koşu içi para; koşu bitince sıfırlanıyor. Grow Castle'daki "altın biriktir → kahramanı yükselt" döngüsü bizde yok, oysa FM ekibi tam bunun için uygun: her kişinin ayrı yükseltme ekseni olursa kimi yükselteceğin bir karar olur.
+- **Nöbetçi silahı:** Envanter yalnızca lidere kuşandırıyor; nöbetçi rolünün Sıradan silahıyla oynuyor (Gece 3'ün bilinen sorunu). 40 silahlık envanterin çoğu boşta.
+- **Boss:** Dev ve Kraliçe tek davranışlı; %50'de bir çağrı dışında can azaldıkça hiçbir şey değişmiyor. Dev'in son %30'u sıkıcı bir "ham DPS" sınavı.
+- **Kampanya sayıları (tasarım hesabı):** Tek kartla 20. dalga: can çarpanı Hayatta Kalma formülüyle 4.03; tek kartlı oyuncu bunu kaldıramaz. Kampanya için yumuşak eğri: 1 + 0.09(n−1) + 0.002(n−1)² → 20. dalga 3.43, 40. dalga 7.6. Oyuncunun gücü Güç seviyesinden (+%10/sv, 50·1.18^sv altın) ve Sur'dan (+%8 can/sv) gelir. Dalga başı altın 20 + 6n (boss ×3): 1–15. dalga ≈ 1020 altın ≈ Güç 0→9 (≈ ×1.9 hasar). Duvarlar bilerek boss dalgalarında olacak; yenilgide %25 altın + yarım hurda verildiği için tekrar oynamak hep ilerletir.
+- **Performans riski:** Yeni şeylerin hepsi menü ya da olay anında çalışıyor (sur çizimi bir kez, aşama kontrolü yalnız boss vurulunca). Oyun döngüsüne her kare iş eklenmiyor.
+
+### Analiz 2 — Karşılaştırma ve oyuncu psikolojisi
+- **Grow Castle:** Kısa dalga savaşları, kaybedince aynı dalga, kale (can + yuva) ve kahraman yükseltmesi altınla; "bir yükseltme daha, bir dalga daha" döngüsü. Wiki sayfaları bu oturumdan açılamadı; sayılar bizim tasarımımız (§0'daki taslak formüller, Sur fiyatı daha ucuz bir eğriye çekildi: 40·1.16^sv ile 6 yuva ≈ 33 bin hurda tutuyordu, 30·1.10^sv ile ≈ 6.7 bin).
+- **Hades / roguelite ile karşılaştırma:** İki mod iki ihtiyaca cevap verir: koşu (çeşitlilik, kart kararları) ve kampanya (kesintisiz ilerleme). Kampanya kartı 1'e indirip gücü kalıcı yükseltmelere bağlamak iki modun birbirini yemesini önler.
+- **Boss aşamaları (genel boss tasarımı yazıları):** Can eşiklerinde davranış değişimi, uyarı işaretiyle (telegraph) gelen büyük saldırı ve "öfke" anı, uzun boss savaşını bölümlere ayırır; adil olması için her yeni tehlike önceden gösterilmeli. Dev'in sıçraması iniş yerini 0.9 sn önce işaretler.
+- **Kilitli özellik = hedef:** x3 hızın bir başarıya bağlanması hedef duygusu verir (Grow Castle'da hızlandırma ilerlemeyle gelir). Var olanı eksiltmemek için eski oyuncunun x3'ü açık bırakılır.
+
+### Karar (bu tur)
+**3 geliştirme**
+1. **B5 Güç seviyesi (ekip):** her hayatta kalana kampanya altınıyla Güç seviyesi (+%10 hasar/sv, 50·1.18^sv). *Gerekçe:* §0 Gece B; altının kalıcı yeri, FM ekibine ikinci eksen.
+2. **Envanter: nöbetçiye silah verme:** silah kartında surdaki her kişi için "Sura: Ad" düğmesi, takaslı. *Gerekçe:* Gece 3'ün bilinen eksiği.
+3. **A4 Boss aşamaları:** Dev %66 öfke (hız ×1.5), %33 işaretli sıçrama; Kraliçe %66 sık doğum, %33 saldırı. *Gerekçe:* §0 Gece C; ham DPS sınavını bölmek.
+
+**3 yeni özellik**
+1. **B3 Kampanya modu:** kalıcı dalga sayacı, tek dalga savaş, 1 kart, zafer/yenilgi ekranı, her 10. dalga boss. *Gerekçe:* §0 Gece B; kısa mobil oturum.
+2. **B2 Sur kalıcı yükseltmesi:** 50 seviye, can +%8/sv, her 8 seviyede +1 nöbetçi yuvası (6'ya kadar), menüde büyüyen sur çizimi. *Gerekçe:* §0 Gece B; yuva sınırına hedef.
+3. **B7 Hız kilitleri:** x3 kampanyada 10. dalgada (ya da Hayatta Kalma rekoru 10) açılır; eski oyuncuya dokunulmaz. *Gerekçe:* §0 Gece D, kampanya geldiği için artık yapılabilir.
+
 ## 2026-11-06 — Gece 3
 
 ### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)

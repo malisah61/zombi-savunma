@@ -836,7 +836,7 @@ func boss_asama(z, asama: int) -> void:
 		metin = "KRALİÇE HIZLANDI!" if asama == 1 else "KRALİÇE SALDIRIYA GEÇTİ!"
 	else:
 		metin = "DEV ÖFKELENDİ!" if asama == 1 else "DEV SIÇRIYOR!"
-	_yazi(z.position + Vector2(0, -120), metin, Color(1, 0.35, 0.25), 38, true)
+	arayuz.uyari_goster(metin)  # üst şerit: boss üstündeki "YARDIM ÇAĞIRDI" yazısıyla çakışmasın
 	ses("boss")
 	_titret(80)
 	_sarsinti = minf(_sarsinti + 6.0, 14.0)
