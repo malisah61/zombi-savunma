@@ -24,6 +24,10 @@ const VARSAYILAN := {
 	"gorevler": {"tarih": "", "liste": [], "bonus": false},
 	"lab": {},  # düğüm id -> seviye
 	"nobetciler": [],  # surdaki ekip: hayatta kalan uid'leri (Grow Castle kale yuvaları)
+	"sur": 1,  # Sur (kale) seviyesi
+	"altin": 0,  # kalıcı kampanya altını (koşu içi altından ayrı); Güç seviyesine harcanır
+	"kampanya": {"dalga": 1, "en_yuksek": 0, "zafer": 0, "yenilgi": 0},
+	"x3_acik": false,
 }
 
 var veri: Dictionary = {}
@@ -50,6 +54,7 @@ func yukle() -> void:
 	if aktif_kahraman().is_empty():
 		veri["aktif"] = veri["ekip"][0]["uid"]
 	_hayatta_kalanlari_tamamla()
+	hiz3_kontrol()
 	gorevleri_hazirla()
 
 
@@ -66,6 +71,8 @@ func _hayatta_kalanlari_tamamla() -> void:
 			h["hedef_modu"] = "rol"
 		if not h.has("puanlar"):
 			h["puanlar"] = []
+		if not h.has("guc"):
+			h["guc"] = 0
 
 
 func kaydet() -> void:
@@ -230,6 +237,8 @@ func kosu_istatistigi() -> Dictionary:
 		"doktor":
 			st["yenilenme"] = 0.004
 	_lab_uygula(st)
+	st["hasar"] *= 1.0 + Veri.GUC_HASAR * int(h.get("guc", 0))
+	st["barikat_max"] *= 1.0 + Veri.SUR_CAN * (sur_sv() - 1)
 	st["kritik"] = clampf(st["kritik"], 0.0, 0.75)
 	st["altin_carpan"] = maxf(st["altin_carpan"], 0.5)
 	return st
@@ -316,6 +325,7 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 			x["yas"] = int(x["yas"]) + 1
 	if dalga > int(veri["rekor"]):
 		veri["rekor"] = dalga
+	ozet["x3"] = hiz3_kontrol()
 	kaydet()
 	return ozet
 
@@ -629,7 +639,7 @@ func nobetci_listesi() -> Array:
 		if h.is_empty() or String(uid) == String(veri["aktif"]) or int(h.get("sakat", 0)) > 0:
 			continue
 		liste.append(h)
-		if liste.size() >= Veri.NOBETCI_YUVA:
+		if liste.size() >= nobetci_yuva():
 			break
 	return liste
 
@@ -649,8 +659,8 @@ func nobetci_degistir(uid: String) -> String:
 		return "Lider zaten sahada"
 	# kayıtta silinmiş/geçersiz uid'ler yuva yemesin
 	liste.assign(liste.filter(func(u) -> bool: return not kahraman_bul(String(u)).is_empty()))
-	if liste.size() >= Veri.NOBETCI_YUVA:
-		return "Surda %d yuva var, hepsi dolu" % Veri.NOBETCI_YUVA
+	if liste.size() >= nobetci_yuva():
+		return "Surda %d yuva var, hepsi dolu. Sur'u yükselt!" % nobetci_yuva()
 	liste.append(uid)
 	kaydet()
 	return ""
@@ -680,7 +690,8 @@ func nobetci_istatistigi(h: Dictionary) -> Dictionary:
 		"rol": String(h["rol"]),
 		"renk": Veri.ROLLER[h["rol"]]["renk"],
 		"mod": String(h.get("hedef_modu", "rol")),
-		"hasar": float(si["hasar"]) * (1.0 + (float(oz["nisancilik"]) - 10.0) * 0.035) * moral * Veri.NOBETCI_VERIM,
+		"hasar": float(si["hasar"]) * (1.0 + (float(oz["nisancilik"]) - 10.0) * 0.035) * moral * Veri.NOBETCI_VERIM
+			* (1.0 + Veri.GUC_HASAR * int(h.get("guc", 0))),
 		"ates_hizi": float(si["ates"]) * (1.0 + (float(oz["refleks"]) - 10.0) * 0.025) * moral,
 		"kritik": clampf(float(si["kritik"]) + (float(oz["sogukkanlilik"]) - 10.0) * 0.008, 0.0, 0.6),
 		"kritik_carpan": 2.5,
@@ -741,10 +752,124 @@ func form(h: Dictionary) -> float:
 	return t / p.size()
 
 
+# ================================================================ SUR, GÜÇ SEVİYESİ, KAMPANYA (Grow Castle)
+
+func sur_sv() -> int:
+	return clampi(int(veri["sur"]), 1, Veri.SUR_MAX)
+
+
+func nobetci_yuva() -> int:
+	return Veri.sur_yuva(sur_sv())
+
+
+func sur_yukselt() -> String:
+	var sv := sur_sv()
+	if sv >= Veri.SUR_MAX:
+		return "Sur en üst seviyede"
+	var f := Veri.sur_fiyat(sv)
+	if hurda() < f:
+		return "Yeterli hurda yok"
+	hurda_ekle(-f)
+	veri["sur"] = sv + 1
+	kaydet()
+	return ""
+
+
+func altin() -> int:
+	return int(veri["altin"])
+
+
+func guc_yukselt(uid: String) -> String:
+	var h := kahraman_bul(uid)
+	if h.is_empty():
+		return "Bulunamadı"
+	var sv := int(h.get("guc", 0))
+	if sv >= Veri.GUC_MAX:
+		return "En üst güç seviyesi"
+	var f := Veri.guc_fiyat(sv)
+	if altin() < f:
+		return "Yeterli altın yok. Kampanya savaşları altın verir."
+	veri["altin"] = altin() - f
+	h["guc"] = sv + 1
+	kaydet()
+	return ""
+
+
+func kampanya_dalgasi() -> int:
+	return maxi(int(veri["kampanya"]["dalga"]), 1)
+
+
+## x3 hız kilidi (B7). Eski oyuncuyu cezalandırmaz: rekoru yetiyorsa ya da x3 zaten seçiliyse açık kalır.
+func hiz3_kontrol() -> bool:
+	if not bool(veri["x3_acik"]):
+		if int(veri["rekor"]) >= Veri.HIZ3_DALGA or int(veri["kampanya"]["en_yuksek"]) >= Veri.HIZ3_DALGA \
+				or int(veri["ayarlar"].get("hiz", 1)) == 3:
+			veri["x3_acik"] = true
+			return true
+	return false
+
+
+## Kampanya savaşı bitti. Kazanınca altın + hurda + sıradaki dalga; kaybedince aynı dalga ve teselli
+## (altının %25'i, hurdanın yarısı): ceza yok, Grow Castle'daki gibi geliştirip yeniden dene.
+func kampanya_bitti(kazandi: bool, dalga: int, oldurme: int, boss_sayisi: int, katki: Dictionary) -> Dictionary:
+	var k: Dictionary = veri["kampanya"]
+	var ozet := {"altin": 0, "hurda": 0, "silahlar": [], "gelisim": [], "kampanya": true, "x3": false}
+	var a := Veri.kampanya_altin(dalga)
+	var hu := Veri.kampanya_hurda(dalga)
+	if kazandi:
+		k["dalga"] = dalga + 1
+		k["en_yuksek"] = maxi(int(k["en_yuksek"]), dalga)
+		k["zafer"] = int(k["zafer"]) + 1
+	else:
+		a = int(a * 0.25)
+		hu = int(hu / 2.0)
+		k["yenilgi"] = int(k["yenilgi"]) + 1
+	veri["altin"] = altin() + a
+	hurda_ekle(hu)
+	ozet["altin"] = a
+	ozet["hurda"] = hu
+	# boss ganimeti: kampanyada da garanti Ender+ silah
+	for i in boss_sayisi:
+		var s := Veri.silah_uret("", maxi(2, Veri.nadirlik_sec(0.3 + dalga * 0.03)))
+		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
+			veri["envanter"].append(s)
+			ozet["silahlar"].append(s)
+		else:
+			hurda_ekle(silah_satis_degeri(s))
+	veri["istatistik"]["boss"] = int(veri["istatistik"]["boss"]) + boss_sayisi
+	veri["istatistik"]["oldurme"] = int(veri["istatistik"]["oldurme"]) + oldurme
+	# Ekip: tek dalga kısa bir savaş; küçük deneyim, küçük yorgunluk
+	var h := aktif_kahraman()
+	var sur := nobetci_listesi()
+	ozet["gelisim"] = _gelistir(h, 0.15 + dalga * 0.02)
+	h["yorgunluk"] = minf(float(h.get("yorgunluk", 0.0)) + 3.0, 100.0)
+	h["xp"] = int(h["xp"]) + dalga * 2 + oldurme
+	while int(h["xp"]) >= int(h["seviye"]) * 100:
+		h["xp"] = int(h["xp"]) - int(h["seviye"]) * 100
+		h["seviye"] = int(h["seviye"]) + 1
+	for x in sur:
+		_gelistir(x, 0.08 + dalga * 0.01)
+		x["yorgunluk"] = minf(float(x.get("yorgunluk", 0.0)) + 2.0, 100.0)
+	if kazandi:
+		h["moral"] = mini(int(h["moral"]) + 1, 100)
+	if not katki.is_empty():
+		_mac_puanlari(h, sur, katki, 0 if kazandi else 2, ozet)
+	ozet["x3"] = hiz3_kontrol()
+	kaydet()
+	return ozet
+
+
 # ================================================================ ENVANTER
 
 func kusan(silah_uid: String) -> void:
-	var h := aktif_kahraman()
+	silah_ver(String(veri["aktif"]), silah_uid)
+
+
+## Silahı herhangi bir hayatta kalana verir (lider ya da surdaki). Silah başkasındaysa ikisi takas eder.
+func silah_ver(uid: String, silah_uid: String) -> void:
+	var h := kahraman_bul(uid)
+	if h.is_empty():
+		return
 	var onceki := silahi_kullanan(silah_uid)
 	if not onceki.is_empty() and onceki["uid"] != h["uid"]:
 		onceki["silah"] = h.get("silah", "")

@@ -3,6 +3,7 @@ extends CanvasLayer
 ## üstte hurda, ortada kaydırılabilir içerik, altta sekme çubuğu. Her sekme koddan kurulur.
 
 signal oyna_istendi
+signal kampanya_istendi
 signal ayarlar_degisti
 
 const Veri := preload("res://betikler/veri.gd")
@@ -332,7 +333,7 @@ func _oyna_sekmesi() -> void:
 
 	var sur: Array = profil.nobetci_listesi()
 	var nk := _kart(Color(0.85, 0.65, 0.3))
-	nk.add_child(_etiket("SURDAKİ EKİP (%d/%d yuva)" % [sur.size(), Veri.NOBETCI_YUVA], 22, Color(0.7, 0.7, 0.65)))
+	nk.add_child(_etiket("SURDAKİ EKİP (%d/%d yuva)" % [sur.size(), profil.nobetci_yuva()], 22, Color(0.7, 0.7, 0.65)))
 	if sur.is_empty():
 		nk.add_child(_etiket("Sur boş. Ekip sekmesinden birini \"Sura koy\": o da kendi silahıyla ateş eder.", 22, Color(1, 0.8, 0.5)))
 	for x in sur:
@@ -340,6 +341,7 @@ func _oyna_sekmesi() -> void:
 		nk.add_child(_etiket("%s · %s · hedef: %s" % [String(x["ad"]), Veri.ROLLER[x["rol"]]["ad"], mdl["ad"]], 24, Color(1, 0.88, 0.6)))
 
 	var b := _kart(Color(0.45, 0.7, 0.3))
+	b.add_child(_etiket("HAYATTA KALMA (roguelike koşu)", 22, Color(0.7, 0.7, 0.65)))
 	b.add_child(_dugme("SAVAŞA BAŞLA", Color(0.35, 0.65, 0.2), func() -> void: oyna_istendi.emit(), 44))
 	b.add_child(_etiket("En iyi: %d. dalga · Toplam %d zombi" % [int(profil.veri["rekor"]),
 		int(profil.veri["istatistik"]["oldurme"])], 24, Color(1, 0.85, 0.4)))
@@ -350,6 +352,8 @@ func _oyna_sekmesi() -> void:
 		b.add_child(_etiket("Laboratuvar: %s %s" % [hedef["ad"], "alınabilir!" if eksik <= 0 else "için %d hurda kaldı" % eksik],
 			22, Color(0.7, 0.85, 1.0)))
 
+	_kampanya_karti()
+	_sur_karti()
 	_gorev_karti()
 
 	var kk := _kart()
@@ -357,6 +361,45 @@ func _oyna_sekmesi() -> void:
 	_kesif_etiket = _etiket("", 26)
 	kk.add_child(_kesif_etiket)
 	_kesif_guncelle()
+
+
+## Kampanya (Grow Castle): kalıcı dalga sayacı, her savaş tek dalga, kaybetmenin cezası yok.
+func _kampanya_karti() -> void:
+	var n: int = profil.kampanya_dalgasi()
+	var k := _kart(Color(0.85, 0.45, 0.3))
+	k.add_child(_etiket("KAMPANYA (kalıcı ilerleme · altın: %d)" % profil.altin(), 22, Color(0.7, 0.7, 0.65)))
+	var boss := n % Veri.KAMPANYA_BOSS == 0
+	k.add_child(_dugme("KAMPANYA · DALGA %d%s" % [n, "  (BOSS)" if boss else ""], Color(0.7, 0.32, 0.18),
+		func() -> void: kampanya_istendi.emit(), 36))
+	k.add_child(_etiket("Kazan: +%d altın, +%d hurda. Tek dalga, 1 kart. Kaybedersen aynı dalga, ceza yok." % [
+		Veri.kampanya_altin(n), Veri.kampanya_hurda(n)], 22, Color(1, 0.85, 0.6)))
+	if not bool(profil.veri["x3_acik"]):
+		k.add_child(_etiket("x3 oyun hızı: %d. dalgayı geçince açılır" % Veri.HIZ3_DALGA, 22, Color(0.6, 0.9, 1.0)))
+
+
+## Sur (kale) kalıcı yükseltmesi: can ve nöbetçi yuvası. Çizim seviyeyle büyür.
+func _sur_karti() -> void:
+	var sv: int = profil.sur_sv()
+	var k := _kart(Color(0.6, 0.55, 0.45))
+	k.add_child(_etiket("SUR · Seviye %d/%d" % [sv, Veri.SUR_MAX], 22, Color(0.7, 0.7, 0.65)))
+	var c := SurCizim.new()
+	c.seviye = sv
+	c.custom_minimum_size = Vector2(0, 120)
+	k.add_child(c)
+	var sonraki_yuva := sv + 1
+	while Veri.sur_yuva(sonraki_yuva) == Veri.sur_yuva(sv) and sonraki_yuva < Veri.SUR_MAX:
+		sonraki_yuva += 1
+	var yuva_metin := "" if Veri.sur_yuva(sv) >= Veri.NOBETCI_YUVA_MAX else " · %d. yuva %d. seviyede" % [Veri.sur_yuva(sv) + 1, sonraki_yuva]
+	k.add_child(_etiket("Barikat canı +%%%d · %d nöbetçi yuvası%s" % [int(round(Veri.SUR_CAN * (sv - 1) * 100)),
+		Veri.sur_yuva(sv), yuva_metin], 22, Color(0.85, 0.85, 0.8)))
+	var en_ust := sv >= Veri.SUR_MAX
+	k.add_child(_dugme("En üst seviye" if en_ust else "Yükselt: %d hurda" % Veri.sur_fiyat(sv), Color(0.55, 0.45, 0.3), func() -> void:
+		var neden: String = profil.sur_yukselt()
+		if neden == "":
+			bildir("Sur %d. seviye!" % profil.sur_sv(), Color(1, 0.85, 0.45))
+		else:
+			bildir(neden, Color(1, 0.55, 0.45))
+		_yenile(), 28, not en_ust))
 
 
 func _gorev_karti() -> void:
@@ -405,7 +448,7 @@ func _kesif_guncelle() -> void:
 
 func _ekip_sekmesi() -> void:
 	var ekip: Array = profil.veri["ekip"]
-	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Lider maç deneyimiyle hızlı, surdakiler yarı hızla, diğerleri antrenmanla yavaş gelişir. Surda %d yuva var: oraya koyduğun kişi kendi silahıyla ateş eder." % [ekip.size(), Veri.EKIP_SINIRI, Veri.NOBETCI_YUVA], 22, Color(0.75, 0.75, 0.7)))
+	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Lider maç deneyimiyle hızlı, surdakiler yarı hızla, diğerleri antrenmanla yavaş gelişir. Surda %d yuva var: oraya koyduğun kişi kendi silahıyla ateş eder. Kampanya altını: %d (Güç seviyesine harcanır)." % [ekip.size(), Veri.EKIP_SINIRI, profil.nobetci_yuva(), profil.altin()], 22, Color(0.75, 0.75, 0.7)))
 	for h in ekip:
 		_hayatta_kalan_karti(h)
 
@@ -438,6 +481,22 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 			son.append("%.1f" % float(x))
 		k.add_child(_etiket("Form: %.1f  (son puanlar: %s)" % [fo, " ".join(son)], 22,
 			Color(0.6, 1, 0.5) if fo >= 7.0 else (Color(1, 0.6, 0.45) if fo < 5.8 else Color(0.9, 0.9, 0.8))))
+	var guc := int(h.get("guc", 0))
+	var gs := _satir(k)
+	var ge := _etiket("Güç Sv %d (hasar +%%%d)" % [guc, int(round(guc * Veri.GUC_HASAR * 100))], 24, Color(1, 0.8, 0.4))
+	ge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gs.add_child(ge)
+	var guc_uid := String(h["uid"])
+	var guc_ust := guc >= Veri.GUC_MAX
+	var gd := _dugme("En üst" if guc_ust else "+1: %d altın" % Veri.guc_fiyat(guc), Color(0.7, 0.55, 0.15), func() -> void:
+		var neden: String = profil.guc_yukselt(guc_uid)
+		if neden == "":
+			bildir("Güç seviyesi arttı!", Color(1, 0.85, 0.4))
+		else:
+			bildir(neden, Color(1, 0.55, 0.45))
+		_yenile(), 22, not guc_ust and profil.altin() >= Veri.guc_fiyat(guc))
+	gd.custom_minimum_size.x = 200
+	gs.add_child(gd)
 	if surda:
 		var md: Dictionary = Veri.HEDEF_MODLARI[String(h.get("hedef_modu", "rol"))]
 		k.add_child(_etiket("Surda nöbette · Hedef: %s (%s)" % [md["ad"], md["aciklama"]], 22, Color(1, 0.85, 0.5)))
@@ -574,6 +633,19 @@ func _silah_karti(s: Dictionary) -> void:
 		else:
 			bildir("Yeterli hurda yok", Color(1, 0.5, 0.4))
 		_yenile(), 24, gelisebilir))
+	# Nöbetçiye ver: surdakilerin her biri için bir düğme (silah başkasındaysa takas olur)
+	var sur: Array = profil.nobetci_listesi()
+	if not sur.is_empty():
+		var sd := _satir(k)
+		for x in sur:
+			if String(x.get("silah", "")) == uid:
+				continue
+			var xuid := String(x["uid"])
+			var xad := String(x["ad"]).get_slice(" ", 0)
+			sd.add_child(_dugme("Sura: %s" % xad, Color(0.6, 0.45, 0.2), func() -> void:
+				profil.silah_ver(xuid, uid)
+				bildir("%s yeni silahını aldı" % xad, Color(1, 0.85, 0.45))
+				_yenile(), 22))
 	if kullanan.is_empty():
 		d.add_child(_dugme("Sat +%d" % profil.silah_satis_degeri(s), Color(0.6, 0.3, 0.25), func() -> void:
 			profil.silah_sat(uid)
@@ -772,3 +844,32 @@ func _ayarlar_sekmesi() -> void:
 
 	var bilgi := _kart()
 	bilgi.add_child(_etiket("Zombi Savunma · Her gece otomatik olarak geliştirilir. İlerlemen telefonunda saklanır.", 22, Color(0.75, 0.75, 0.7)))
+
+
+## Menüdeki büyüyen sur çizimi: seviyeyle kat ve kule sayısı artar, malzeme ahşap → taş → çelik olur.
+## Bir kez çizilir (Control yalnızca menü yenilenince yeniden kurulur).
+class SurCizim extends Control:
+	var seviye := 1
+
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		var kat := 1 + mini(int(seviye / 6.0), 6)  # 1–7 kat
+		var malzeme := Color("8a6a45") if seviye < 17 else (Color("8d8f8a") if seviye < 33 else Color("6f8296"))
+		var kat_boy := (h - 30.0) / 7.0
+		var taban := h - 6.0
+		for i in kat:
+			var y := taban - (i + 1) * kat_boy
+			var r := malzeme.darkened(0.12 * float(i % 2))
+			draw_rect(Rect2(20, y, w - 40, kat_boy - 2), r)
+			for j in int((w - 40) / 46.0):  # tuğla/tahta çizgileri
+				draw_rect(Rect2(20 + j * 46 + (23 if i % 2 == 1 else 0), y, 2, kat_boy - 2), r.darkened(0.3))
+		# nöbetçi kuleleri: yuva sayısı kadar
+		var yuva := Veri.sur_yuva(seviye)
+		var ust := taban - kat * kat_boy
+		for i in yuva:
+			var x := 30.0 + (w - 100.0) * (float(i) / maxf(yuva - 1, 1))
+			draw_rect(Rect2(x, ust - 22, 40, 22), malzeme.lightened(0.15))
+			draw_rect(Rect2(x + 4, ust - 30, 10, 8), malzeme.lightened(0.15))
+			draw_rect(Rect2(x + 26, ust - 30, 10, 8), malzeme.lightened(0.15))
+		draw_rect(Rect2(10, taban, w - 20, 6), Color("3a3328"))

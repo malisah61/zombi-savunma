@@ -167,9 +167,47 @@ const EKIP_SINIRI := 8
 # ---------------------------------------------------------------- SURDAKİ EKİP (Grow Castle kale yuvaları)
 # Yuva sayısı ileride Sur seviyesiyle 6'ya çıkacak (TASARIM §0 B2). Verim: nöbetçinin hasarı liderin
 # aynı silahla yapacağının bu katı; kartlar ona işlemez ama dalgayla güçlenir (oyun.nobetci_carpani).
-const NOBETCI_YUVA := 2
+const NOBETCI_YUVA := 2  # Sur 1. seviyedeki yuva; her SUR_YUVA_ARALIK seviyede +1, en çok NOBETCI_YUVA_MAX
+const NOBETCI_YUVA_MAX := 6
 const NOBETCI_VERIM := 0.45
 const NOBETCI_DALGA := 0.04
+# ---------------------------------------------------------------- SUR (kalıcı kale yükseltmesi, Grow Castle)
+# Seviye 1→50, can +%8/sv, her 8 seviyede +1 nöbetçi yuvası (9, 17, 25, 33 → 6 yuva). Fiyat hurda: 30·1.10^(sv−1).
+const SUR_MAX := 50
+const SUR_CAN := 0.08
+const SUR_YUVA_ARALIK := 8
+
+# ---------------------------------------------------------------- GÜÇ SEVİYESİ (Grow Castle kahraman yükseltmesi)
+# Kampanya altınıyla alınır; hasar +%10/sv (lider ve nöbetçi, iki modda da). Fiyat: 50·1.18^sv. FM özelliklerinden ayrı eksen.
+const GUC_HASAR := 0.10
+const GUC_MAX := 30
+
+# ---------------------------------------------------------------- KAMPANYA (Grow Castle dalga ilerlemesi)
+# Her savaş tek dalga. Kazanınca sıradaki açılır, kaybedince aynı dalga (ceza yok, teselli ödülü).
+const KAMPANYA_BOSS := 10  # her 10. dalga boss (10 Dev, 20 Kraliçe, 30 Dev…)
+const HIZ3_DALGA := 10     # x3 hız: kampanyada bu dalgayı geçince ya da Hayatta Kalma rekoru bu kadarsa açılır
+
+
+static func sur_fiyat(sv: int) -> int:
+	return int(round(30.0 * pow(1.10, sv - 1)))
+
+
+static func sur_yuva(sv: int) -> int:
+	return mini(NOBETCI_YUVA + int((sv - 1) / float(SUR_YUVA_ARALIK)), NOBETCI_YUVA_MAX)
+
+
+static func guc_fiyat(sv: int) -> int:
+	return int(round(50.0 * pow(1.18, sv)))
+
+
+static func kampanya_altin(dalga: int) -> int:
+	return (20 + 6 * dalga) * (3 if dalga % KAMPANYA_BOSS == 0 else 1)
+
+
+static func kampanya_hurda(dalga: int) -> int:
+	return 4 + dalga + (25 if dalga % KAMPANYA_BOSS == 0 else 0)
+
+
 # Ekip yapay zekâsı hedef modları (Bloons TD hedefleme seçenekleri gibi). "rol": rolüne göre karar verir.
 const HEDEF_MODLARI := {
 	"rol": {"ad": "Rolüne göre", "aciklama": "Avcı boss/zırhlı/kusan, diğerleri barikata en yakın"},

@@ -43,6 +43,8 @@ var _tanitim: PanelContainer
 var _tanitim_baslik: Label
 var _tanitim_metin: Label
 var _uyari: Label
+var _bitis_baslik: Label
+var _tekrar_dugme: Button
 var _aktif_dugme: Button
 var _aktif_ad := ""
 var _aktif_son := -1
@@ -468,6 +470,7 @@ func _process(_delta: float) -> void:
 func _bitis_kur() -> void:
 	_bitis = _tam_ekran_panel(Color(0.12, 0.0, 0.0, 0.78))
 	var baslik := _etiket(70, Color(1, 0.3, 0.25))
+	_bitis_baslik = baslik
 	baslik.text = "BARİKAT DÜŞTÜ"
 	baslik.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bitis.add_child(baslik)
@@ -492,6 +495,7 @@ func _bitis_kur() -> void:
 	_odul_kutusu.offset_top = -290
 	_odul_kutusu.offset_bottom = 220
 	var tekrar := _buyuk_dugme("TEKRAR", Color(0.6, 0.2, 0.15), func() -> void: basla_istendi.emit(), 230)
+	_tekrar_dugme = tekrar
 	tekrar.offset_left = -330
 	tekrar.offset_right = -10
 	_bitis.add_child(tekrar)
@@ -653,6 +657,10 @@ func oyun_basladi() -> void:
 
 
 func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: Dictionary) -> void:
+	_bitis_baslik.text = "BARİKAT DÜŞTÜ"
+	_bitis_baslik.add_theme_color_override("font_color", Color(1, 0.3, 0.25))
+	(_bitis as ColorRect).color = Color(0.12, 0.0, 0.0, 0.78)
+	_tekrar_dugme.text = "TEKRAR"
 	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün · En iyi: %d" % [dalga, oldurme, rekor]
 	_konusma_kutu.visible = ozet.has("uid")
 	_konusma_satir.visible = true
@@ -672,7 +680,12 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 			parca.append("%s %.1f%s" % [p["ad"], float(p["puan"]), " ★" if p.has("yildiz") else ""])
 		_odul_ekle("Puan: " + "  ·  ".join(parca), Color(0.95, 0.9, 0.6), 24)
 	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 28)
-	_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 28)
+	if ozet.has("kampanya"):
+		_odul_ekle("+%d altın  ·  +%d hurda" % [int(ozet.get("altin", 0)), int(ozet.get("hurda", 0))], Color(1, 0.8, 0.35), 28)
+	else:
+		_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 28)
+	if bool(ozet.get("x3", false)):
+		_odul_ekle("x3 OYUN HIZI AÇILDI!", Color(0.6, 1, 0.9), 28)
 	if ozet.has("hedef"):
 		_odul_ekle(String(ozet["hedef"]), Color(0.75, 0.85, 1.0), 24)
 	# en değerli 3 silah gösterilir, kalanı tek satırda (ekrana sığsın)
@@ -712,6 +725,21 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 	_bitis.visible = true
 	_bitis.modulate.a = 0.0
 	create_tween().tween_property(_bitis, "modulate:a", 1.0, 0.6)
+
+
+## Kampanya savaşı sonu: bitiş ekranı kullanılır, başlık/metin/düğme kampanyaya göre değişir.
+func kampanya_sonu_goster(kazandi: bool, dalga: int, oldurme: int, sonraki: int, ozet: Dictionary) -> void:
+	bitis_goster(dalga, oldurme, 0, false, ozet)
+	if kazandi:
+		_bitis_baslik.text = "ZAFER!"
+		_bitis_baslik.add_theme_color_override("font_color", Color(0.55, 1, 0.45))
+		(_bitis as ColorRect).color = Color(0.0, 0.1, 0.02, 0.8)
+		_bitis_metin.text = "Kampanya %d. dalga geçildi\n%d zombi öldürdün\nSıradaki: %d. dalga%s" % [dalga, oldurme, sonraki,
+			"  (BOSS)" if sonraki % Veri.KAMPANYA_BOSS == 0 else ""]
+		_tekrar_dugme.text = "SONRAKİ"
+	else:
+		_bitis_metin.text = "Kampanya %d. dalga\nCeza yok: Sur'u ve Güç seviyelerini\nyükseltip yeniden dene." % dalga
+		_tekrar_dugme.text = "YENİDEN"
 
 
 func bitis_gizle() -> void:

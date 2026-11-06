@@ -49,6 +49,8 @@ jobs:
           timeout 420 ./godot --headless --path . --fixed-fps 60 -- --bot=2 2>&1 | grep -E "BOT|SCRIPT ERROR|Parse Error" || true
           rm -rf ~/.local/share/godot/app_userdata
           timeout 420 ./godot --headless --path . --fixed-fps 60 -- --bot=2 --bot_ekip 2>&1 | grep -E "BOT|SCRIPT ERROR|Parse Error" || true
+          rm -rf ~/.local/share/godot/app_userdata
+          timeout 500 ./godot --headless --path . --fixed-fps 60 -- --bot_kampanya=60 2>&1 | grep -E "BOTK|SCRIPT ERROR|Parse Error" || true
 
       - name: Depoya kaydet
         run: |
