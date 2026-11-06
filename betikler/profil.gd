@@ -709,8 +709,10 @@ func mac_puani(katki: Dictionary, kaynak: int, kaynak_sayisi: int, performans: i
 	var benim: Dictionary = katki.get(kaynak, {"hasar": 0.0, "oldurme": 0})
 	var p := 6.0
 	if toplam > 0.0 and kaynak_sayisi > 1:
+		# beklenen pay: lider kart aldığı için 2, her nöbetçi 1 ağırlık (2 nöbetçide lider %50, nöbetçi %25)
+		var beklenen := (2.0 if kaynak == 0 else 1.0) / (kaynak_sayisi + 1.0)
 		var pay := float(benim["hasar"]) / toplam
-		p += clampf((pay * kaynak_sayisi - 1.0) * 1.5, -1.5, 2.0)
+		p += clampf((pay / beklenen - 1.0) * 1.5, -1.5, 2.0)
 	p += minf(int(benim["oldurme"]) / 25.0, 1.2)
 	match performans:
 		0:

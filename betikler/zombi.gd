@@ -151,6 +151,8 @@ func _process(delta: float) -> void:
 		olu = true
 		oyun.patlayan_barikatta(self)
 		return
+	elif kralice and _dogurma_hak > 0:
+		pass  # Kraliçe geride bekler: yavruları bitene dek barikata vurmaz
 	elif boss:
 		_boss_saldir(delta)
 	elif tur == "kusan":

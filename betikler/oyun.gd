@@ -1052,7 +1052,7 @@ func _kanat_surprizi() -> void:
 	for i in secilen.size():
 		var z = _zombi_dogur(secilen[i])
 		z.position = Vector2(x + randf_range(-30.0, 30.0), -30.0 - i * 45.0)
-	_yazi(Vector2(clampf(x, 170.0, genislik - 170.0), 200.0), "KANATTAN GELİYORLAR!", Color(1, 0.55, 0.3), 32, true)
+	arayuz.uyari_goster("%s KANATTAN GELİYORLAR!" % ("SAĞ" if sag else "SOL"))
 	ses("dalga")
 	if _yon_gunluk:
 		print("YONETMEN kanat surprizi: %s" % str(secilen))
@@ -1636,15 +1636,17 @@ func _onizleme(klasor: String) -> void:
 	arayuz.tanitim_goster("KRALİÇE", String(TANITIM["kralice"]))
 	await _bekle(1.6)
 	await _kare(klasor + "/27_kralice.png")
-	print("ONIZLEME kralice: can=%.0f/%.0f zombi=%d" % [kr.can, kr.max_can, zombiler.size()])
+	print("ONIZLEME kralice: can=%.0f/%.0f zombi=%d durum=%d hak=%d bekleyen=%d" % [kr.can, kr.max_can, zombiler.size(),
+		durum, kr._dogurma_hak, _bekleyen_cagri])
 	_temizle()
 	# Yönetmen: oyuncu rahatken sıradaki zombiler kanattan birlikte gelir
 	dalga = 9
 	for t in ["kosucu", "kosucu", "yuruyen", "zirhli", "yuruyen"]:
 		_dogacak.append(t)
-	kahraman.position.x = 200.0
+	kahraman.position.x = 560.0
+	kahraman.hedef_x = 560.0
 	_kanat_surprizi()
-	await _bekle(0.9)
+	await _bekle(1.3)
 	await _kare(klasor + "/28_yonetmen_kanat.png")
 	_dogacak.clear()
 	await _yuk_testi()

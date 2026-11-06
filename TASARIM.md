@@ -99,15 +99,15 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
   göre ölçeklenir; mermi çarpışması doğru parçası testine çevrildi (x3'te zombinin içinden geçmesin).
 
 **Gece A (ilk): surdaki ekip + ekip yapay zekâsı + yönetmen**
-- [ ] **B1 Surdaki ekip (yeni):** Barikatın üstünde nöbetçi yuvaları (başta 2, Sur seviyesiyle 6'ya kadar). Ekip
+- [x] **B1 Surdaki ekip (yeni)** (2026-11-06, Gece 3 — 2 yuva; bkz. §16c): Barikatın üstünde nöbetçi yuvaları (başta 2, Sur seviyesiyle 6'ya kadar). Ekip
   sekmesinden hayatta kalanlar yuvalara konur; koşuda hepsi aynı anda kendi silahı, rolü ve özellikleriyle ateş eder.
   Parmakla yönettiğin asker "lider" olarak kalır. Yuvadaki kişi de koşu sonunda deneyim/gelişim alır (FM ↔ savaş bağı).
   Performans: nöbetçiler kahraman gibi pişmiş doku + havuzdaki mermiler; 6 nöbetçi × ateş hızı ile çizim çağrısı ölç.
-- [ ] **A5 Ekip yapay zekâsı (yeni):** Her nöbetçi rolüne göre hedef seçer: Avcı → boss/zırhlı/kusan, Pompalı/Asker →
+- [x] **A5 Ekip yapay zekâsı (yeni)** (2026-11-06, Gece 3 — Doktor boşta onarır, moral etkisi yok; bkz. §16c): Her nöbetçi rolüne göre hedef seçer: Avcı → boss/zırhlı/kusan, Pompalı/Asker →
   barikata en yakın, Mühendis → boşken barikat onarır (saniyede %0.3), Doktor → yorgunluk/moral. **Aşırı öldürme
   önleme:** her zombiye "beklenen hasar" yazılır; beklenen ≥ kalan can ise diğerleri başka hedef seçer (Bloons/KR
   hedefleme modlarından esinli). Her nöbetçiye ayarlanabilir hedef modu: En yakın / En güçlü / Boss önce.
-- [ ] **A1 Yönetmen (geliştirme: dalga sistemi):** Left 4 Dead'in Yapay Zekâ Yönetmeni gibi "gerilim" ölçer
+- [x] **A1 Yönetmen (geliştirme: dalga sistemi)** (2026-11-06, Gece 3 — zorluk tavanı §8 gelince bağlanacak; bkz. §3d): Left 4 Dead'in Yapay Zekâ Yönetmeni gibi "gerilim" ölçer
   (barikat hasar hızı + ekrandaki zombi ağırlığı + son 5 sn'de kaçan zombiler). Döngü: Yükselme → Zirve (3–5 sn) →
   Sönme → Nefes (4–8 sn). Gerilim düşükken doğumu %30'a kadar hızlandırır ya da kanattan 3–5 koşucu sürprizi
   gönderir; yüksekken nefes aldırır. **Adil kural:** dalganın toplam zombisi değişmez, sadece zamanlama ve yön değişir.
@@ -151,6 +151,9 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
+- **Yeni araştırılan (Gece 3):**
+  - **Takım kimyası (FM "team cohesion" / "tight-knit"):** FM'de birlikte oynayan ve aynı dili konuşan oyuncuların uyumu zamanla artar, kadroya çok kişi birden katılınca düşer. Bizde: aynı koşuda birlikte (lider + sur) oynayan her çift için `kimya[uid_a|uid_b]` +1 (en çok 20). Sur ekibinin ortalama kimyası k ise nöbetçi ateş hızı +%0.5·k (en çok +%10). Yeni gelen kişi 0'dan başlar → rotasyon ile kimya arasında gerçek karar. Kişilik: Lider ruhlu kimyayı ×1.5 artırır, Asabi ×0.5. Ekip kartında "Uyum: Ali ile iyi" satırı. Teknik: profil sözlüğü, VARSAYILAN'a `kimya: {}`; koşu sonu tek döngü.
+  - **Başarımlar (kalıcı hedef zinciri):** 3 kademeli (bronz/gümüş/altın) 12 başarım: "Dev avcısı 1/5/20", "Kraliçe 1/5/15", "Dalga 15/25/40", "Evrim 1/5/15", "Ekip 3/5/8 kişi", "Sur 1/2 dolu", "Taret uzmanlığı 1/10/30", "Yük: 1000/10000/50000 zombi"… Ödül kademe başına 40/100/250 hurda + profil rozeti. Mobil araştırmalarına göre ödül hemen ve görünür verilmeli, kademeler hedefi her zaman "bir sonraki"ne taşır; angarya olmaması için hepsi normal oynarken dolar. Teknik: `Veri.BASARIMLAR` tablosu, `profil.basarim_ilerlet(id, deger)` (gorev_ilerlet ile aynı yerden), menüde OYNA sekmesinde "en yakın başarım" satırı.
 - **Yeni araştırılan (Gece 2):**
   - **Tehdit Seviyesi (Hades Pact of Punishment gibi):** koşu öncesi 4 şalter, her biri 1–3 kademe, her kademe 1–2 tehdit puanı: Kalabalık (+%20 zombi), Dişli (+%20 zombi hasarı), Kalın Deri (+%15 can), Karaborsa (+%40 onarım/taret fiyatı). Ödül: puan başına hurda +%10; yeni en yüksek puan ilk kez geçilince tek seferlik Destansı silah. Hades'in dersi: ödül bir kerelik yeni tepe için verilir, puanı birer birer artırmak ödüllendirilir. Teknik: `profil.tehdit` sözlüğü, `_sonraki_dalga` ve `kur` çarpanları, OYNA sekmesinde şalter satırı. Yeni oyuncu için 15. dalgayı geçince açılsın.
   - **Erken dalga çağırma (Kingdom Rush):** kalan doğacak zombi sıfırsa barikatın üstünde "ERKEN ÇAĞIR" düğmesi: sahadaki zombi başına 2 altın + aktif yetenek bekleme −3 sn. Sahada kalanlar kalır, kart seçimi kısa tutulur. Risk: iki dalga üst üste biner. Kart ekranı kalanlar varken oyunu durdurmalı (şu an `durum=KART` zombileri durdurmuyor, önce tree pause gerekir).
@@ -184,21 +187,24 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] Ses v3: gerçek silah ve zombi sesleri, arka plan müziği (Kenney kitlerindeki blaster sesleri bilim kurgu olduğu için alınmadı).
 - [x] (Gece 1) Performans v2: zombi/leke atlası, zemin ve barikat dokuya pişirildi; uyarlamalı kalite; 120 zombilik yük testi karesi.
 - [x] (Gece 2) Performans v3: kahraman dokuya pişirildi, 52 CPUParticles2D düğümü tek düğümde toplandı (yük testi 252 → 219 çizim çağrısı).
-- [ ] Performans v4: barikat tahtalarını sadeleştir, hasar yazılarını tek düğümde topla (Label başına çağrı), asit dairelerini dikdörtgene çevir.
+- [x] (Gece 3) Performans v4 ilk parça: hasar yazıları 32 Label → tek düğüm (`yazilar.gd`, sabit dizi, yazı yoksa çizim yok).
+- [ ] Performans v5: barikat tahtalarını sadeleştir, asit dairelerini dikdörtgene çevir, nöbetçi mermilerini ölç.
 - [x] (Gece 1) FM v2 (bkz. §16): kişilik, sakatlık ve yorgunluk.
 - [x] (Gündüz turu) Mentorluk: 28+ yaş ve Liderlik 12+ kişi, 25 yaş altı gence bağlanır; gelişim +%20, koşu başına %3 kişilik geçişi.
 - [x] (Gece 2) FM v3 ilk parça: koşu sonu ekip konuşması (Öv / Sert konuş / Sessiz kal), sonuç beklenti ve kişiliğe bağlı, tekrar yarım etki.
-- [ ] FM v3 kalanı: personel, tesisler.
+- [x] (Gece 3) FM maç puanı ve form: lider + nöbetçilere 1–10 puan, koşunun yıldızı, son 5 puan form, puan → moral (bkz. §16c).
+- [ ] FM v3 kalanı: personel, tesisler, takım kimyası (Fikir Havuzu, Gece 3).
+- [ ] Başarımlar (Fikir Havuzu, Gece 3).
 - [x] (Gündüz turu) Keşif v2 ilk parça: öneri yıldızı (3 + (değer − ekip en iyi)/6, bilgi azsa ±1.5 yanılır) ve kısa liste (raporu korur).
 - [ ] Keşif v3: gözlemci personeli (Yetenek / Potansiyel Değerlendirme).
 - [ ] Envanter v2: zırh + aksesuar yuvası, silah modları, set bonusları, kötü şans koruması.
 - [x] (Gece 2) Patlayan zombi: barikatta 34 hasar, yolda vurulursa çevresini patlatır (bkz. §3b).
 - [ ] Sıradaki zombiler: Kalkanlı (önden mermi keser), Çağırıcı (boss olmayan kaynak).
-- [ ] Boss 2: Kraliçe (her 10. dalgada Dev ile sırayla; sürekli koşucu doğurur).
+- [x] (Gece 3) Boss 2: Kraliçe (10, 20, 30… dalga; Dev 5, 15, 25…; bkz. §3b).
 - [x] (Gündüz turu) Kule yuvaları: 3 yuva, taret 60/96/154 altın, 8×1.5^(sv−1)×(1+0.05·dalga) hasar, 0.6 sn, menzil 520; Mühendis +%30 güç, %20 ucuz.
 - [x] (Gece 2) Kule v2: 3. seviyeden sonra 240 altına iki dal: Havan (45×güç alan, 105 px, 2.6 sn, zırhı aşar), Ağır Taret (43×güç, 1.2 sn, zırh yok sayar, 1 delme). Seçim oyunu durdurur, Vazgeç var.
 - [ ] Kule v3: alev kulesi, onarım istasyonu.
-- [ ] **Sıradaki öncelik:** Boss 2 Kraliçe, Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
+- [ ] **Sıradaki öncelik:** §0 Gece B (Sur kalıcı yükseltmesi → yuva 2→6, Kampanya, altınla seviye), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
 - [x] (Gece 2) Laboratuvar: bkz. §7b.
 - [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
@@ -218,12 +224,21 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 | Zırhlı | 46 | 40 | 9 | 5 | zırh 4 + 0.35·dalga; oran %10+1.5·(n−4), en çok %25 | 4 |
 | Kusan | 26 | 44 | 9 | 5 | 330 px'te durur, 2.8 sn'de bir asit; öncelik +260; oran %8+1·(n−6), en çok %16 | 6 |
 | Patlayan | 20 | 78 | 34 | 6 | barikatta patlar (altın yok); yolda vurulursa 130 px, 40×can çarpanı alan hasarı; öncelik +200; son 260 px yanıp söner; oran %6+1·(n−8), en çok %14 | 8 |
+| Kraliçe (boss) | 520 | 22 | 26 | 50 | barikattan 420 px geride durur, 4 sn'de 2 koşucu (6 kez = 12), sonra yürüyüp Dev gibi işaretli vurur; ölünce bekleyen yavrular iptal; güç sırası Dev ile ortak (dalga/5) | 10, 20, 30… |
 | Dev (boss) | 480 | 27 | 32 | 40 | zırh 2; 1.3 sn işaretli vuruş; %50 canda 2+2k koşucu; her k. Dev can ×(1+0.6(k−1)), hasar ×(1+0.35(k−1)) | 5, 10, 15… |
 - **Zırh formülü:** son hasar = max(hasar − zırh, hasar × 0.2). Düz çıkarma bilerek seçildi: Makineli (5.5) zırha çok takılır, Keskin Nişancı (34) neredeyse etkilenmez;
   böylece silah ve kart seçimi anlam kazanır. Zırh Delici kartı 4 puan siler, Titanyum evrimi tümünü.
 - **Can eğrisi:** çarpan = 1 + 0.12(n−1) + 0.03·max(0, n−15)², 25. dalgadan sonra ×1.08^(n−25). Hasar çarpanı 1 + 0.02n.
 - **Dalga ritmi:** boss dalgasında normal sayı yarıya iner + n koşucu (yoğun saldırı korunur) + Dev; boss sonrası dalga %60 (nefes).
 - **Ekonomi:** onarım fiyatı her kullanımda +5 altın; yeniden çekme 15, +10 artar.
+
+## 3d. Yönetmen (Gece 3'te uygulandı)
+- **Gerilim (0–100)** = hasar gerilimi + ekran gerilimi. Hasar: barikatın kaybettiği can oranı × 250 (canın %10'u → +25), saniyede 8 söner.
+  Ekran: saniyede 4 kez Σ min(can / (30 × can çarpanı), 6) × (y / barikat_y)² × 4. Yani barikata yakın, kalın zombiler sayılır.
+- **Evreler:** Yükselme (gerilim < 25 ise doğum ×1.3) → gerilim ≥ 70: Zirve (3–5 sn, normal) → Sönme (doğum durur, gerilim < 40 ya da 6 sn) → Nefes (4–8 sn, doğum durur) → Yükselme.
+  Bir dalgada toplam durma en çok 15 sn (dalga uzayıp sıkmasın).
+- **Kanat sürprizi:** Yükselmede gerilim 4 sn boyunca < 15 ise (dalga ≥ 4, en az 3 zombi bekliyorsa) dalganın sıradaki 4 zombisi (önce koşucular) askerin uzak kanadından birlikte gelir, "KANATTAN GELİYORLAR!" yazısı çıkar. Dalga başına bir kez.
+- **Adil kural:** dalga listesi hiç büyümez; yalnızca zamanlama ve yön değişir. Önizlemede evre geçişleri `YONETMEN` satırıyla kayda yazılır.
 
 ## 3c. Kart evrimleri (Gece 1'de uygulandı)
 Ana kart en üst seviye + eş kart gereken seviye → sonraki kart ekranında altın evrim kartı (Survivor.io: silah 5. seviye + eş destek):
@@ -285,6 +300,17 @@ Diken Kalesi (Sağlam Barikat 5 + Dikenli Tel 2). Kartlar bitince Altın Kesesi 
 Beklenti = önceki en iyi dalga × 0.7 (en az 3). İyi ≥ beklenti×1.3, normal ≥ beklenti, altı kötü. İlk koşu normal.
 Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Profesyonel sert +2, Kararlı sert +3, Hırslı öv +2, Asabi sert −7, Tembel sert +2 öv −2. Üst üste aynı konuşmada olumlu etki yarıya iner. Lider ruhlu olumlu tepki verirse tüm ekip +1.
 
+## 16c. Surdaki ekip, ekip yapay zekâsı, maç puanı (Gece 3'te uygulandı)
+- **Yuvalar:** `Veri.NOBETCI_YUVA` = 2 (B2 Sur yükseltmesi 6'ya çıkaracak; düğüm havuzu baştan 6). Lider sura konamaz; sakat olan sura çıkmaz (listede kalır).
+  Konumlar ekran genişliğinin 0.35 / 0.65'i (taretlerin arası), sonra kenarlar.
+- **Güç:** kendi silahı (yoksa rolünün Sıradan silahı) × özellikler × moral × yorgunluk × **0.45**; dalga başı +%4 (taret gibi); kartlar işlemez. Pompalı surda 3 saçma. Asker +%10 hasar, Avcı +%8 kritik ve ×3 kritik.
+- **Koşu sonu:** nöbetçi 0.3 + 0.12·dalga gelişim puanı (yedek 0.35), dalga×5 XP, yorgunluk +5 + 0.8·dalga (dinlenmez), sakatlanmaz.
+- **Hedef modları** (Bloons gibi): Rolüne göre (Avcı: boss +3000, kusan +900, zırhlı +800, patlayan +600, yakınlık ×0.3; diğerleri en yakın) / En yakın / En güçlü (can + 25·zırh, boss +5000) / Boss önce.
+- **Aşırı öldürme önleme:** her mermi hedefine tahmini hasar (zırh düşülmüş) yazar; mermi çarpınca ya da kaybolunca geri alınır. Beklenen ≥ kalan can ise hedef ancak başka aday yoksa seçilir. Lider ve normal/ağır taret de kullanır.
+- **Boşta:** Mühendis nöbetçi saniyede barikatın %0.3'ünü, Doktor %0.2'sini onarır.
+- **Maç puanı:** 6.0 + clamp((hasar payı / beklenen pay − 1) × 1.5, −1.5, +2) (beklenen pay ağırlıkla: lider 2, nöbetçi 1; kart alan lider haksız öne geçmesin) + min(öldürme / 25, 1.2) + (iyi sonuç +0.8, kötü −0.8), 3.0–10.0. Puan ≥ 7.5 moral +3, ≤ 5.0 moral −3.
+  Son 5 puan "form" olarak saklanır (Ekip kartında). En yüksek puan "koşunun yıldızı" (★). Bomba lidere, havan taretlere sayılır.
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -297,6 +323,16 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-06 (Gece 3)
+- Grow Castle: kale yuvalarına kahraman yerleştirme, kahramanlar kendiliğinden saldırır, altınla seviye; kesin yuva sayıları kaynaklarda yok, 2 → 6 bizim tasarımımız. — [App Store](https://apps.apple.com/au/app/grow-castle/id1133478462)
+- Bloons TD hedefleme seçenekleri (First / Last / Close / Strong): oyuncu kule yapay zekâsını tek düğmeyle yönlendirir. Wiki sayfası bu oturumdan açılamadı; seçenek adları bilinen oyun bilgisi. — [Bloons Wiki: Targeting option](https://www.bloonswiki.com/Targeting_option)
+- Aşırı öldürme (overkill) önleme: RTS/TD topluluklarında "gelecek hasarı say" yaklaşımı tartışılıyor; ayrıntılı sayfa bot korumasıyla açılamadı, uygulama kendi tasarımımız. — [SpringRTS forumu](https://springrts.com/phpbb/viewtopic.php?p=228189), [Factorio: topçu aşırı öldürme](https://forums.factorio.com/119445)
+- FM maç puanı: puanlar oyuncuyu neden iyi/kötü oynadığını açıklamaz, sadece özet verir (FM Projects yazısı); formül yayınlanmamış, bizim formülümüz hasar payı + öldürme + sonuç. — [FM Projects: Match Ratings](https://fmprojects.substack.com/p/match-ratings-in-football-manager), [FM Projects: Morale](https://fmprojects.substack.com/p/morale)
+- PvZ Dr. Zomboss: 40 000 can, sol eliyle şeritlere zombi bırakır, kafasını indirip ateş/buz topu atar, 8 000 / 20 000 hasarda görünüşü değişir. Ders: çağırıcı boss oyuncuya "kaynağı vur" önceliği öğretir; aşamalar (A4) için can eşikleri. — [PvZ Wiki: Dr. Zomboss](https://plantsvszombies.wiki.gg/wiki/Dr._Zomboss_(PvZ))
+- FM takım uyumu (cohesion): birlikte oynama ve ortak geçmiş artırır, toplu transfer düşürür. — [VideoGamer: FM24 cohesion](https://www.videogamer.com/guides/football-manager-2024-fm24-how-to-improve-team-cohesion)
+- Mobil ödül sistemleri: kademeli kilometre taşları ve anında görünen ödül geri dönüşü artırır. — [Tango: gaming incentives](https://www.tangocard.com/resources/gaming-incentive-programs-driving-player-engagement-and-retention-in-mobile-games)
+- Godot: `CanvasItem.draw_string` / `draw_string_outline` aynı yazı tipi dokusundan glif çizer; çok sayıda Label yerine tek düğümde çizim. — [Godot Font sınıfı](https://docs.godotengine.org/en/4.2/classes/class_font.html)
+
 ### 2026-11-06 (gündüz, yapay zekâ + Grow Castle isteği)
 - Left 4 Dead Yapay Zekâ Yönetmeni: oyuncu başına "duygusal yoğunluk" hasar ve yakın ölümlerle artar, zamanla
   söner; döngü Yükselme → Zirveyi koru (3–5 sn) → Zirve sönümü → Rahatlama (30–45 sn); "roller coaster" hissi

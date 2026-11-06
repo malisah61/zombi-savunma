@@ -8,7 +8,7 @@ extends Node2D
 const HEDEF_ARA := 0.2
 const MUHENDIS_ONARIM := 0.003  # boşken saniyede barikat canının %0.3'ü
 const DOKTOR_ONARIM := 0.002
-const OLCEK := 0.62
+const OLCEK := 0.78
 const BOLGE_GOVDE := Rect2(220, 0, 220, 220)  # kahraman dokusundaki gövde hücresi
 
 var oyun  # oyun.gd
@@ -89,8 +89,8 @@ func _ates() -> void:
 
 func _draw() -> void:
 	# taban: kum torbası parçası ve rol rengi şerit (oyuncu kimin nerede olduğunu görsün)
-	draw_rect(Rect2(-22, -4, 44, 18), Color("6b5d45"))
-	draw_rect(Rect2(-22, 10, 44, 4), _rol_renk)
+	draw_rect(Rect2(-26, -6, 52, 22), Color("6b5d45"))
+	draw_rect(Rect2(-26, 12, 52, 5), _rol_renk)
 	var doku: Texture2D = oyun.kahraman._doku if oyun and oyun.kahraman else null
 	draw_set_transform(Vector2.ZERO, aci, Vector2.ONE)
 	draw_rect(Rect2(8, -4, float(veri.get("boy", 30.0)) * 0.7, 8), Color("2b2b2b"))

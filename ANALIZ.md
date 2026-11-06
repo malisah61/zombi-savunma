@@ -11,6 +11,35 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-06 — Gece 3
+
+### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)
+- **İlk 5 dakika:** Tabanca 10 hasar × 1.8 atış ≈ 18 DPS (Asker +%10 → 20). 1. dalga 8 yürüyen × 30 can = 240 can, ~12 sn'de temizlenir. Doğum aralığı 1.25 − 0.06n sn, sabit ve tekdüze: dalganın içinde hiç "dalga" yok, zombiler eşit aralıkla damlıyor. İlk 4 dalga bu yüzden "izleme" hissi veriyor; oyuncunun parmağı boşta.
+- **5–15. dalga:** 8. dalgada can çarpanı 1 + 0.12·7 = 1.84 → koşucu ≈ 28 can. Lider (20) + 3 Sv1 taret (8 × 1.4 ≈ 11) aynı anda **aynı** "barikata en yakın" zombiyi hedefliyor: 28 canlık koşucuya 20 + 3·11 = 53 hasar yollanıyor, yani bu anlarda atışların **≈ %45'i boşa** (aşırı öldürme). Kalabalıkta en çok ihtiyaç duyulan anda verim düşüyor. Ayrıca her 5 dalgada aynı boss (Dev) geliyor: 5, 10, 15. dalgaların hepsi aynı sınav.
+- **Geç oyun:** Bot verisi 35. dalgada duvar gösteriyordu. Duvarı aşmanın tek yolu kart ve taret; koşu dışında biriktirdiğin ekibin (8 kişiye kadar) geç oyuna **hiçbir katkısı yok**.
+- **Meta / ekip (en önemli bulgu):** Ekip sekmesinde 6 özellik, kişilik, yorgunluk, mentor, konuşma var; ama savaşa yalnızca **1 kişi** çıkıyor. Keşifte 220 hurda verip bulduğun 2. ve 3. kişi yalnızca "yedek" ve antrenmanla 0.35 puan gelişiyor. FM derinliği ile savaş arasında köprü yok: oyuncu ekibini sahada görmüyor, kimin iyi oynadığını bilmiyor. Grow Castle'ın kalbi tam tersi: kaledeki her kahraman yuvası savaşta görünür ve oyuncu "kimi koysam" diye düşünür.
+- **Ekonomi:** Bir nöbetçi (Saldırı Tüfeği 7 × 3.6 = 25 ham DPS) %45 verimle ≈ 11 DPS, 10. dalgada (+%4/dalga) ≈ 16 DPS; bu, Sv1 taretin (13 → 20 DPS) seviyesinde. İki nöbetçi erken oyunda DPS'i ≈ %60–80 artırır ama bunun bedeli keşif hurdası ve yorgunluk: kart/taret ekonomisini bozmadan meta kazancı.
+- **Telefonda his / performans:** Hasar yazıları 32 ayrı Label; her biri yazı + dış çizgi ≈ 2 çizim çağrısı ve kendi Tween'i. Kalabalıkta 30 yazı aynı anda açık → ≈ 60 çağrı, yük testindeki 220 çağrının büyük parçası. 6 nöbetçi eklenince mermi ve yazı sayısı artacağı için bu darboğaz önce kapanmalı.
+
+### Analiz 2 — Karşılaştırma ve oyuncu psikolojisi
+- **Grow Castle:** Kalenin üstündeki kahraman yuvaları, kahramanların kendiliğinden saldırması ve altınla seviye atlatma; oyuncunun ana kararı **kimi hangi yuvaya koyacağı** ve kimi geliştireceği. Bizde ekip var ama yuva yok. Ders: ekibi sura çıkar, kararı yuva sayısıyla kıt tut (2 yuva → Sur yükseltmesiyle 6).
+- **Bloons TD hedefleme seçenekleri (First / Last / Close / Strong):** Oyuncu yapay zekâyı mikro yönetmeden **yönlendirir**: tek dokunuşla "en güçlü" veya "en yakın". Bizim nöbetçilere aynı tek düğme yeter: Rolüne göre / En yakın / En güçlü / Boss önce.
+- **Aşırı öldürme önleme (RTS ve TD topluluk tartışmaları):** Her mermi hedefine "gelecek hasar" yazar, kalan canı karşılanan hedef başkalarınca seçilmez. Oyuncu bunu görmez ama "ekip akıllı" hisseder; kalabalıkta DPS artar.
+- **Left 4 Dead Yönetmeni:** Sabit akış yerine gerilim → zirve → sönme → rahatlama. Bizim dalgalar kısa, rahatlama 4–8 sn; adil kural: toplam zombi değişmez. Oyuncu rahatsa "kanattan sürpriz" ile parmağına iş çıkar.
+- **Football Manager maç puanı ve form:** Her maçtan sonra oyuncu başına 1–10 puan, son 5 maçın ortalaması "form", maçın en iyisi yıldız; puan moral ve gelişimi etkiler. Bizim koşu sonunda kimin ne yaptığı görünmüyor: puan ve "koşunun yıldızı", nöbetçi seçimine veri sağlar (kim surda kalmalı?).
+- **PvZ Dr. Zomboss / KR çağırıcı bosslar:** Zombi indiren boss, oyuncuya "kaynağı öldür" önceliğini öğretir; Dev'in ham DPS sınavından farklı bir sınav. Havan ve bombaya anlam verir.
+
+### Karar (bu gece)
+**3 geliştirme**
+1. **Dalga sistemi → Yönetmen (A1):** gerilim ölçümü, zirve/sönme/nefes evreleri, sakin oyuncuya kanattan sürpriz, toplam zombi sabit. *Gerekçe:* §0 Gece A; tekdüze doğum ve "izleme" sorunu.
+2. **Performans v4:** hasar yazıları 32 Label → tek düğüm (`yazilar.gd`), yük testine 6 nöbetçi eklendi. *Gerekçe:* Mehmet Ali'nin 1 numaralı kuralı; yeni nöbetçi mermileri yükü artıracak.
+3. **Koşu sonu v3 / FM: maç puanı ve form:** lider ve nöbetçilere 1–10 puan, koşunun yıldızı, son 5 puan form, puan → moral. *Gerekçe:* Ekip ↔ savaş köprüsü, nöbetçi seçimine bilgi.
+
+**3 yeni özellik**
+1. **Surdaki ekip (B1):** barikatta 2 nöbetçi yuvası; Ekip sekmesinden "Sura koy"; kendi silahı, rolü, özellikleriyle ateş eder; koşu sonunda gelişir ve yorulur. *Gerekçe:* §0 Gece A'nın ilk maddesi, Analiz 1'in en önemli bulgusu.
+2. **Ekip yapay zekâsı (A5):** rol bazlı hedefleme, nöbetçi başına hedef modu, aşırı öldürme önleme (lider ve taretler dahil), boşta Mühendis/Doktor onarımı. *Gerekçe:* §0 Gece A; boşa giden atışlar.
+3. **Boss 2: Kraliçe:** 10, 20, 30. dalgada Dev yerine; geride durur, 4 sn'de 2 koşucu doğurur, 6 doğumdan sonra barikata yürür. *Gerekçe:* Yol haritasında "sıradaki öncelik"; her boss dalgasının aynı olması.
+
 ## 2026-11-06 — Gece 2
 
 ### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)
