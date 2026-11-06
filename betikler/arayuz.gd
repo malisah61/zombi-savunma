@@ -401,8 +401,8 @@ func _duraklat_kur() -> void:
 	_hiz_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.3, 0.3, 0.3, 0.7), Color.WHITE, 14))
 	add_child(_hiz_dugme)
 	_hiz_dugme.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	_hiz_dugme.offset_left = 50
-	_hiz_dugme.offset_right = 130
+	_hiz_dugme.offset_left = -130
+	_hiz_dugme.offset_right = -50
 	_hiz_dugme.offset_top = _ust_bosluk + 4
 	_hiz_dugme.offset_bottom = _ust_bosluk + 80
 	_hiz_dugme.pressed.connect(func() -> void: hiz_istendi.emit())
