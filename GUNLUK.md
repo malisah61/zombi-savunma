@@ -2,6 +2,17 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-06 — Gece 3
+- **Analizler:** (1) Ekip derinliği savaşa hiç çıkmıyor: 8 kişilik ekipten sahada 1 kişi var; dalga içinde doğum tekdüze; kalabalıkta lider + taretler aynı zombiye ateş edip atışların ≈ %45'ini boşa harcıyor; her boss dalgası aynı (Dev). (2) Grow Castle kale yuvaları, Bloons hedefleme modları, aşırı öldürme önleme, L4D yönetmeni, FM maç puanı/form, PvZ Zomboss'un çağırıcı boss dersi.
+- **Araştırılanlar:** yukarıdakiler + FM takım uyumu ve başarım/ödül tasarımı; Fikir Havuzu'na sayılarıyla **Takım kimyası** ve **Başarımlar** yazıldı. Bazı kaynak sayfaları (Bloons wiki, SpringRTS) bot korumasıyla açılamadı; formüller bizim tasarımımız, TASARIM §17'de belirtildi.
+- **3 geliştirme:** Yönetmen (dalga sistemi: gerilim, zirve/sönme/nefes, kanattan sürpriz, toplam zombi sabit, dalga başı en çok 15 sn mola); Performans v4 (32 Label → tek düğüm `yazilar.gd`); Koşu sonu v3 / FM maç puanı (1–10 puan, koşunun yıldızı, son 5 puan form, puan → moral).
+- **3 yeni özellik:** Surdaki ekip (2 nöbetçi yuvası, Ekip'ten "Sura koy", kendi silahıyla %45 verim + dalga başı %4, koşu sonu yarı deneyim + yorgunluk); Ekip yapay zekâsı (rol hedeflemesi, 4 hedef modu, aşırı öldürme önleme lider ve taretlerde de, boşta Mühendis/Doktor onarır); Boss 2 Kraliçe (10/20/30. dalga, geride durup 6 kez 2 koşucu doğurur, sonra saldırır).
+- **Ölçüm (bulut, yazılım ekranı):** 120 zombi + 6 nöbetçi: 29.0 FPS, 244 çizim çağrısı (önceki test 120 zombi, nöbetçisiz: 25.8 FPS, 220 çağrı). Yani 6 yeni atıcı ve mermileri eklendiği hâlde yazıların tek düğüme inmesiyle FPS düşmedi.
+- **Bot (boş kayıt, bulut, iki tur):** nöbetçisiz 35/40 ve 35/40. dalga; 2 nöbetçiyle 40/38 ve 35/35. Nöbetçiler dengeyi bozmuyor (bot en güçlü kart yolunu bulduğu için fark küçük); 35. dalga duvarı hâlâ sık, izlenecek. Son yük testi: 53 FPS, 262 çağrı (bulut makinesi değişken).
+- **Hata düzeltmesi aynı gece:** ilk sürümde Kraliçe geride dururken uzaktan barikata vuruyordu; düzeltildi. Maç puanında lider kart aldığı için nöbetçiler hep düşük çıkıyordu; beklenen pay ağırlıklı yapıldı (lider 2, nöbetçi 1).
+- **Bilinen sorunlar:** Gerçek telefonda FPS hâlâ ölçülmedi. Nöbetçi silahı yalnızca kişinin üstündeki silahtır; nöbetçiye silah kuşandırma ekranı yok (Envanter yalnız lidere kuşandırıyor). Yönetmenin zorluk tavanı, zorluk seçimi (§8) gelince bağlanacak. Kraliçe'nin yavruları görev "boss" sayımına girmez (bilinçli).
+- **Sıradaki:** §0 Gece B: Sur kalıcı yükseltmesi (yuva 2 → 6), Kampanya modu, altınla seviye; nöbetçiye silah kuşandırma; Takım kimyası.
+
 ## 2026-11-06 — Gündüz (Mehmet Ali'nin isteği: yapay zekâ, Grow Castle tarzı, hızlandırma)
 - **Eklenen:** Oyun hızı x1/x2/x3 düğmesi (HUD, duraklatmanın yanında; seçim kaydedilir). x3'te mermiler zombinin
   içinden geçmesin diye çarpışma doğru parçası testine çevrildi; boss ağır çekimi hıza göre ölçekleniyor.
