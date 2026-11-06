@@ -2,6 +2,16 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-06 — Gece 2
+- **Analizler:** (1) Taretler 15. dalgaya kadar altını yutuyor ama sonrasında ≈ 800 altın boşa birikiyor; hurdanın uzun vadeli yeri yok; bitiş ekranı neden öldüğünü söylemiyor; düşmanların hepsi aynı şeyi sınıyor. (2) KR'de küçük kalıcı adımlar, Hades'te "az güç + çok seçim", FM'de beklentiye ve kişiliğe göre konuşma, patlayıcı düşmanın iki yönlü olması.
+- **Araştırılanlar:** KR yükseltme ağacı, meta çeşitlilik/güç dengesi, fark türü ve ölçeği, FM konuşması, Hades Heat, KR erken çağırma; plana sayılarıyla Tehdit Seviyesi, Erken dalga çağırma, Boss Kraliçe yazıldı.
+- **3 geliştirme:** Performans v3 (52 parçacık düğümü → 1 düğüm, kahraman dokuya pişti); Kule v2 (3. seviyeden sonra 240 altına Havan veya Ağır Taret, seçim oyunu durdurur); Koşu sonu v2 (barikatı en çok yiyen tür + öneri, sıradaki Laboratuvar hedefi, ilk 3 koşuda dalga dalga ipucu). Ayrıca taret düğmesi üstünden sürükleme hatası kapandı.
+- **3 yeni özellik:** Laboratuvar (yeni LAB sekmesi, 3 dal, 9 düğüm + 3 kural değiştiren son); Patlayan zombi (8. dalga; barikatta 34 hasar, kalabalıkta vurulursa zincirleme alan hasarı); Koşu sonu ekip konuşması (Öv / Sert konuş / Sessiz kal). Görev havuzuna "patlayan öldür" eklendi.
+- **Ölçüm:** Aynı makinede eski/yeni yük testi: çizim çağrısı 252 → 219, yazılım ekranında FPS değişmedi (≈ 21.5; bu ölçüm işlemci render'ına bağlı, gerçek telefonu temsil etmez). Bulut: 25.8 FPS, 220 çağrı, yeni testte 2 uzman taret ve 8 patlama da var. Kalan çağrıların önemli kısmı hasar yazıları (Label).
+- **Bot:** Boş kayıtla 4 koşu, hepsi 35. dalgada (7. Dev) düştü, 13–14 kart. Bot altını hep doğru harcıyor ve yeteneği hep basıyor; gerçek oyuncu daha erken düşer. Tüm botların aynı dalgada düşmesi 35. dalgada sert bir duvar var demek, izlenecek.
+- **Bilinen sorunlar:** Gerçek telefonda FPS hâlâ ölçülmedi. Patlayanın yanıp sönmesi sadece renk, sesi yok. `menüye dön` ile biten koşuda konuşma ekranı çıkmaz (bilinçli). Ekip konuşması sayıları bizim tahminimiz, denge verisi yok.
+- **Sıradaki:** Boss Kraliçe (Havan ile eşleşir), CC0 sprite (Görsel v2), Tehdit Seviyesi.
+
 ## 2026-11-05 — Gündüz turu (elle başlatıldı, Gece 1'den birkaç saat sonra)
 - **Analizler:** (1) Ekonomi düzeldi ama oyuncunun eylemi yok, altının yatırım yeri yok, keşif raporu kanaat vermiyor. (2) KR'deki büyü + kule ayrımı, FM mentorluk ve gözlemci notu, cezasız günlük hedef eksik.
 - **Araştırılanlar:** KR büyü ve kule döngüsü, günlük görev riskleri, FM mentorluk, Kenney CC0 sesleri; ek olarak Laboratuvar ve hava olayı sayılarıyla plana yazıldı.
