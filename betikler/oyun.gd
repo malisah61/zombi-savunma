@@ -64,6 +64,7 @@ var yukseklik := 1280.0
 var barikat_y := 1010.0
 
 var durum: Durum = Durum.MENU
+var oyun_hizi := 1  # 1, 2 veya 3 (Engine.time_scale)
 var dalga := 0
 var altin := 0
 var oldurme := 0
@@ -201,6 +202,7 @@ func _ready() -> void:
 	arayuz.basla_istendi.connect(_yeni_oyun)
 	arayuz.menu_istendi.connect(_menuye_don)
 	arayuz.duraklat_istendi.connect(_duraklat)
+	arayuz.hiz_istendi.connect(_hiz_degistir)
 	arayuz.yeniden_cek_istendi.connect(_yeniden_cek)
 	arayuz.aktif_istendi.connect(aktif_kullan)
 	arayuz.kule_istendi.connect(kule_al)
@@ -345,6 +347,9 @@ func _process(delta: float) -> void:
 func _yeni_oyun() -> void:
 	get_tree().paused = false
 	_temizle()
+	oyun_hizi = clampi(int(profil.ayar("hiz")), 1, 3)
+	arayuz.hiz_goster(oyun_hizi)
+	Engine.time_scale = float(oyun_hizi)
 	st = profil.kosu_istatistigi()
 	kart_seviye.clear()
 	barikat.max_can = float(st["barikat_max"])
@@ -503,6 +508,15 @@ func _ogret() -> void:
 func can_carpani() -> float:
 	var gec := maxf(float(dalga - 15), 0.0)
 	return (1.0 + 0.12 * (dalga - 1) + 0.03 * gec * gec) * pow(1.08, maxf(float(dalga - 25), 0.0))
+
+
+## Oyun hızı x1 → x2 → x3 (Grow Castle tarzı). Seçim kaydedilir, sonraki koşularda da geçerli olur.
+func _hiz_degistir() -> void:
+	oyun_hizi = oyun_hizi % 3 + 1
+	profil.ayar_degistir("hiz", oyun_hizi)
+	arayuz.hiz_goster(oyun_hizi)
+	if durum == Durum.OYUN or durum == Durum.KART:
+		Engine.time_scale = float(oyun_hizi)
 
 
 func _duraklat(acik: bool) -> void:
@@ -709,8 +723,9 @@ func _boss_oldu(z) -> void:
 	for i in 5:
 		_parcacik("kan_buyuk", z.position + Vector2(randf_range(-60, 60), randf_range(-60, 60)))
 	# kısa ağır çekim: büyük an hissedilsin
-	Engine.time_scale = 0.35
-	get_tree().create_timer(0.5, true, false, true).timeout.connect(func() -> void: Engine.time_scale = 1.0)
+	Engine.time_scale = 0.35 * oyun_hizi
+	get_tree().create_timer(0.5, true, false, true).timeout.connect(func() -> void:
+		Engine.time_scale = float(oyun_hizi) if (durum == Durum.OYUN or durum == Durum.KART) else 1.0)
 
 
 func asit_at(konum: Vector2, hasar: float) -> void:

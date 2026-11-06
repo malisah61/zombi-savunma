@@ -88,6 +88,57 @@ iki dallı uzmanlık (Kingdom Rush gibi).
 
 ## 0. Oyuncu İstekleri (önce bunlar yapılır)
 Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; bitenleri silmez, [x] yapar.
+
+### ★ (2026-11-06) EN ÖNCELİKLİ: Yapay zekâ + Grow Castle tarzı + hızlandırma
+Mehmet Ali: "Zombiye yapay zekâ ekle, böyle özellikleri düşün, oyunu hızlandırma, Grow Castle gibi olsa daha güzel olur."
+Gece görevi bu bloğu **yukarıdan aşağı** sırayla yapar (her gece 3 geliştirme + 3 yeni özellik kuralına bu maddelerden
+seçerek). Hepsi internetsiz, ücretsiz, telefonun içinde çalışan oyun yapay zekâsıdır (dil modeli değil).
+Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yanına eklenir.
+
+- [x] **Hız x1/x2/x3** (2026-11-06, gündüz): HUD'da duraklatmanın yanında, seçim kaydedilir; boss ağır çekimi hıza
+  göre ölçeklenir; mermi çarpışması doğru parçası testine çevrildi (x3'te zombinin içinden geçmesin).
+
+**Gece A (ilk): surdaki ekip + ekip yapay zekâsı + yönetmen**
+- [ ] **B1 Surdaki ekip (yeni):** Barikatın üstünde nöbetçi yuvaları (başta 2, Sur seviyesiyle 6'ya kadar). Ekip
+  sekmesinden hayatta kalanlar yuvalara konur; koşuda hepsi aynı anda kendi silahı, rolü ve özellikleriyle ateş eder.
+  Parmakla yönettiğin asker "lider" olarak kalır. Yuvadaki kişi de koşu sonunda deneyim/gelişim alır (FM ↔ savaş bağı).
+  Performans: nöbetçiler kahraman gibi pişmiş doku + havuzdaki mermiler; 6 nöbetçi × ateş hızı ile çizim çağrısı ölç.
+- [ ] **A5 Ekip yapay zekâsı (yeni):** Her nöbetçi rolüne göre hedef seçer: Avcı → boss/zırhlı/kusan, Pompalı/Asker →
+  barikata en yakın, Mühendis → boşken barikat onarır (saniyede %0.3), Doktor → yorgunluk/moral. **Aşırı öldürme
+  önleme:** her zombiye "beklenen hasar" yazılır; beklenen ≥ kalan can ise diğerleri başka hedef seçer (Bloons/KR
+  hedefleme modlarından esinli). Her nöbetçiye ayarlanabilir hedef modu: En yakın / En güçlü / Boss önce.
+- [ ] **A1 Yönetmen (geliştirme: dalga sistemi):** Left 4 Dead'in Yapay Zekâ Yönetmeni gibi "gerilim" ölçer
+  (barikat hasar hızı + ekrandaki zombi ağırlığı + son 5 sn'de kaçan zombiler). Döngü: Yükselme → Zirve (3–5 sn) →
+  Sönme → Nefes (4–8 sn). Gerilim düşükken doğumu %30'a kadar hızlandırır ya da kanattan 3–5 koşucu sürprizi
+  gönderir; yüksekken nefes aldırır. **Adil kural:** dalganın toplam zombisi değişmez, sadece zamanlama ve yön değişir.
+  Zorluk seviyesi (§8) yönetmenin tavanını belirler.
+
+**Gece B: Grow Castle kalesi ve kampanya**
+- [ ] **B2 Sur (kale) kalıcı yükseltme:** Sur seviyesi 1→50; can +%8/sv; her 8 seviyede +1 nöbetçi yuvası;
+  maliyet ≈ 40·1.16^(sv−1) hurda. Menüde görsel olarak büyüyen barikat.
+- [ ] **B3 Kampanya modu (Grow Castle dalga ilerlemesi):** Menüde iki mod: "Hayatta Kalma" (bugünkü koşu) ve
+  "Kampanya". Kampanyada dalga sayacı kalıcıdır; her SAVAŞ tek dalga; kazanınca sıradaki açılır, kaybedince aynı
+  dalga tekrar (ceza yok); her 10. dalga boss; dalga başına altın + hurda. Kartlar kampanyada kalıcı değil, dalga
+  başı 1 kart seçilir.
+- [ ] **B5 Altınla seviye (geliştirme: ekip):** Grow Castle'daki kahraman yükseltmesi gibi her hayatta kalanın
+  "Güç seviyesi" altınla artar (hasar +%10/sv, maliyet 50·1.18^sv). FM özellikleri (antrenman) ayrı eksen kalır.
+
+**Gece C: akıllı zombiler**
+- [ ] **A2 Zayıf nokta hedefleme:** Barikat 6 bölüme ayrılır, her bölümün canı ayrı ve görünür. Zombiler en zayıf
+  bölüme yönelir; bölüm kırılırsa zombi oradan geçip "üs canı"na vurur. Oyuncu kararı: hangi bölüme dokunup onaracak.
+- [ ] **A3 Sürü davranışı:** hafif boids (ayrılma + hizalanma, komşu araması ızgara ile, O(n)); koşucular askerin
+  baktığı tarafın tersinden kanat açar; kusan menzilde kalır, hedef alınınca yana kayar; zırhlılar önde sıra olur,
+  arkalarına koşucular saklanır (zırhlı ölünce dağılırlar).
+- [ ] **A4 Boss aşamaları:** can %66 / %33'te davranış değişir (hızlanma, çağırma, barikata sıçrama + uyarı işareti).
+
+**Gece D: rahat oyun (Grow Castle hissi)**
+- [ ] **B4 Otomatik savaş + çevrimdışı kazanç:** Kampanyada geçilmiş dalgayı otomatik tekrarla (ekip yapay zekâsıyla,
+  lider de otomatik nişan alır). Kasaba binaları (Hurda Madeni, Çiftlik) saatte üretir, en fazla 8 saat birikir;
+  açılışta "Sen yokken: +X hurda" ekranı. Saat hilesine karşı: geri giden saat → 0 kazanç.
+- [ ] **A6 Akıllı otomatik kart seçimi:** oto modda kartı yapay zekâ seçer: karşılaşılan zombi karışımına göre
+  (zırhlı oranı yüksek → Zırh Delici), evrim yoluna ve ekonomiye göre puanlar. Oyuncu kapatabilir.
+- [ ] **B6 Kasaba sekmesi:** Atölye, Antrenman Sahası, Revir, Gözcü Kulesi, Maden (§16'daki tesislerle birleşir).
+- [ ] **B7 Hız kilitleri:** x2 baştan açık, x3 kampanyada 10. dalgayı geçince açılır (hedef duygusu).
 - [x] (2026-11-05) Telefon performansı ve görüntü kalitesi: kasma, hata, donma olmasın. → v1 yapıldı (bkz. §12).
 - [x] (2026-11-05) Ana menü. → Oyna / Ekip / Envanter / Keşif / Ayarlar.
 - [x] (2026-11-05) FM tarzı gelişim, scout (keşif), envanter, silah, RPG özellikleri. → v1 yapıldı (bkz. §13–15).
@@ -246,6 +297,18 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-06 (gündüz, yapay zekâ + Grow Castle isteği)
+- Left 4 Dead Yapay Zekâ Yönetmeni: oyuncu başına "duygusal yoğunluk" hasar ve yakın ölümlerle artar, zamanla
+  söner; döngü Yükselme → Zirveyi koru (3–5 sn) → Zirve sönümü → Rahatlama (30–45 sn); "roller coaster" hissi
+  (Valve, Mike Booth GDC 2009 sunumu; ayrıca [Shacknews: Evolve ve L4D yönetmeni](https://shacknews.com/article/82787/how-evolve-assures-action-peaks-and-valleys),
+  [Game Developer: The Discomfort Zone](https://www.gamedeveloper.com/design/the-discomfort-zone-the-hidden-potential-of-valve-s-ai-director)).
+  Bizim dalgalar kısa olduğu için rahatlama 4–8 sn'ye ölçeklendi.
+- Grow Castle: kale yükseltmesi, kalede kahraman yuvaları, kahramanları altınla seviye atlatma, kasaba okçuları,
+  koloniler, otomatik savaş, hızlandırma, boss dalgaları; topluluk rehberleri yapı (build) çeşitliliğini ve altın
+  kasma döngüsünü öne çıkarıyor ([r/GrowCastle rehber başlığı](https://redlib.ssps.io/r/GrowCastle/comments/nyynyt/official_wave_build_guide_skill_tree_guide_and),
+  [App Store](https://apps.apple.com/za/app/grow-castle/id1133478462)). Kesin sayılar kaynaklarda yok; maliyetler bizim tahminimiz,
+  bot denge testiyle ayarlanmalı.
+
 ### 2026-11-06 (Gece 2)
 - Kingdom Rush kalıcı yükseltmeler: 6 ağaç, ağaç başı 5 yükseltme, tekil etki küçük (+%10 can, +%15 hasar), maliyet 1–4 yıldız. — [KR Upgrades](https://kingdomrushtd.fandom.com/wiki/Upgrades)
 - Meta çeşitlilik vs güç: Slay the Spire/Balatro taban güç vermez, Hades ortada; saf güç zorluğu kaydırır, saf çeşitlilik kısa oyunda ilerleme hissini zayıflatır. — [Meta as variety](https://saschb2b.github.io/game-mechanics/concepts/meta-as-variety-not-power)

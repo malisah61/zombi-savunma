@@ -2,6 +2,13 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-06 — Gündüz (Mehmet Ali'nin isteği: yapay zekâ, Grow Castle tarzı, hızlandırma)
+- **Eklenen:** Oyun hızı x1/x2/x3 düğmesi (HUD, duraklatmanın yanında; seçim kaydedilir). x3'te mermiler zombinin
+  içinden geçmesin diye çarpışma doğru parçası testine çevrildi; boss ağır çekimi hıza göre ölçekleniyor.
+- **Plan:** `TASARIM.md` §0'a en öncelikli blok yazıldı: surdaki ekip (nöbetçi yuvaları), ekip yapay zekâsı, yönetmen,
+  sur yükseltmesi, kampanya modu, altınla seviye, zayıf nokta hedefleme, sürü davranışı, boss aşamaları,
+  otomatik savaş + çevrimdışı kazanç, akıllı kart seçimi, kasaba, hız kilitleri. Gece görevi bunları sırayla yapar.
+
 ## 2026-11-06 — Gece 2
 - **Analizler:** (1) Taretler 15. dalgaya kadar altını yutuyor ama sonrasında ≈ 800 altın boşa birikiyor; hurdanın uzun vadeli yeri yok; bitiş ekranı neden öldüğünü söylemiyor; düşmanların hepsi aynı şeyi sınıyor. (2) KR'de küçük kalıcı adımlar, Hades'te "az güç + çok seçim", FM'de beklentiye ve kişiliğe göre konuşma, patlayıcı düşmanın iki yönlü olması.
 - **Araştırılanlar:** KR yükseltme ağacı, meta çeşitlilik/güç dengesi, fark türü ve ölçeği, FM konuşması, Hades Heat, KR erken çağırma; plana sayılarıyla Tehdit Seviyesi, Erken dalga çağırma, Boss Kraliçe yazıldı.

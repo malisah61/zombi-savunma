@@ -28,14 +28,18 @@ func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int
 
 
 func _process(delta: float) -> void:
+	var once := position
 	position += yon * hiz * delta
 	if position.y < -60.0 or position.y > oyun.yukseklik + 60.0 or position.x < -60.0 or position.x > oyun.genislik + 60.0:
 		oyun.mermi_birak(self)
 		return
+	# Çarpışma: bu karede gidilen yol (doğru parçası) zombiye değiyor mu? Oyun x2/x3 hızdayken
+	# mermi bir karede zombiden uzun yol alabilir; tek noktaya bakmak "içinden geçme" yaratır.
 	for z in oyun.zombiler:
 		if z.olu or _vurulanlar.has(z):
 			continue
-		if position.distance_squared_to(z.position) < z.yaricap * z.yaricap:
+		var en_yakin: Vector2 = Geometry2D.get_closest_point_to_segment(z.position, once, position)
+		if en_yakin.distance_squared_to(z.position) < z.yaricap * z.yaricap:
 			_vurulanlar.append(z)
 			oyun.isabet(z, hasar, kritik, position, zirh_gec)
 			delme_kalan -= 1

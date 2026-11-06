@@ -7,6 +7,7 @@ signal onar_istendi
 signal basla_istendi
 signal menu_istendi
 signal duraklat_istendi(duraklat: bool)
+signal hiz_istendi
 signal yeniden_cek_istendi
 signal aktif_istendi
 signal kule_istendi(i: int)
@@ -27,6 +28,7 @@ var _kart_paneli: Control
 var _kart_kutusu: VBoxContainer
 var _kart_baslik: Label
 var _duraklat_dugme: Button
+var _hiz_dugme: Button
 var _duraklat_paneli: Control
 var _fps_etiket: Label
 var _ipucu: Label
@@ -364,6 +366,14 @@ func _tam_ekran_panel(renk: Color) -> Control:
 	return p
 
 
+func hiz_goster(h: int) -> void:
+	_hiz_dugme.text = "x%d" % h
+	var renk := Color(1, 1, 1) if h == 1 else (Color(1, 0.85, 0.3) if h == 2 else Color(1, 0.45, 0.3))
+	_hiz_dugme.add_theme_color_override("font_color", renk)
+	_hiz_dugme.add_theme_color_override("font_pressed_color", renk)
+	_hiz_dugme.add_theme_color_override("font_hover_color", renk)
+
+
 func _duraklat_kur() -> void:
 	_duraklat_dugme = Button.new()
 	_duraklat_dugme.text = "II"
@@ -380,6 +390,22 @@ func _duraklat_kur() -> void:
 	_duraklat_dugme.offset_top = _ust_bosluk + 4
 	_duraklat_dugme.offset_bottom = _ust_bosluk + 80
 	_duraklat_dugme.pressed.connect(func() -> void: duraklat_istendi.emit(true))
+
+	# Oyun hızı (Grow Castle'daki gibi): x1 → x2 → x3
+	_hiz_dugme = Button.new()
+	_hiz_dugme.text = "x1"
+	_hiz_dugme.focus_mode = Control.FOCUS_NONE
+	_hiz_dugme.add_theme_font_size_override("font_size", 30)
+	_hiz_dugme.add_theme_stylebox_override("normal", st)
+	_hiz_dugme.add_theme_stylebox_override("hover", st)
+	_hiz_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.3, 0.3, 0.3, 0.7), Color.WHITE, 14))
+	add_child(_hiz_dugme)
+	_hiz_dugme.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_hiz_dugme.offset_left = 50
+	_hiz_dugme.offset_right = 130
+	_hiz_dugme.offset_top = _ust_bosluk + 4
+	_hiz_dugme.offset_bottom = _ust_bosluk + 80
+	_hiz_dugme.pressed.connect(func() -> void: hiz_istendi.emit())
 
 	_duraklat_paneli = _tam_ekran_panel(Color(0, 0, 0, 0.7))
 	var baslik := _etiket(80, Color(0.9, 0.9, 0.9))
@@ -540,6 +566,7 @@ func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bo
 		onar_fiyat = fiyat
 		_onar_dugme.text = "ONAR  %d altın" % onar_fiyat
 	_duraklat_dugme.visible = oyunda
+	_hiz_dugme.visible = oyunda
 	_dalga_etiket.text = "DALGA %d" % dalga
 	_altin_etiket.text = "%d ALTIN" % altin
 	_oldurme_etiket.text = "%d zombi" % oldurme

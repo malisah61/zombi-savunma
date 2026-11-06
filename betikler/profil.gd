@@ -16,7 +16,7 @@ const VARSAYILAN := {
 	"envanter": [],
 	"aktif": "",
 	"kesif": {"aktif": {}, "raporlar": []},
-	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true},
+	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true, "hiz": 1},
 	"rekor": 0,
 	"istatistik": {"kosu": 0, "oldurme": 0, "boss": 0},
 	"gorulen": [],  # tanıtımı yapılmış zombi türleri
