@@ -61,6 +61,14 @@ static func _susleme_govde(ci: CanvasItem, tur: String, r: float) -> void:
 			ci.draw_circle(Vector2(-r * 0.16, -r * 0.34), r * 0.22, Color("ffd24a"))
 			ci.draw_line(Vector2(r * 0.4, -r * 0.7), Vector2(r * 0.62, -r * 1.02), Color("2b2b2b"), 3.0, true)
 			ci.draw_circle(Vector2(r * 0.64, -r * 1.05), r * 0.12, Color("ffe08a"))
+		"kralice":
+			# pelerin ve sırtındaki yumurta keseleri
+			ci.draw_circle(Vector2(0, -r * 0.35), r * 0.85, Color("3d1f33"))
+			for i in 4:
+				var a := PI * (1.15 + i * 0.23)
+				ci.draw_circle(Vector2.from_angle(a) * r * 0.62 + Vector2(0, -r * 0.1), r * 0.2, Color("c9d97a"))
+				ci.draw_circle(Vector2.from_angle(a) * r * 0.62 + Vector2(-r * 0.04, -r * 0.14), r * 0.08, Color("eef5b0"))
+			ci.draw_circle(Vector2(0, -r * 0.05), r * 0.5, Color("6e3a5c"))
 		"dev":
 			# kaslı omuzlar, bel zinciri ve dikişler
 			var et := Color("6d7f4c")
@@ -83,6 +91,13 @@ static func _susleme_kafa(ci: CanvasItem, tur: String, r: float, kafa: Vector2) 
 			# damlayan ağız
 			ci.draw_circle(kafa + Vector2(0, r * 0.38), r * 0.15, Color("b6f04a"))
 			ci.draw_circle(kafa + Vector2(r * 0.06, r * 0.56), r * 0.07, Color("b6f04a"))
+		"kralice":
+			# taç (üstten bakış: başın çevresinde altın sivri uçlar ve ortada yakut)
+			var altin := Color("e8c24a")
+			for i in 6:
+				var u := kafa + Vector2.from_angle(TAU * i / 6.0) * r * 0.36
+				ci.draw_rect(Rect2(u.x - r * 0.08, u.y - r * 0.08, r * 0.16, r * 0.16), altin)
+			ci.draw_circle(kafa, r * 0.09, Color("d13a5a"))
 		"dev":
 			# kırık diş ve yara izi
 			ci.draw_rect(Rect2(kafa.x - r * 0.16, kafa.y + r * 0.34, r * 0.1, r * 0.13), Color("e8e0c0"))

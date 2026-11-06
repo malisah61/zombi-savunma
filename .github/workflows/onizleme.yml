@@ -37,8 +37,18 @@ jobs:
       - name: Ekran görüntüleri
         run: |
           rm -rf onizleme/oyun
-          timeout 200 xvfb-run -a -s "-screen 0 720x1280x24" ./godot --path . --rendering-driver opengl3 --resolution 720x1280 -- --onizleme=onizleme/oyun 2>&1 | grep -vE "^\s*$" | tail -40
+          timeout 200 xvfb-run -a -s "-screen 0 720x1280x24" ./godot --path . --rendering-driver opengl3 --resolution 720x1280 -- --onizleme=onizleme/oyun 2>&1 | grep -vE "^\s*$" > kayit.txt || true
+          tail -60 kayit.txt
+          echo "Hata sayısı: $(grep -cE 'SCRIPT ERROR|Parse Error' kayit.txt || true)"
+          grep -E -A3 "SCRIPT ERROR|Parse Error" kayit.txt | head -40 || true
           ls -la onizleme/oyun
+
+      - name: Denge botu (bilgi amaçlı)
+        run: |
+          rm -rf ~/.local/share/godot/app_userdata
+          timeout 420 ./godot --headless --path . --fixed-fps 60 -- --bot=2 2>&1 | grep -E "BOT|SCRIPT ERROR|Parse Error" || true
+          rm -rf ~/.local/share/godot/app_userdata
+          timeout 420 ./godot --headless --path . --fixed-fps 60 -- --bot=2 --bot_ekip 2>&1 | grep -E "BOT|SCRIPT ERROR|Parse Error" || true
 
       - name: Depoya kaydet
         run: |

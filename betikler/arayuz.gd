@@ -665,6 +665,12 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 		c.queue_free()
 	if ozet.has("neden"):
 		_odul_ekle(String(ozet["neden"]), Color(1, 0.65, 0.5), 24)
+	if ozet.has("puanlar"):
+		# FM maç puanı: lider ve surdakiler; en iyi olan "koşunun yıldızı"
+		var parca: Array[String] = []
+		for p in ozet["puanlar"]:
+			parca.append("%s %.1f%s" % [p["ad"], float(p["puan"]), " ★" if p.has("yildiz") else ""])
+		_odul_ekle("Puan: " + "  ·  ".join(parca), Color(0.95, 0.9, 0.6), 24)
 	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 28)
 	_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 28)
 	if ozet.has("hedef"):

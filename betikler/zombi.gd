@@ -21,11 +21,17 @@ const TURLER := {
 		"gomlek": [Color("7a3b1f"), Color("6b2f2f")], "ten": Color("b5a55a")},
 	"dev": {"can": 480.0, "hiz": 27.0, "hasar": 32.0, "yaricap": 76.0, "altin": 40, "oncelik": 140.0, "boss": true,
 		"zirh": 2.0, "zirh_artis": 0.1, "gomlek": [Color("4d4436")], "ten": Color("7d9a58")},
+	# Boss 2: geride durur, 4 sn'de bir 2 koşucu doğurur; doğurma hakkı bitince barikata yürür.
+	"kralice": {"can": 520.0, "hiz": 22.0, "hasar": 26.0, "yaricap": 66.0, "altin": 50, "oncelik": 140.0, "boss": true,
+		"kralice": true, "gomlek": [Color("5a2f4a")], "ten": Color("8fa070")},
 }
 const DEV_HAZIRLIK := 1.3  # Dev'in vuruşunu işaret ettiği süre: oyuncu görür, onarıma koşar
 const DEV_ARA := 1.5
 const KUSMA_ARA := 2.8
 const PATLAMA_UYARI := 260.0
+const KRALICE_ARA := 4.0
+const KRALICE_HAK := 6      # 6 × 2 = 12 koşucu, sonra kendisi saldırır
+const KRALICE_DURUS := 420.0
 
 var oyun  # oyun.gd
 var tur := "yuruyen"
@@ -39,6 +45,10 @@ var zirh := 0.0
 var oncelik := 0.0
 var boss := false
 var olu := false
+var beklenen := 0.0  # Ekip yapay zekâsı: yoldaki mermilerin bu zombiye getireceği hasar
+var kralice := false
+var _dogurma_sayac := 0.0
+var _dogurma_hak := 0
 
 var _gomlek := Color.GRAY
 var _ten := Color.GREEN
@@ -80,6 +90,7 @@ func kur(o, t: String, can_carpani: float, hasar_carpani: float = 1.0) -> void:
 	_cagirdi = false
 	_yanma_kalan = 0.0
 	_yakilmis = false
+	beklenen = 0.0
 	create_tween().tween_property(self, "modulate:a", 1.0, 0.6)
 	var veri: Dictionary = TURLER[t]
 	max_can = float(veri["can"]) * can_carpani
@@ -91,6 +102,9 @@ func kur(o, t: String, can_carpani: float, hasar_carpani: float = 1.0) -> void:
 	zirh = float(veri.get("zirh", 0.0)) + float(veri.get("zirh_artis", 0.0)) * oyun.dalga
 	oncelik = float(veri.get("oncelik", 0.0))
 	boss = bool(veri.get("boss", false))
+	kralice = bool(veri.get("kralice", false))
+	_dogurma_sayac = 2.5
+	_dogurma_hak = KRALICE_HAK
 	var gomlekler: Array = veri["gomlek"]
 	_varyant = randi() % gomlekler.size()
 	_gomlek = gomlekler[_varyant]
@@ -103,6 +117,8 @@ func kur(o, t: String, can_carpani: float, hasar_carpani: float = 1.0) -> void:
 	_durus_y = oyun.barikat_y - float(veri["durus"]) + randf_range(-50.0, 50.0) if veri.has("durus") else oyun.barikat_y - yaricap - 6.0
 	if boss:
 		_durus_y = oyun.barikat_y - yaricap - 24.0
+	if kralice:
+		_durus_y = oyun.barikat_y - KRALICE_DURUS
 	queue_redraw()
 
 
@@ -116,6 +132,8 @@ func _process(delta: float) -> void:
 	_yanma_isle(delta)
 	if cizim_gerek or _yakilmis:
 		_renk_guncelle()
+	if kralice and _dogurma_hak > 0 and position.y > 40.0:
+		_kralice_isle(delta)
 	if tur == "patlayan" and position.y > _durus_y - PATLAMA_UYARI:
 		# barikata yaklaşınca kırmızı yanıp söner: "şimdi vur" işareti
 		self_modulate = _taban_renk.lerp(Color(2.2, 0.5, 0.25), 0.5 + 0.5 * sin(_zaman * 14.0))
@@ -164,6 +182,19 @@ func _boss_saldir(delta: float) -> void:
 	if _saldiri_sayac <= 0.0:
 		_hazirlik = DEV_HAZIRLIK
 		oyun.ses("boss")
+
+
+## Kraliçe: belli aralıkla yavru doğurur (doğum oyun.gd'de, güvenli anda). Hakkı bitince barikata yürür.
+func _kralice_isle(delta: float) -> void:
+	_dogurma_sayac -= delta
+	if _dogurma_sayac > 0.0:
+		return
+	_dogurma_sayac = KRALICE_ARA
+	_dogurma_hak -= 1
+	_hamle = 1.2
+	oyun.kralice_dogurdu(self)
+	if _dogurma_hak <= 0:
+		_durus_y = oyun.barikat_y - yaricap - 24.0
 
 
 func _yanma_isle(delta: float) -> void:

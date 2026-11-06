@@ -330,6 +330,15 @@ func _oyna_sekmesi() -> void:
 		sk.add_child(_etiket("%s %s  (Sv %d)" % [n["ad"], Veri.SILAHLAR[s["taban"]]["ad"], int(s["seviye"])], 32, n["renk"]))
 		sk.add_child(_etiket("Güç: %d" % Veri.silah_gucu(s), 26))
 
+	var sur: Array = profil.nobetci_listesi()
+	var nk := _kart(Color(0.85, 0.65, 0.3))
+	nk.add_child(_etiket("SURDAKİ EKİP (%d/%d yuva)" % [sur.size(), Veri.NOBETCI_YUVA], 22, Color(0.7, 0.7, 0.65)))
+	if sur.is_empty():
+		nk.add_child(_etiket("Sur boş. Ekip sekmesinden birini \"Sura koy\": o da kendi silahıyla ateş eder.", 22, Color(1, 0.8, 0.5)))
+	for x in sur:
+		var mdl: Dictionary = Veri.HEDEF_MODLARI[String(x.get("hedef_modu", "rol"))]
+		nk.add_child(_etiket("%s · %s · hedef: %s" % [String(x["ad"]), Veri.ROLLER[x["rol"]]["ad"], mdl["ad"]], 24, Color(1, 0.88, 0.6)))
+
 	var b := _kart(Color(0.45, 0.7, 0.3))
 	b.add_child(_dugme("SAVAŞA BAŞLA", Color(0.35, 0.65, 0.2), func() -> void: oyna_istendi.emit(), 44))
 	b.add_child(_etiket("En iyi: %d. dalga · Toplam %d zombi" % [int(profil.veri["rekor"]),
@@ -396,7 +405,7 @@ func _kesif_guncelle() -> void:
 
 func _ekip_sekmesi() -> void:
 	var ekip: Array = profil.veri["ekip"]
-	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Oynayan, maç deneyimiyle hızlı; diğerleri antrenmanla yavaş gelişir. Gençler daha hızlı gelişir." % [ekip.size(), Veri.EKIP_SINIRI], 22, Color(0.75, 0.75, 0.7)))
+	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Lider maç deneyimiyle hızlı, surdakiler yarı hızla, diğerleri antrenmanla yavaş gelişir. Surda %d yuva var: oraya koyduğun kişi kendi silahıyla ateş eder." % [ekip.size(), Veri.EKIP_SINIRI, Veri.NOBETCI_YUVA], 22, Color(0.75, 0.75, 0.7)))
 	for h in ekip:
 		_hayatta_kalan_karti(h)
 
@@ -404,9 +413,11 @@ func _ekip_sekmesi() -> void:
 func _hayatta_kalan_karti(h: Dictionary) -> void:
 	var rol: Dictionary = Veri.ROLLER[h["rol"]]
 	var aktif := String(h["uid"]) == String(profil.veri["aktif"])
-	var k := _kart(Color(0.5, 0.9, 0.4) if aktif else rol["renk"])
+	var surda: bool = profil.nobetci_mi(String(h["uid"])) and not aktif
+	var k := _kart(Color(0.5, 0.9, 0.4) if aktif else (Color(0.95, 0.75, 0.35) if surda else rol["renk"]))
 	var ust := _satir(k)
-	var ad := _etiket(String(h["ad"]) + ("  (SAHADA)" if aktif else ""), 32, Color(0.6, 1, 0.5) if aktif else Color.WHITE)
+	var ad := _etiket(String(h["ad"]) + ("  (LİDER)" if aktif else ("  (SURDA)" if surda else "")), 32,
+		Color(0.6, 1, 0.5) if aktif else (Color(1, 0.85, 0.45) if surda else Color.WHITE))
 	ad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ust.add_child(ad)
 	k.add_child(_etiket("%s · %d yaş · Sv %d (%d/%d XP) · %d koşu · en iyi %d. dalga" % [rol["ad"], int(h["yas"]),
@@ -419,6 +430,17 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 	k.add_child(_etiket("Moral: %s · Pasif: %s" % [Veri.moral_metni(int(h["moral"])), rol["pasif"]], 22, Color(0.7, 0.9, 0.6)))
 	var ks := Veri.kisilik(h)
 	k.add_child(_etiket("Kişilik: %s (%s)" % [ks["ad"], ks["etki"]], 22, Color(0.8, 0.75, 1.0)))
+	var fo: float = profil.form(h)
+	if fo > 0.0:
+		var pl: Array = h.get("puanlar", [])
+		var son := PackedStringArray()
+		for x in pl:
+			son.append("%.1f" % float(x))
+		k.add_child(_etiket("Form: %.1f  (son puanlar: %s)" % [fo, " ".join(son)], 22,
+			Color(0.6, 1, 0.5) if fo >= 7.0 else (Color(1, 0.6, 0.45) if fo < 5.8 else Color(0.9, 0.9, 0.8))))
+	if surda:
+		var md: Dictionary = Veri.HEDEF_MODLARI[String(h.get("hedef_modu", "rol"))]
+		k.add_child(_etiket("Surda nöbette · Hedef: %s (%s)" % [md["ad"], md["aciklama"]], 22, Color(1, 0.85, 0.5)))
 	var yorgun := float(h.get("yorgunluk", 0.0))
 	var sakat := int(h.get("sakat", 0))
 	var mentor: Dictionary = profil.kahraman_bul(String(h.get("mentor", "")))
@@ -446,10 +468,22 @@ func _hayatta_kalan_karti(h: Dictionary) -> void:
 		_acik_kart = "" if _acik_kart == uid else uid
 		_yenile(), 24))
 	if not aktif:
-		d.add_child(_dugme("Sahaya sür", Color(0.35, 0.65, 0.25), func() -> void:
+		d.add_child(_dugme("Lider yap", Color(0.35, 0.65, 0.25), func() -> void:
 			profil.aktif_yap(uid)
-			bildir("%s sahada!" % h["ad"], Color(0.5, 1, 0.5))
+			bildir("%s artık lider!" % h["ad"], Color(0.5, 1, 0.5))
 			_yenile(), 24, sakat <= 0))
+		d.add_child(_dugme("Surdan indir" if surda else "Sura koy", Color(0.75, 0.55, 0.2), func() -> void:
+			var neden: String = profil.nobetci_degistir(uid)
+			if neden != "":
+				bildir(neden, Color(1, 0.6, 0.45))
+			else:
+				bildir("%s %s" % [String(h["ad"]).get_slice(" ", 0), "surdan indi." if surda else "sura çıktı!"], Color(1, 0.85, 0.45))
+			_yenile(), 24, sakat <= 0 or surda))
+		if surda:
+			d = _satir(k)
+			d.add_child(_dugme("Hedef modu: %s" % Veri.HEDEF_MODLARI[String(h.get("hedef_modu", "rol"))]["ad"], Color(0.55, 0.4, 0.2), func() -> void:
+				profil.hedef_modu_degistir(uid)
+				_yenile(), 24))
 	if acik:
 		d.add_child(_dugme("Odak değiştir", Color(0.3, 0.55, 0.8), func() -> void:
 			var ids: Array = []

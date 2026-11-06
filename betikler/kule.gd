@@ -139,10 +139,10 @@ func _ates() -> void:
 				_gulle.visible = true
 		"agir":
 			_atis = AGIR_ARA
-			oyun.kule_atesi(uc, yon, _guc(AGIR_HASAR), 1, true)
+			oyun.kule_atesi(uc, yon, _guc(AGIR_HASAR), 1, true, _hedef)
 		_:
 			_atis = ATIS_ARA
-			oyun.kule_atesi(uc, yon, _guc(8.0 * pow(1.5, seviye - 1)))
+			oyun.kule_atesi(uc, yon, _guc(8.0 * pow(1.5, seviye - 1)), 0, false, _hedef)
 
 
 ## Gülle kavis çizerek uçar, düştüğü yerde patlar (düğüm yeniden kullanılır).

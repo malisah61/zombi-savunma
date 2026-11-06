@@ -9,6 +9,9 @@ var hasar := 10.0
 var kritik := false
 var delme_kalan := 0
 var zirh_gec := false  # Ağır Taret mermisi zırhı yok sayar
+var kaynak := -1  # katkı istatistiği: 0 lider, 1+ nöbetçi, -2 taret, -1 diğer
+var hedef  # Ekip yapay zekâsı: bu merminin "ayırdığı" zombi (aşırı öldürme önleme)
+var ayrilan := 0.0  # hedefe yazılan beklenen hasar
 var _vurulanlar: Array = []
 
 
@@ -21,6 +24,9 @@ func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int
 	kritik = k
 	delme_kalan = delme
 	zirh_gec = zg
+	kaynak = -1
+	hedef = null
+	ayrilan = 0.0
 	_vurulanlar.clear()
 	visible = true
 	set_process(true)
@@ -41,7 +47,8 @@ func _process(delta: float) -> void:
 		var en_yakin: Vector2 = Geometry2D.get_closest_point_to_segment(z.position, once, position)
 		if en_yakin.distance_squared_to(z.position) < z.yaricap * z.yaricap:
 			_vurulanlar.append(z)
-			oyun.isabet(z, hasar, kritik, position, zirh_gec)
+			oyun.ayrimi_birak(self)
+			oyun.isabet(z, hasar, kritik, position, zirh_gec, kaynak)
 			delme_kalan -= 1
 			if delme_kalan < 0:
 				oyun.mermi_birak(self)

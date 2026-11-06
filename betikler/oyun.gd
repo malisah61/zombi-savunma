@@ -20,6 +20,8 @@ const ProfilBetik := preload("res://betikler/profil.gd")
 const SeslerBetik := preload("res://betikler/sesler.gd")
 const Kartlar := preload("res://betikler/kartlar.gd")
 const Veri := preload("res://betikler/veri.gd")
+const YazilarBetik := preload("res://betikler/yazilar.gd")
+const NobetciBetik := preload("res://betikler/nobetci.gd")
 
 enum Durum { MENU, OYUN, KART, BITTI }
 
@@ -39,6 +41,18 @@ const ASI_SURE := 6.0
 const PATLAMA_YARICAP := 130.0
 const PATLAMA_HASAR := 40.0  # can çarpanıyla büyür: yürüyeni her dalgada tek seferde indirir
 const IKINCI_SANS_CAN := 0.25
+const NOBETCI_X := [0.35, 0.65, 0.07, 0.93, 0.43, 0.57]  # sur yuvaları (taretlerin arası, sonra kenarlar)
+
+# Yönetmen (Left 4 Dead'in yapay zekâ yönetmeni gibi): gerilimi ölçer, doğum zamanlamasını ve yönünü ayarlar.
+# Adil kural: dalganın zombi sayısı ve türleri DEĞİŞMEZ; yalnızca ne zaman ve nereden geldikleri değişir.
+enum Evre { YUKSELME, ZIRVE, SONME, NEFES }
+const YON_ZIRVE := 70.0       # bu gerilimde zirve başlar
+const YON_SONME_BITIS := 40.0 # sönme bu gerilimin altında nefese döner
+const YON_DUSUK := 25.0       # altında doğum %30 hızlanır
+const YON_KANAT := 15.0       # bu kadar sakin ve 4 sn sürerse kanattan sürpriz
+const YON_HASAR_KATSAYI := 250.0  # barikat canının %10'u gitti → +25 gerilim
+const YON_SONUM := 8.0        # hasar gerilimi saniyede bu kadar söner
+const YON_MOLA_SINIRI := 15.0 # bir dalgada en fazla bu kadar saniye doğum durur
 
 # Zombi türlerinin ilk çıktığı dalga ve tanıtım metni (Kingdom Rush: her yeni düşman tanıtılır)
 const TANITIM := {
@@ -47,6 +61,7 @@ const TANITIM := {
 	"kusan": "Uzakta durup barikata asit atar. Asker onu öncelikli hedefler.",
 	"patlayan": "Barikatta patlar, çok can götürür. Kalabalığın içinde vurursan etrafındakileri de havaya uçurur!",
 	"dev": "BOSS. Vuruşunu kırmızı halkayla işaret eder, yarı canda koşucu çağırır. Öldür: garanti Ender+ silah!",
+	"kralice": "BOSS. Geride durup sürekli koşucu doğurur. Yavrular bitmez: önce onu öldür! Havan ve el bombası iyi gelir.",
 }
 
 # Bitiş ekranı: barikatı en çok yiyen türe göre öneri (öğrenme döngüsü)
@@ -57,6 +72,7 @@ const OLUM_IPUCU := {
 	"kusan": "Asit uzaktan eritti. Menzil al veya Havan kur.",
 	"patlayan": "Patlayanları kalabalığın içinde, erken vur.",
 	"dev": "Dev'in vuruşunu bekle: bombanı ve onarımı ona sakla.",
+	"kralice": "Kraliçe yavru doğurdukça kalabalık büyür. Surdakileri 'Boss önce' moduna al.",
 }
 
 var genislik := 720.0
@@ -106,6 +122,18 @@ var _aktif_bekleme := 0.0
 var _aktif_max := 22.0
 var _nisan_kalan := 0.0
 var _asi_kalan := 0.0
+var nobetciler: Array = []  # surdaki ekip düğümleri (havuz, 6 yuva)
+var _katki: Dictionary = {}  # kaynak (0 lider, 1+ nöbetçi, -2 taret) -> {hasar, oldurme}
+var _yazilar  # yazilar.gd (Performans v4)
+var _yon_evre: Evre = Evre.YUKSELME
+var _yon_hasar := 0.0
+var _yon_ekran := 0.0
+var _yon_sayac := 0.0
+var _yon_olcum := 0.0
+var _yon_sakin := 0.0
+var _yon_kanat := false
+var _yon_mola := 0.0
+var _yon_gunluk := false  # önizlemede evre geçişlerini kayda yazar
 
 var _leke_katmani: Node2D
 var _zombi_katmani: Node2D
@@ -125,8 +153,6 @@ var _tehlike: ColorRect
 var _zombi_havuzu: Array = []
 var _mermi_havuzu: Array = []
 var _asit_havuzu: Array = []
-var _yazi_havuzu: Array[Label] = []
-var _yazi_sira := 0
 var _lekeler: Array = []
 
 
@@ -161,6 +187,15 @@ func _ready() -> void:
 		ku.position = Vector2(genislik * (0.2 + 0.3 * i), barikat_y - 18.0)
 		add_child(ku)
 		kuleler.append(ku)
+	for i in NOBETCI_X.size():
+		var nb = Node2D.new()
+		nb.set_script(NobetciBetik)
+		nb.oyun = self
+		nb.sira = i + 1
+		nb.position = Vector2(genislik * NOBETCI_X[i], barikat_y - 20.0)
+		nb.visible = false
+		add_child(nb)
+		nobetciler.append(nb)
 	kahraman = Node2D.new()
 	kahraman.set_script(KahramanBetik)
 	kahraman.oyun = self
@@ -183,6 +218,9 @@ func _ready() -> void:
 	_parcaciklar = Node2D.new()
 	_parcaciklar.set_script(ParcacikBetik)
 	_efekt_katmani.add_child(_parcaciklar)
+	_yazilar = Node2D.new()
+	_yazilar.set_script(YazilarBetik)
+	_efekt_katmani.add_child(_yazilar)
 
 	_kamera = Camera2D.new()
 	_kamera.position = boyut / 2
@@ -235,6 +273,7 @@ func _ready() -> void:
 
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--onizleme="):
+			_yon_gunluk = true
 			_onizleme(a.trim_prefix("--onizleme="))
 		elif a.begins_with("--bot="):
 			_bot(int(a.trim_prefix("--bot=")))
@@ -328,8 +367,9 @@ func _process(delta: float) -> void:
 	if float(st["yenilenme"]) > 0.0:
 		barikat.onar(float(st["yenilenme"]) * delta)
 
+	_yonetmen(delta)
 	if not _dogacak.is_empty():
-		_dogum_sayac -= delta
+		_dogum_sayac -= delta * _yon_dogum_carpani()
 		if _dogum_sayac <= 0.0:
 			_dogum_sayac = _dogum_aralik * randf_range(0.6, 1.3)
 			_zombi_dogur(_dogacak.pop_front())
@@ -370,6 +410,8 @@ func _yeni_oyun() -> void:
 	_kese_gelir = 0
 	for ku in kuleler:
 		ku.sifirla()
+	_nobetcileri_kur()
+	_katki = {0: {"hasar": 0.0, "oldurme": 0}}
 	var ak: Dictionary = Veri.AKTIFLER[String(st["rol"])]
 	_aktif_max = float(ak["bekleme"])
 	_aktif_bekleme = 0.0
@@ -403,6 +445,7 @@ func _temizle() -> void:
 		dugum.set_process(false)
 	_dogacak.clear()
 	_dalga_bitti_sayac = -1.0
+	_yazilar.temizle()
 	boss = null
 	_bekleyen_cagri = 0
 	_uzman_yuva = -1
@@ -418,6 +461,8 @@ func _sonraki_dalga() -> void:
 	if _kese_gelir > 0:
 		altin += _kese_gelir
 	var boss_dalgasi := dalga % 5 == 0
+	var boss_turu := "kralice" if dalga % 10 == 0 else "dev"  # Dev ve Kraliçe sırayla
+	_yon_sifirla()
 	var nefes := dalga % 5 == 1 and dalga > 5  # boss sonrası nefes dalgası
 	var adet := 6 + dalga * 2
 	if boss_dalgasi:
@@ -431,12 +476,12 @@ func _sonraki_dalga() -> void:
 	if boss_dalgasi:
 		for i in dalga:
 			_dogacak.append("kosucu")
-		_dogacak.insert(mini(3, _dogacak.size()), "dev")
+		_dogacak.insert(mini(3, _dogacak.size()), boss_turu)
 	_dogum_aralik = maxf(1.25 - dalga * 0.06, 0.35)
 	_dogum_sayac = 1.5
 	var afis := "DALGA %d" % dalga
 	if boss_dalgasi:
-		afis += "\nBOSS: DEV!\nYOĞUN SALDIRI!"
+		afis += "\nBOSS: %s!\nYOĞUN SALDIRI!" % _tur_adi(boss_turu)
 	elif nefes:
 		afis += "\nNefes al"
 	arayuz.dalga_afisi(afis)
@@ -491,7 +536,7 @@ func _yeni_turleri_tanit() -> void:
 
 func _tur_adi(t: String) -> String:
 	return {"yuruyen": "YÜRÜYEN", "kosucu": "KOŞUCU", "zirhli": "ZIRHLI", "kusan": "KUSAN", "patlayan": "PATLAYAN",
-		"dev": "DEV"}.get(t, t)
+		"dev": "DEV", "kralice": "KRALİÇE"}.get(t, t)
 
 
 ## İlk koşularda her şeyi bir anda değil, gerektiği dalgada anlatır.
@@ -530,7 +575,7 @@ func _menuye_don() -> void:
 	get_tree().paused = false
 	if (durum == Durum.OYUN or durum == Durum.KART) and not _kosu_odullendi:
 		_kosu_odullendi = true
-		profil.kosu_bitti(dalga, oldurme, _boss_olduruldu)
+		profil.kosu_bitti(dalga, oldurme, _boss_olduruldu, false, _katki)
 	_temizle()
 	arayuz.kart_kapat()
 	durum = Durum.MENU
@@ -548,7 +593,7 @@ func _oyun_bitti() -> void:
 	var ozet: Dictionary = {}
 	if not _kosu_odullendi:
 		_kosu_odullendi = true
-		ozet = profil.kosu_bitti(dalga, oldurme, _boss_olduruldu, true)
+		ozet = profil.kosu_bitti(dalga, oldurme, _boss_olduruldu, true, _katki)
 		_olum_ozeti(ozet)
 	_son_ozet = ozet
 	ses("bitis")
@@ -601,18 +646,22 @@ func _zombi_dogur(tur: String):
 		_zombi_katmani.add_child(z)
 	else:
 		z = _zombi_havuzu.pop_back()
-	if tur == "dev":
-		# her Dev bir öncekinden güçlü; ilk Dev bilerek kolay
+	if tur == "dev" or tur == "kralice":
+		# her boss bir öncekinden güçlü; ilk Dev bilerek kolay. Dev 5, 15, 25…; Kraliçe 10, 20, 30…
 		var sira := int(dalga / 5.0)
 		z.kur(self, tur, can_carpani() * (1.0 + 0.6 * (sira - 1)), 1.0 + 0.35 * (sira - 1))
 		z.position = Vector2(genislik / 2.0, -80.0)
 		boss = z
-		arayuz.boss_goster("DEV", 1.0)
+		arayuz.boss_goster(boss_adi(), 1.0)
 	else:
 		z.kur(self, tur, can_carpani(), 1.0 + dalga * 0.02)
 		z.position = Vector2(randf_range(70.0, genislik - 70.0), randf_range(-60.0, -20.0))
 	zombiler.append(z)
 	return z
+
+
+func boss_adi() -> String:
+	return "KRALİÇE" if boss != null and boss.tur == "kralice" else "DEV"
 
 
 func _zombi_havuza(z) -> void:
@@ -658,6 +707,7 @@ func barikat_vuruldu(miktar: float, x: float, saldiran = null, kaynak: String = 
 	if kaynak == "kusan" or kaynak == "patlayan":
 		miktar *= 1.0 - float(st["direnc"])
 	_hasar_kaynak[kaynak] = float(_hasar_kaynak.get(kaynak, 0.0)) + miktar
+	_yon_hasar = minf(_yon_hasar + miktar / barikat.max_can * YON_HASAR_KATSAYI, 100.0)
 	barikat.hasar_al(miktar)
 	if saldiran != null and float(st["diken"]) > 0.0:
 		saldiran.vurul(float(st["diken"]))
@@ -696,10 +746,18 @@ func boss_vurdu(z) -> void:
 
 
 func boss_cagirdi(z) -> void:
-	_bekleyen_cagri = 2 + int(dalga / 5.0) * 2
+	_bekleyen_cagri += 2 + int(dalga / 5.0) * 2
 	_cagri_konum = z.position
 	ses("boss")
 	_yazi(z.position + Vector2(0, -100), "YARDIM ÇAĞIRDI!", Color(1, 0.4, 0.3), 40, true)
+
+
+## Kraliçe yavruları: hep 2 koşucu, Kraliçe'nin dibinde (doğum _process'te, güvenli anda).
+func kralice_dogurdu(z) -> void:
+	_bekleyen_cagri += 2
+	_cagri_konum = z.position
+	if kalite > 0:
+		_parcacik("asit", z.position + Vector2(0, 40))
 
 
 ## Çağrılan koşucular Dev'in yanında doğar (mermi döngüsü dışında, güvenli anda).
@@ -713,10 +771,12 @@ func _cagri_dogur() -> void:
 
 func _boss_oldu(z) -> void:
 	boss = null
+	if z.tur == "kralice":
+		_bekleyen_cagri = 0  # ölen kraliçenin sıradaki yavruları doğmaz
 	_boss_olduruldu += 1
 	profil.gorev_ilerlet("boss")
 	arayuz.boss_gizle()
-	arayuz.dalga_afisi("DEV DÜŞTÜ!\nGARANTİ GANİMET")
+	arayuz.dalga_afisi("%s DÜŞTÜ!\nGARANTİ GANİMET" % ("KRALİÇE" if z.tur == "kralice" else "DEV"))
 	ses("bitis")
 	_titret(200)
 	_sarsinti = 16.0
@@ -771,18 +831,41 @@ func _yanma_yay(olen) -> void:
 
 # ================================================================ ATIŞ
 
-func mermi_at(konum: Vector2, yon: Vector2) -> void:
-	var m
+func _mermi_al():
 	if _mermi_havuzu.is_empty():
-		m = Node2D.new()
+		var m = Node2D.new()
 		m.set_script(MermiBetik)
 		m.oyun = self
 		_mermi_katmani.add_child(m)
-	else:
-		m = _mermi_havuzu.pop_back()
+		return m
+	return _mermi_havuzu.pop_back()
+
+
+func mermi_at(konum: Vector2, yon: Vector2, hedef = null) -> void:
+	var m = _mermi_al()
 	var kritik := _nisan_kalan > 0.0 or randf() < float(st["kritik"])
-	m.baslat(konum, yon, float(st["mermi_hizi"]),
-		float(st["hasar"]) * (float(st["kritik_carpan"]) if kritik else 1.0), kritik, int(st["delme"]))
+	var h := float(st["hasar"]) * (float(st["kritik_carpan"]) if kritik else 1.0)
+	m.baslat(konum, yon, float(st["mermi_hizi"]), h, kritik, int(st["delme"]))
+	m.kaynak = 0
+	_ayir(m, hedef, h)
+
+
+## Ekip yapay zekâsı — aşırı öldürme önleme: atılan mermi hedefine "beklenen hasar" yazar. Beklenen hasar
+## kalan canı karşılıyorsa diğer atıcılar o zombiyi bırakıp başkasını seçer (mermi boşa gitmez).
+func _ayir(m, hedef, hasar: float) -> void:
+	if hedef == null or hedef.olu:
+		return
+	var tahmin := maxf(hasar - float(hedef.zirh), hasar * 0.2)
+	hedef.beklenen += tahmin
+	m.hedef = hedef
+	m.ayrilan = tahmin
+
+
+func ayrimi_birak(m) -> void:
+	if m.hedef != null:
+		m.hedef.beklenen = maxf(m.hedef.beklenen - m.ayrilan, 0.0)
+		m.hedef = null
+		m.ayrilan = 0.0
 
 
 ## Barikata en tehlikeli, menzildeki hedef (kahraman ve taretler ortak kullanır).
@@ -796,22 +879,183 @@ func hedef_bul(konum: Vector2, menzil: float):
 		if konum.distance_squared_to(z.position) > menzil_kare:
 			continue
 		var puan: float = z.position.y + z.oncelik
+		if z.beklenen >= z.can:
+			puan -= 100000.0  # zaten ölecek: başka hedef varsa onu seç
 		if puan > en_iyi_puan:
 			en_iyi_puan = puan
 			en_iyi = z
 	return en_iyi
 
 
-func kule_atesi(konum: Vector2, yon: Vector2, hasar: float, delme: int = 0, zirh_gec: bool = false) -> void:
-	var m
-	if _mermi_havuzu.is_empty():
-		m = Node2D.new()
-		m.set_script(MermiBetik)
-		m.oyun = self
-		_mermi_katmani.add_child(m)
-	else:
-		m = _mermi_havuzu.pop_back()
+func kule_atesi(konum: Vector2, yon: Vector2, hasar: float, delme: int = 0, zirh_gec: bool = false, hedef = null) -> void:
+	var m = _mermi_al()
 	m.baslat(konum, yon, 1200.0, hasar, false, delme, zirh_gec)
+	m.kaynak = -2
+	_ayir(m, hedef, hasar)
+
+
+# ================================================================ SURDAKİ EKİP + EKİP YAPAY ZEKÂSI
+
+func _nobetcileri_kur() -> void:
+	var liste: Array = profil.nobetci_listesi()
+	for i in nobetciler.size():
+		if i < liste.size():
+			nobetciler[i].kur(profil.nobetci_istatistigi(liste[i]))
+			_katki[i + 1] = {"hasar": 0.0, "oldurme": 0}
+		else:
+			nobetciler[i].sifirla()
+
+
+## Nöbetçiler kart almaz ama taretler gibi dalgayla güçlenir; geç oyunda da işe yarasınlar.
+func nobetci_carpani() -> float:
+	return 1.0 + Veri.NOBETCI_DALGA * dalga
+
+
+func nobetci_atesi(konum: Vector2, yon: Vector2, hasar: float, kritik: bool, delme: int, kaynak: int, hedef) -> void:
+	var m = _mermi_al()
+	m.baslat(konum, yon, 1150.0, hasar, kritik, delme)
+	m.kaynak = kaynak
+	_ayir(m, hedef, hasar)
+
+
+func ekip_onarimi(oran: float) -> void:
+	if barikat.can < barikat.max_can:
+		barikat.onar(oran)
+
+
+## Ekip yapay zekâsı hedef seçimi. mod: rol / yakin / guclu / boss. "rol" modunda Avcı en değerli hedefi
+## (boss, zırhlı, kusan, patlayan) avlar, diğer roller barikata en yakını vurur. Beklenen hasarı kalan
+## canını karşılayan zombi ancak başka aday yoksa seçilir.
+func ekip_hedef_sec(konum: Vector2, menzil: float, mod: String, rol: String):
+	if mod == "rol":
+		mod = "avci" if rol == "avci" else "yakin"
+	var en_iyi = null
+	var en_iyi_puan := -INF
+	var mk := menzil * menzil
+	for z in zombiler:
+		if z.olu or z.position.y < -10.0 or konum.distance_squared_to(z.position) > mk:
+			continue
+		var puan: float
+		match mod:
+			"guclu":
+				puan = z.can + z.zirh * 25.0 + (5000.0 if z.boss else 0.0)
+			"boss":
+				puan = (100000.0 if z.boss else 0.0) + z.position.y + z.oncelik
+			"avci":
+				puan = z.position.y * 0.3 + z.oncelik + (3000.0 if z.boss else 0.0) + (800.0 if z.zirh > 0.0 else 0.0) \
+					+ (900.0 if z.tur == "kusan" else 0.0) + (600.0 if z.tur == "patlayan" else 0.0)
+			_:
+				puan = z.position.y + z.oncelik
+		if z.beklenen >= z.can:
+			puan -= 1000000.0
+		if puan > en_iyi_puan:
+			en_iyi_puan = puan
+			en_iyi = z
+	return en_iyi
+
+
+func _katki_ekle(kaynak: int, hasar: float, oldu: bool) -> void:
+	if not _katki.has(kaynak):
+		_katki[kaynak] = {"hasar": 0.0, "oldurme": 0}
+	var k: Dictionary = _katki[kaynak]
+	k["hasar"] = float(k["hasar"]) + hasar
+	if oldu:
+		k["oldurme"] = int(k["oldurme"]) + 1
+
+
+# ================================================================ YÖNETMEN (A1)
+
+func _yon_sifirla() -> void:
+	_yon_evre = Evre.YUKSELME
+	_yon_sayac = 0.0
+	_yon_sakin = 0.0
+	_yon_kanat = false
+	_yon_mola = 0.0
+
+
+func gerilim() -> float:
+	return minf(_yon_hasar + _yon_ekran, 100.0)
+
+
+## Gerilim = son barikat hasarı (zamanla söner) + ekrandaki tehdit (zombilerin canı × barikata yakınlığı²).
+func _yonetmen(delta: float) -> void:
+	_yon_hasar = maxf(_yon_hasar - YON_SONUM * delta, 0.0)
+	_yon_olcum -= delta
+	if _yon_olcum <= 0.0:
+		_yon_olcum = 0.25  # her kare değil, saniyede 4 kez ölç
+		var agirlik := 0.0
+		var cc := can_carpani() * 30.0
+		for z in zombiler:
+			if z.olu:
+				continue
+			var yakinlik := clampf(z.position.y / barikat_y, 0.0, 1.0)
+			agirlik += minf(z.max_can / cc, 6.0) * yakinlik * yakinlik
+		_yon_ekran = minf(agirlik * 4.0, 100.0)
+	var g := gerilim()
+	match _yon_evre:
+		Evre.YUKSELME:
+			if g >= YON_ZIRVE and _yon_mola < YON_MOLA_SINIRI:
+				_yon_gec(Evre.ZIRVE, randf_range(3.0, 5.0))
+			elif g < YON_KANAT and not _dogacak.is_empty():
+				_yon_sakin += delta
+				if _yon_sakin >= 4.0 and not _yon_kanat and dalga >= 4 and _dogacak.size() >= 3:
+					_kanat_surprizi()
+			else:
+				_yon_sakin = 0.0
+		Evre.ZIRVE:
+			_yon_sayac -= delta
+			if _yon_sayac <= 0.0:
+				_yon_gec(Evre.SONME, 6.0)
+		Evre.SONME:
+			_yon_sayac -= delta
+			_yon_mola += delta
+			if g < YON_SONME_BITIS or _yon_sayac <= 0.0:
+				_yon_gec(Evre.NEFES, randf_range(4.0, 8.0))
+		Evre.NEFES:
+			_yon_sayac -= delta
+			_yon_mola += delta
+			if _yon_sayac <= 0.0 or _yon_mola >= YON_MOLA_SINIRI:
+				_yon_gec(Evre.YUKSELME, 0.0)
+
+
+func _yon_gec(e: Evre, sure: float) -> void:
+	_yon_evre = e
+	_yon_sayac = sure
+	_yon_sakin = 0.0
+	if _yon_gunluk:
+		print("YONETMEN dalga=%d evre=%s gerilim=%.0f" % [dalga, Evre.keys()[e], gerilim()])
+
+
+## Zirvede doğum normal, sönme ve nefeste durur (sahadakiler devam eder), çok sakinse %30 hızlanır.
+func _yon_dogum_carpani() -> float:
+	match _yon_evre:
+		Evre.SONME, Evre.NEFES:
+			return 0.0
+		Evre.YUKSELME:
+			return 1.3 if gerilim() < YON_DUSUK else 1.0
+	return 1.0
+
+
+## Oyuncu çok rahatsa sıradaki 3–4 zombi (önce koşucular) askerin uzak tarafındaki kanattan birlikte gelir.
+## Yeni zombi eklenmez: dalganın doğacaklar listesinden alınır.
+func _kanat_surprizi() -> void:
+	_yon_kanat = true
+	var secilen: Array[String] = []
+	for t in ["kosucu", "yuruyen", "zirhli", "patlayan"]:
+		while secilen.size() < 4 and _dogacak.has(t):
+			_dogacak.erase(t)
+			secilen.append(t)
+	if secilen.is_empty():
+		return
+	var sag: bool = kahraman.position.x < genislik / 2.0
+	var x := genislik - 90.0 if sag else 90.0
+	for i in secilen.size():
+		var z = _zombi_dogur(secilen[i])
+		z.position = Vector2(x + randf_range(-30.0, 30.0), -30.0 - i * 45.0)
+	_yazi(Vector2(clampf(x, 170.0, genislik - 170.0), 200.0), "KANATTAN GELİYORLAR!", Color(1, 0.55, 0.3), 32, true)
+	ses("dalga")
+	if _yon_gunluk:
+		print("YONETMEN kanat surprizi: %s" % str(secilen))
 
 
 func kule_al(i: int) -> void:
@@ -863,7 +1107,7 @@ func havan_dustu(konum: Vector2, yaricap: float, hasar: float) -> void:
 	_patla_efekt(konum, yaricap)
 	_parcacik("patlama", konum)
 	ses("bomba")
-	_alan_hasari(konum, yaricap, hasar)
+	_alan_hasari(konum, yaricap, hasar, -2)
 
 
 # ================================================================ PATLAMALAR
@@ -874,15 +1118,18 @@ func _patla_efekt(konum: Vector2, yaricap: float) -> void:
 
 
 ## Alan hasarı zırhı yok sayar. Zincirleme ölümler güvenli: dizi burada değişmez, ölenler kare sonunda çıkar.
-func _alan_hasari(konum: Vector2, yaricap: float, hasar: float) -> void:
+func _alan_hasari(konum: Vector2, yaricap: float, hasar: float, kaynak: int = -1) -> void:
 	var yk := yaricap * yaricap
 	for z in zombiler:
 		if z.olu or z.position.distance_squared_to(konum) > yk:
 			continue
 		_yazi(z.position + Vector2(0, -24), str(int(round(hasar))), Color(1, 0.7, 0.3), 30, false)
+		var once: float = z.can
 		z.vurul(hasar)
+		if kaynak != -1:
+			_katki_ekle(kaynak, minf(hasar, maxf(once, 0.0)), z.olu)
 	if boss != null:
-		arayuz.boss_goster("DEV", boss.can / boss.max_can)
+		arayuz.boss_goster(boss_adi(), boss.can / boss.max_can)
 
 
 ## Patlayan yolda vurulunca çevresini yakar: oyuncunun lehine "güzel an".
@@ -953,22 +1200,26 @@ func _bomba(konum: Vector2) -> void:
 	var hasar := float(st["hasar"]) * 8.0 + 25.0
 	_patla_efekt(konum, BOMBA_YARICAP)
 	_sarsinti = minf(_sarsinti + 8.0, 14.0)
-	_alan_hasari(konum, BOMBA_YARICAP, hasar)
+	_alan_hasari(konum, BOMBA_YARICAP, hasar, 0)
 
 
 func mermi_birak(m) -> void:
+	ayrimi_birak(m)
 	m.visible = false
 	m.set_process(false)
 	if not _mermi_havuzu.has(m):
 		_mermi_havuzu.append(m)
 
 
-func isabet(z, hasar: float, kritik: bool, konum: Vector2, zirh_gec: bool = false) -> void:
+func isabet(z, hasar: float, kritik: bool, konum: Vector2, zirh_gec: bool = false, kaynak: int = -1) -> void:
 	# Zırh düz hasar keser: küçük mermi çok, büyük mermi az etkilenir. En az %20 hep geçer.
 	var kalan_zirh := 0.0 if bool(st["zirh_yok"]) or zirh_gec else maxf(float(z.zirh) - float(st["zirh_delme"]), 0.0)
 	var son := maxf(hasar - kalan_zirh, hasar * 0.2)
 	var zirhta_kaldi: bool = son < hasar * 0.6
+	var once: float = z.can
 	z.vurul(son)
+	if kaynak != -1:
+		_katki_ekle(kaynak, minf(son, maxf(once, 0.0)), z.olu)
 	if float(st["yanma"]) > 0.0 and not z.olu:
 		z.tutustur(float(st["hasar"]) * float(st["yanma"]), 3.0)
 	_parcacik("kivilcim" if kalan_zirh > 0.0 else "kan_kucuk", konum)
@@ -981,7 +1232,7 @@ func isabet(z, hasar: float, kritik: bool, konum: Vector2, zirh_gec: bool = fals
 	if not z.olu:
 		ses("zirh" if kalan_zirh > 0.0 else "isabet")
 	if z == boss and boss != null:
-		arayuz.boss_goster("DEV", z.can / z.max_can)
+		arayuz.boss_goster(boss_adi(), z.can / z.max_can)
 
 
 # ================================================================ KARTLAR
@@ -1202,15 +1453,7 @@ func _titret(ms: int) -> void:
 
 
 func _havuzlari_kur() -> void:
-	for i in 32:
-		var l := Label.new()
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.size = Vector2(120, 44)
-		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-		l.add_theme_constant_override("outline_size", 8)
-		l.visible = false
-		_efekt_katmani.add_child(l)
-		_yazi_havuzu.append(l)
+	pass  # Performans v4: hasar yazıları artık tek düğümde (yazilar.gd); Label havuzu kalmadı
 
 
 func _parcacik(tur: String, konum: Vector2) -> void:
@@ -1238,23 +1481,7 @@ func _leke_birak(konum: Vector2) -> void:
 func _yazi(konum: Vector2, metin: String, renk: Color, boyut: int, onemli: bool = false) -> void:
 	if not onemli and kalite == 0:
 		return
-	var l: Label = _yazi_havuzu[_yazi_sira]
-	_yazi_sira = (_yazi_sira + 1) % _yazi_havuzu.size()
-	if l.has_meta("tw"):
-		var eski: Tween = l.get_meta("tw")
-		if eski and eski.is_valid():
-			eski.kill()
-	l.text = metin
-	l.add_theme_font_size_override("font_size", boyut)
-	l.add_theme_color_override("font_color", renk)
-	l.position = konum - Vector2(60, 22)
-	l.modulate.a = 1.0
-	l.visible = true
-	var tw := l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 60.0, 0.7).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.7).set_delay(0.25)
-	tw.tween_callback(func() -> void: l.visible = false)
-	l.set_meta("tw", tw)
+	_yazilar.yaz(konum, metin, renk, boyut)
 
 
 # ================================================================ ÖNİZLEME (bulutta ekran görüntüsü)
@@ -1269,6 +1496,11 @@ func _onizleme(klasor: String) -> void:
 	for i in 4:
 		profil.veri["envanter"].append(Veri.silah_uret("", i + 1 if i < 3 else 0))
 	profil.veri["hurda"] = 420
+	# Surdaki ekip: iki kişi sura, biri "Boss önce" modunda; liderin formu dolu görünsün
+	profil.nobetci_degistir(String(profil.veri["ekip"][1]["uid"]))
+	profil.nobetci_degistir(String(profil.veri["ekip"][2]["uid"]))
+	profil.veri["ekip"][2]["hedef_modu"] = "boss"
+	profil.veri["ekip"][0]["puanlar"] = [6.4, 7.1, 7.8]
 	profil.veri["kesif"]["aktif"] = {"bolge": 1, "bitis": int(Time.get_unix_time_from_system()) - 1}
 	profil.kesif_kontrol()
 	await _bekle(0.6)
@@ -1285,7 +1517,9 @@ func _onizleme(klasor: String) -> void:
 	menu.sekme_ac(1)
 	await _bekle(0.3)
 	await _kare(klasor + "/06_ekip_kisilik.png")
+	profil.veri["ekip"][1]["sakat"] = 0
 	_yeni_oyun()
+	print("ONIZLEME surdaki ekip: %d nobetci" % profil.nobetci_listesi().size())
 	profil.ayar_degistir("oto_kalite", false)  # yazılım ekranında kalite düşmesin, gerçek görüntü çıksın
 	print("ONIZLEME atlas hazir: ", atlas.hazir)
 	for i in 14:
@@ -1392,6 +1626,27 @@ func _onizleme(klasor: String) -> void:
 	pl.vurul(100000.0)
 	await _bekle(0.12)
 	await _kare(klasor + "/24_patlama.png")
+	_temizle()
+	# Boss 2: Kraliçe geride durur, yavru doğurur; nöbetçiler "Boss önce" ile ona döner
+	barikat.can = barikat.max_can
+	dalga = 10
+	var kr = _zombi_dogur("kralice")
+	kr.position = Vector2(genislik / 2.0, kr._durus_y)
+	kr._dogurma_sayac = 0.3
+	arayuz.tanitim_goster("KRALİÇE", String(TANITIM["kralice"]))
+	await _bekle(1.6)
+	await _kare(klasor + "/27_kralice.png")
+	print("ONIZLEME kralice: can=%.0f/%.0f zombi=%d" % [kr.can, kr.max_can, zombiler.size()])
+	_temizle()
+	# Yönetmen: oyuncu rahatken sıradaki zombiler kanattan birlikte gelir
+	dalga = 9
+	for t in ["kosucu", "kosucu", "yuruyen", "zirhli", "yuruyen"]:
+		_dogacak.append(t)
+	kahraman.position.x = 200.0
+	_kanat_surprizi()
+	await _bekle(0.9)
+	await _kare(klasor + "/28_yonetmen_kanat.png")
+	_dogacak.clear()
 	await _yuk_testi()
 	_temizle()
 	profil.veri["ekip"][1]["sakat"] = 0
@@ -1414,6 +1669,14 @@ func _onizleme(klasor: String) -> void:
 ## Rastgele kart seçip onarım yapan bir bot N koşu oynar, ulaştığı dalgayı yazar.
 func _bot(kosu: int) -> void:
 	await _bekle(0.5)
+	_yon_gunluk = false
+	if OS.get_cmdline_user_args().has("--bot_ekip"):
+		# surdaki ekiple denge: iki sıradan hayatta kalan sura çıkar
+		for i in 2:
+			var h := Veri.hayatta_kalan_uret(9.0, 0.3)
+			h["silah"] = ""
+			profil.veri["ekip"].append(h)
+			profil.nobetci_degistir(String(h["uid"]))
 	for i in kosu:
 		_yeni_oyun()
 		while durum != Durum.BITTI:
@@ -1433,8 +1696,9 @@ func _bot(kosu: int) -> void:
 			if dalga >= 60:
 				barikat.can = 0.0
 				_oyun_bitti()
-		print("BOT kosu %d: dalga=%d oldurme=%d boss=%d evrim=%s kartlar=%d" % [i, dalga, oldurme, _boss_olduruldu,
-			str(kart_seviye.keys().filter(func(k) -> bool: return Kartlar.bul(k).is_empty())), kart_seviye.size()])
+		print("BOT kosu %d: nobetci=%d dalga=%d oldurme=%d boss=%d evrim=%s kartlar=%d puan=%s" % [i, profil.nobetci_listesi().size(), dalga, oldurme, _boss_olduruldu,
+			str(kart_seviye.keys().filter(func(k) -> bool: return Kartlar.bul(k).is_empty())), kart_seviye.size(),
+			str(_son_ozet.get("puanlar", []))])
 	get_tree().quit()
 
 
@@ -1446,6 +1710,10 @@ func _yuk_testi() -> void:
 	barikat.can = barikat.max_can
 	st["ates_hizi"] = 10.0
 	st["hasar"] = 1.0
+	# en kötü durum: 6 yuvanın hepsi dolu (Sur yükseltmesi sonrası)
+	var ekip: Array = profil.veri["ekip"]
+	for i in nobetciler.size():
+		nobetciler[i].kur(profil.nobetci_istatistigi(ekip[i % ekip.size()]))
 	var turler := ["yuruyen", "kosucu", "zirhli", "kusan"]
 	for i in 120:  # patlayan yok: barikata varınca kaybolur, sayı sabit kalmaz
 		_zombi_dogur(turler[i % 4])
@@ -1460,10 +1728,12 @@ func _yuk_testi() -> void:
 	await _bekle(4.0)
 	var fps := (Engine.get_frames_drawn() - kare_bas) * 1000.0 / (Time.get_ticks_msec() - bas)
 	var cagri := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
-	print("ONIZLEME yuk testi: 120 zombi FPS=%.1f cizim_cagrisi=%d" % [fps, cagri])
+	print("ONIZLEME yuk testi: 120 zombi + 6 nobetci FPS=%.1f cizim_cagrisi=%d yazi=%d mermi=%d" % [fps, cagri,
+		_yazilar.aktif_sayisi(), _mermi_katmani.get_child_count()])
 	await _kare("%s/18_yuk_testi.png" % OS.get_cmdline_user_args()[0].trim_prefix("--onizleme="))
 	barikat.max_can = 300.0
 	barikat.can = 300.0
+	_nobetcileri_kur()
 
 
 func _bekle(sn: float) -> void:

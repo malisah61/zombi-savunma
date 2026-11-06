@@ -163,6 +163,20 @@ const BOLGELER: Array[Dictionary] = [
 ]
 
 const EKIP_SINIRI := 8
+
+# ---------------------------------------------------------------- SURDAKİ EKİP (Grow Castle kale yuvaları)
+# Yuva sayısı ileride Sur seviyesiyle 6'ya çıkacak (TASARIM §0 B2). Verim: nöbetçinin hasarı liderin
+# aynı silahla yapacağının bu katı; kartlar ona işlemez ama dalgayla güçlenir (oyun.nobetci_carpani).
+const NOBETCI_YUVA := 2
+const NOBETCI_VERIM := 0.45
+const NOBETCI_DALGA := 0.04
+# Ekip yapay zekâsı hedef modları (Bloons TD hedefleme seçenekleri gibi). "rol": rolüne göre karar verir.
+const HEDEF_MODLARI := {
+	"rol": {"ad": "Rolüne göre", "aciklama": "Avcı boss/zırhlı/kusan, diğerleri barikata en yakın"},
+	"yakin": {"ad": "En yakın", "aciklama": "Barikata en yakın zombi"},
+	"guclu": {"ad": "En güçlü", "aciklama": "En çok canı ve zırhı olan"},
+	"boss": {"ad": "Boss önce", "aciklama": "Boss varsa hep onu, yoksa en yakın"},
+}
 const ENVANTER_SINIRI := 40
 
 

@@ -23,6 +23,7 @@ const VARSAYILAN := {
 	"son_zaman": 0,  # gerçek zamanla dinlenme için
 	"gorevler": {"tarih": "", "liste": [], "bonus": false},
 	"lab": {},  # düğüm id -> seviye
+	"nobetciler": [],  # surdaki ekip: hayatta kalan uid'leri (Grow Castle kale yuvaları)
 }
 
 var veri: Dictionary = {}
@@ -61,6 +62,10 @@ func _hayatta_kalanlari_tamamla() -> void:
 			h["yorgunluk"] = 0.0
 		if not h.has("sakat"):
 			h["sakat"] = 0
+		if not h.has("hedef_modu"):
+			h["hedef_modu"] = "rol"
+		if not h.has("puanlar"):
+			h["puanlar"] = []
 
 
 func kaydet() -> void:
@@ -231,7 +236,7 @@ func kosu_istatistigi() -> Dictionary:
 
 
 ## Koşu bitince çağrılır: ödüller, ganimet, gelişim (FM tarzı), moral. Özet sözlüğü döndürür.
-func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false) -> Dictionary:
+func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false, katki: Dictionary = {}) -> Dictionary:
 	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0, "sakat": {}, "yorgunluk": ""}
 	var kazanc := int(round((dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))))
 	hurda_ekle(kazanc)
@@ -257,10 +262,12 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 	veri["istatistik"]["boss"] = int(veri["istatistik"]["boss"]) + boss_sayisi
 
 	var h := aktif_kahraman()
+	var nobetciler := nobetci_listesi()  # sakatlık/rotasyon değiştirmeden önce: bu koşuda surda olanlar
 	var onceki_en_iyi := int(h.get("en_iyi_dalga", 0))
 	ozet["uid"] = h["uid"]
 	ozet["ad"] = String(h["ad"]).get_slice(" ", 0)
 	ozet["performans"] = _performans(dalga, onceki_en_iyi)
+	_mac_puanlari(h, nobetciler, katki, int(ozet["performans"]), ozet)
 	h["kosu"] = int(h.get("kosu", 0)) + 1
 	h["en_iyi_dalga"] = maxi(onceki_en_iyi, dalga)
 	h["xp"] = int(h["xp"]) + dalga * 10 + oldurme
@@ -283,14 +290,23 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 		degisim = int(round(degisim * float(ks["kazanc"])))
 	elif degisim < 0:
 		degisim = int(round(degisim * float(ks["kayip"])))
+	degisim += _puan_morali(float(ozet.get("lider_puan", 6.0)))
 	h["moral"] = clampi(eski_moral + degisim, 5, 100)
 	ozet["moral"] = int(h["moral"]) - eski_moral
-	_ekip_kosu_sonu(h, dalga, barikat_dustu, ozet)
+	_ekip_kosu_sonu(h, dalga, barikat_dustu, ozet, nobetciler)
 
-	# Gelişim: oynayan hayatta kalan maç deneyimiyle, diğerleri antrenmanla (daha az) gelişir
+	# Gelişim: oynayan hayatta kalan maç deneyimiyle, surdakiler yarı deneyimle, diğerleri antrenmanla gelişir
 	ozet["gelisim"] = _gelistir(h, 0.5 + dalga * 0.22)
 	for diger in veri["ekip"]:
-		if diger["uid"] != h["uid"]:
+		if diger["uid"] == h["uid"]:
+			continue
+		if nobetciler.has(diger):
+			_gelistir(diger, 0.3 + dalga * 0.12)
+			diger["xp"] = int(diger["xp"]) + dalga * 5
+			while int(diger["xp"]) >= int(diger["seviye"]) * 100:
+				diger["xp"] = int(diger["xp"]) - int(diger["seviye"]) * 100
+				diger["seviye"] = int(diger["seviye"]) + 1
+		else:
 			_gelistir(diger, 0.35)
 		# her 10 koşuda bir "sezon" geçer, herkes yaşlanır
 	veri["istatistik"]["kosu"] = int(veri["istatistik"]["kosu"]) + 1
@@ -305,14 +321,18 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 
 
 ## Koşu sonu rotasyon etkileri: oynayan yorulur, yedekler dinlenir, sakatlıklar iyileşir, kişilik moralleri.
-func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dictionary) -> void:
+func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dictionary, nobetciler: Array = []) -> void:
 	var tek_kisi: bool = veri["ekip"].size() <= 1
 	var lider := String(Veri.kisilik(h).get("ad", "")) == "Lider ruhlu"
 	for x in veri["ekip"]:
 		if x["uid"] == h["uid"]:
 			continue
 		x["sakat"] = maxi(int(x.get("sakat", 0)) - 1, 0)
-		x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - 35.0, 0.0)
+		if nobetciler.has(x):
+			# surda nöbet tutan dinlenmez, lider kadar olmasa da yorulur
+			x["yorgunluk"] = minf(float(x.get("yorgunluk", 0.0)) + 5.0 + dalga * 0.8, 100.0)
+		else:
+			x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - 35.0, 0.0)
 		if lider:
 			x["moral"] = mini(int(x["moral"]) + 2, 100)
 		if String(x.get("kisilik", "")) == "hirsli":
@@ -330,6 +350,40 @@ func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dicti
 		if not yedek.is_empty():
 			veri["aktif"] = yedek["uid"]
 			ozet["sakat"]["yedek"] = yedek["ad"]
+
+
+## Lider (kaynak 0) ve surdakiler (1, 2…) için maç puanı; form kaydı ve surdakilerin puan morali.
+func _mac_puanlari(h: Dictionary, nobetciler: Array, katki: Dictionary, performans: int, ozet: Dictionary) -> void:
+	if katki.is_empty():
+		return
+	var n := 1 + nobetciler.size()
+	var liste: Array = []
+	var lp := mac_puani(katki, 0, n, performans)
+	_form_ekle(h, lp)
+	ozet["lider_puan"] = lp
+	liste.append({"ad": String(h["ad"]).get_slice(" ", 0), "puan": lp})
+	for i in nobetciler.size():
+		var x: Dictionary = nobetciler[i]
+		var p := mac_puani(katki, i + 1, n, performans)
+		_form_ekle(x, p)
+		x["moral"] = clampi(int(x["moral"]) + _puan_morali(p), 5, 100)
+		liste.append({"ad": String(x["ad"]).get_slice(" ", 0), "puan": p})
+	var en := 0
+	for i in liste.size():
+		if float(liste[i]["puan"]) > float(liste[en]["puan"]):
+			en = i
+	if liste.size() > 1:
+		liste[en]["yildiz"] = true  # koşunun yıldızı (FM'de maçın oyuncusu)
+	ozet["puanlar"] = liste
+
+
+## FM: iyi maç puanı morali yükseltir, kötüsü düşürür.
+func _puan_morali(p: float) -> int:
+	if p >= 7.5:
+		return 3
+	if p <= 5.0:
+		return -3
+	return 0
 
 
 func _en_iyi_saglam(haric: String) -> Dictionary:
@@ -528,6 +582,7 @@ func aktif_yap(uid: String) -> void:
 	var h := kahraman_bul(uid)
 	if not h.is_empty() and int(h.get("sakat", 0)) <= 0:
 		veri["aktif"] = uid
+		veri["nobetciler"].erase(uid)  # lider aynı anda surda olamaz
 		kaydet()
 
 
@@ -559,8 +614,129 @@ func kov(uid: String) -> bool:
 		return false
 	var h := kahraman_bul(uid)
 	veri["ekip"].erase(h)
+	veri["nobetciler"].erase(uid)
 	kaydet()
 	return true
+
+
+# ================================================================ SURDAKİ EKİP (nöbetçiler)
+
+## Koşuda gerçekten sura çıkacaklar: ekipte olan, lider olmayan, sakat olmayanlar; yuva sayısı kadar.
+func nobetci_listesi() -> Array:
+	var liste: Array = []
+	for uid in veri["nobetciler"]:
+		var h := kahraman_bul(String(uid))
+		if h.is_empty() or String(uid) == String(veri["aktif"]) or int(h.get("sakat", 0)) > 0:
+			continue
+		liste.append(h)
+		if liste.size() >= Veri.NOBETCI_YUVA:
+			break
+	return liste
+
+
+func nobetci_mi(uid: String) -> bool:
+	return veri["nobetciler"].has(uid)
+
+
+## Sura koy / surdan indir. Yuva doluysa "" yerine neden döner.
+func nobetci_degistir(uid: String) -> String:
+	var liste: Array = veri["nobetciler"]
+	if liste.has(uid):
+		liste.erase(uid)
+		kaydet()
+		return ""
+	if uid == String(veri["aktif"]):
+		return "Lider zaten sahada"
+	# kayıtta silinmiş/geçersiz uid'ler yuva yemesin
+	liste.assign(liste.filter(func(u) -> bool: return not kahraman_bul(String(u)).is_empty()))
+	if liste.size() >= Veri.NOBETCI_YUVA:
+		return "Surda %d yuva var, hepsi dolu" % Veri.NOBETCI_YUVA
+	liste.append(uid)
+	kaydet()
+	return ""
+
+
+func hedef_modu_degistir(uid: String) -> void:
+	var h := kahraman_bul(uid)
+	if h.is_empty():
+		return
+	var modlar: Array = Veri.HEDEF_MODLARI.keys()
+	h["hedef_modu"] = modlar[(modlar.find(String(h.get("hedef_modu", "rol"))) + 1) % modlar.size()]
+	kaydet()
+
+
+## Nöbetçinin koşu içi istatistikleri: kendi silahı (yoksa rolünün sıradan silahı) × özellikleri × moral,
+## lideri tamamlayan bir yardımcı olsun diye NOBETCI_VERIM ile ölçeklenir. Kartlar nöbetçiye işlemez.
+func nobetci_istatistigi(h: Dictionary) -> Dictionary:
+	var s := silah_bul(String(h.get("silah", "")))
+	if s.is_empty():
+		s = Veri.silah_uret(String(Veri.ROLLER[h["rol"]]["silah"]), 0)
+	var si := Veri.silah_istatistik(s)
+	var oz: Dictionary = h["oz"]
+	var moral := (1.0 + (float(h["moral"]) - 50.0) / 50.0 * 0.05) * Veri.yorgunluk_carpani(float(h.get("yorgunluk", 0.0)))
+	var st := {
+		"uid": h["uid"],
+		"ad": String(h["ad"]).get_slice(" ", 0),
+		"rol": String(h["rol"]),
+		"renk": Veri.ROLLER[h["rol"]]["renk"],
+		"mod": String(h.get("hedef_modu", "rol")),
+		"hasar": float(si["hasar"]) * (1.0 + (float(oz["nisancilik"]) - 10.0) * 0.035) * moral * Veri.NOBETCI_VERIM,
+		"ates_hizi": float(si["ates"]) * (1.0 + (float(oz["refleks"]) - 10.0) * 0.025) * moral,
+		"kritik": clampf(float(si["kritik"]) + (float(oz["sogukkanlilik"]) - 10.0) * 0.008, 0.0, 0.6),
+		"kritik_carpan": 2.5,
+		"menzil": float(si["menzil"]),
+		"namlu": mini(int(si["namlu"]), 3),  # pompalı surda 3 saçma: mermi sayısı patlamasın
+		"yayilim": float(si["yayilim"]),
+		"delme": int(si["delme"]),
+		"boy": float(Veri.SILAHLAR[s["taban"]]["boy"]),
+	}
+	match String(h["rol"]):
+		"asker":
+			st["hasar"] *= 1.1
+		"avci":
+			st["kritik"] += 0.08
+			st["kritik_carpan"] = 3.0
+	return st
+
+
+## FM maç puanı (1–10, bir ondalık): 6.0'dan başlar; ekip içindeki hasar payı beklenen payla kıyaslanır,
+## öldürmeler ve sonucun beklentiye göre durumu eklenir. Son 5 puan "form" olarak saklanır.
+func mac_puani(katki: Dictionary, kaynak: int, kaynak_sayisi: int, performans: int) -> float:
+	var toplam := 0.0
+	for k in katki:
+		if int(k) >= 0:
+			toplam += float(katki[k]["hasar"])
+	var benim: Dictionary = katki.get(kaynak, {"hasar": 0.0, "oldurme": 0})
+	var p := 6.0
+	if toplam > 0.0 and kaynak_sayisi > 1:
+		var pay := float(benim["hasar"]) / toplam
+		p += clampf((pay * kaynak_sayisi - 1.0) * 1.5, -1.5, 2.0)
+	p += minf(int(benim["oldurme"]) / 25.0, 1.2)
+	match performans:
+		0:
+			p += 0.8
+		2:
+			p -= 0.8
+	return clampf(snappedf(p, 0.1), 3.0, 10.0)
+
+
+func _form_ekle(h: Dictionary, puan: float) -> void:
+	var p: Array = h.get("puanlar", [])
+	p.append(puan)
+	while p.size() > 5:
+		p.pop_front()
+	h["puanlar"] = p
+
+
+## Son 5 koşunun ortalama puanı (FM'deki "form"); hiç yoksa 0.
+func form(h: Dictionary) -> float:
+	var p: Array = h.get("puanlar", [])
+	if p.is_empty():
+		return 0.0
+	var t := 0.0
+	for x in p:
+		t += float(x)
+	return t / p.size()
 
 
 # ================================================================ ENVANTER

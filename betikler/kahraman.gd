@@ -13,6 +13,7 @@ var _zaman := 0.0
 var _silah_boy := 34.0
 var _silah_kalin := 12.0
 var _silah_renk := Color("2b2b2b")
+var _hedef  # son seçilen hedef: ilk mermi ona hasar "ayırır" (aşırı öldürme önleme)
 var _doku: Texture2D  # Performans v3: zemin halkası, gövde ve namlu alevi tek dokuda
 
 const HUCRE := 110.0
@@ -79,6 +80,7 @@ func _process(delta: float) -> void:
 	position.x = move_toward(position.x, clampf(hedef_x, 50.0, oyun.genislik - 50.0), 950.0 * delta)
 
 	var hedef = _hedef_bul()
+	_hedef = hedef
 	if hedef:
 		var istenen: float = (hedef.position - position).angle()
 		aci = lerp_angle(aci, istenen, minf(delta * 18.0, 1.0))
@@ -103,7 +105,7 @@ func _ates() -> void:
 	var ucu := position + Vector2.from_angle(aci) * (_silah_boy + 18.0) * scale.x
 	for i in namlu:
 		var sapma := (float(i) - float(namlu - 1) / 2.0) * yayilim
-		oyun.mermi_at(ucu, Vector2.from_angle(aci + sapma))
+		oyun.mermi_at(ucu, Vector2.from_angle(aci + sapma), _hedef if i == 0 else null)
 	_parlama = 1.0
 	_geri_tepme = 5.0
 	oyun.ses("atis")
