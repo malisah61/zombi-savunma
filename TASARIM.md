@@ -66,6 +66,13 @@ iki dallı uzmanlık (Kingdom Rush gibi).
   Aynı 3 eşya birleşince bir üst nadirliğe çıkar.
 - **Başarımlar ve günlük görevler.**
 
+## 7b. Laboratuvar (Gece 2'de uygulandı)
+3 dal × 3 düğüm (5 seviye) + dal sonu. Fiyat 40·1.5^sv (40/60/90/135/203, düğüm başı 528), dal sonu 500 hurda ve dalda 6 seviye ister. Toplam ≈ 6250 hurda (12. dalga koşusu ≈ 190 hurda, yani ≈ 33 koşu).
+- **Saldırı:** Hasar +%3, Ateş hızı +%2, Kritik +%1.5; son: Sert Açılış (koşu kartla başlar).
+- **Savunma:** Barikat +%4, Onarım +%6, Asit/patlama hasarı −%4; son: İkinci Şans (koşu başına bir kez %25 canla kalkar).
+- **Ekonomi:** Başlangıç +12 altın, Hurda +%4, Altın +%3; son: Hazır Cephanelik (2 ücretsiz yeniden çekme).
+- En üstte toplam DPS ≈ ×1.3. Karar: saf güç yerine "küçük yüzde + kural değiştiren son" (Hades ortası).
+
 ## 8. Bölümler ve Zorluk
 - Bölümler: Kasaba → Orman → Hastane → Askeri Üs → Şehir Merkezi. Her bölüm yeni bir zombi ve yeni bir
   harita kuralı getirir (ör. Orman: sis, görüş kısa; Hastane: gece, karanlık).
@@ -93,6 +100,11 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
+- **Yeni araştırılan (Gece 2):**
+  - **Tehdit Seviyesi (Hades Pact of Punishment gibi):** koşu öncesi 4 şalter, her biri 1–3 kademe, her kademe 1–2 tehdit puanı: Kalabalık (+%20 zombi), Dişli (+%20 zombi hasarı), Kalın Deri (+%15 can), Karaborsa (+%40 onarım/taret fiyatı). Ödül: puan başına hurda +%10; yeni en yüksek puan ilk kez geçilince tek seferlik Destansı silah. Hades'in dersi: ödül bir kerelik yeni tepe için verilir, puanı birer birer artırmak ödüllendirilir. Teknik: `profil.tehdit` sözlüğü, `_sonraki_dalga` ve `kur` çarpanları, OYNA sekmesinde şalter satırı. Yeni oyuncu için 15. dalgayı geçince açılsın.
+  - **Erken dalga çağırma (Kingdom Rush):** kalan doğacak zombi sıfırsa barikatın üstünde "ERKEN ÇAĞIR" düğmesi: sahadaki zombi başına 2 altın + aktif yetenek bekleme −3 sn. Sahada kalanlar kalır, kart seçimi kısa tutulur. Risk: iki dalga üst üste biner. Kart ekranı kalanlar varken oyunu durdurmalı (şu an `durum=KART` zombileri durdurmuyor, önce tree pause gerekir).
+  - **Boss 2 Kraliçe:** 10, 20, 30. dalgada Dev yerine: 900 can, 22 hız, durur ve 4 sn'de 2 koşucu doğurur; öldürülünce 60 altın. Alan hasarını ödüllendirir, Havan ile eşleşir.
+
 - Gündüz/gece döngüsü: gece zombiler güçlü, gündüz kaynak toplama.
 - Kurtarılan hayatta kalanlar üste yardımcı olur.
 - Hava durumu: yağmur alevi zayıflatır, sis menzili düşürür.
@@ -120,23 +132,30 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 - [x] (Gündüz turu) Ses v2 ilk parça: Kenney CC0 para, kırılma, patlama, yerleştirme sesleri.
 - [ ] Ses v3: gerçek silah ve zombi sesleri, arka plan müziği (Kenney kitlerindeki blaster sesleri bilim kurgu olduğu için alınmadı).
 - [x] (Gece 1) Performans v2: zombi/leke atlası, zemin ve barikat dokuya pişirildi; uyarlamalı kalite; 120 zombilik yük testi karesi.
-- [ ] Performans v3: kahraman çizimini de pişir; parçacıkları tek düğümde topla; barikat tahtalarını sadeleştir.
+- [x] (Gece 2) Performans v3: kahraman dokuya pişirildi, 52 CPUParticles2D düğümü tek düğümde toplandı (yük testi 252 → 219 çizim çağrısı).
+- [ ] Performans v4: barikat tahtalarını sadeleştir, hasar yazılarını tek düğümde topla (Label başına çağrı), asit dairelerini dikdörtgene çevir.
 - [x] (Gece 1) FM v2 (bkz. §16): kişilik, sakatlık ve yorgunluk.
 - [x] (Gündüz turu) Mentorluk: 28+ yaş ve Liderlik 12+ kişi, 25 yaş altı gence bağlanır; gelişim +%20, koşu başına %3 kişilik geçişi.
-- [ ] FM v3: koşu sonu ekip konuşması, personel, tesisler.
+- [x] (Gece 2) FM v3 ilk parça: koşu sonu ekip konuşması (Öv / Sert konuş / Sessiz kal), sonuç beklenti ve kişiliğe bağlı, tekrar yarım etki.
+- [ ] FM v3 kalanı: personel, tesisler.
 - [x] (Gündüz turu) Keşif v2 ilk parça: öneri yıldızı (3 + (değer − ekip en iyi)/6, bilgi azsa ±1.5 yanılır) ve kısa liste (raporu korur).
 - [ ] Keşif v3: gözlemci personeli (Yetenek / Potansiyel Değerlendirme).
 - [ ] Envanter v2: zırh + aksesuar yuvası, silah modları, set bonusları, kötü şans koruması.
-- [ ] Sıradaki zombiler: Patlayan (barikatta alan hasarı), Kalkanlı (önden mermi keser, 8. bölüm), Çağırıcı (boss olmayan kaynak).
+- [x] (Gece 2) Patlayan zombi: barikatta 34 hasar, yolda vurulursa çevresini patlatır (bkz. §3b).
+- [ ] Sıradaki zombiler: Kalkanlı (önden mermi keser), Çağırıcı (boss olmayan kaynak).
 - [ ] Boss 2: Kraliçe (her 10. dalgada Dev ile sırayla; sürekli koşucu doğurur).
 - [x] (Gündüz turu) Kule yuvaları: 3 yuva, taret 60/96/154 altın, 8×1.5^(sv−1)×(1+0.05·dalga) hasar, 0.6 sn, menzil 520; Mühendis +%30 güç, %20 ucuz.
-- [ ] Kule v2: havan (alan) ve alev kulesi, 3. seviyede iki dal.
-- [ ] **Sıradaki öncelik:** Laboratuvar (hurdanın kalıcı harcama yeri) ve Patlayan zombi.
-- [ ] Kalıcı yetenek ağacı (Laboratuvar): Saldırı / Savunma / Ekonomi.
+- [x] (Gece 2) Kule v2: 3. seviyeden sonra 240 altına iki dal: Havan (45×güç alan, 105 px, 2.6 sn, zırhı aşar), Ağır Taret (43×güç, 1.2 sn, zırh yok sayar, 1 delme). Seçim oyunu durdurur, Vazgeç var.
+- [ ] Kule v3: alev kulesi, onarım istasyonu.
+- [ ] **Sıradaki öncelik:** Boss 2 Kraliçe, Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
+- [x] (Gece 2) Laboratuvar: bkz. §7b.
 - [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
 - [ ] Bölümler ve zorluk seçimi; sonsuz mod.
 - [x] (Gündüz turu) Günlük görevler: 3 görev, gece yarısı yenilenir, biten ödül kaybolmaz, üçü alınınca bonus Nadir+ silah.
+- [x] (Gece 2) Koşu sonu ekranı v2: barikatı en çok yiyen tür + öneri, sıradaki Laboratuvar hedefi; ilk 3 koşuda dalga dalga öğretici ipucu.
+- [ ] Tehdit Seviyesi (Fikir Havuzu, Gece 2).
+- [ ] Erken dalga çağırma (Fikir Havuzu, Gece 2).
 - [ ] Başarımlar.
 - [ ] Bölüm 2: Orman.
 
@@ -147,6 +166,7 @@ Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; 
 | Koşucu | 15 | 135 | 4 | 3 | oran %15+3·n, en çok %45 | 3 |
 | Zırhlı | 46 | 40 | 9 | 5 | zırh 4 + 0.35·dalga; oran %10+1.5·(n−4), en çok %25 | 4 |
 | Kusan | 26 | 44 | 9 | 5 | 330 px'te durur, 2.8 sn'de bir asit; öncelik +260; oran %8+1·(n−6), en çok %16 | 6 |
+| Patlayan | 20 | 78 | 34 | 6 | barikatta patlar (altın yok); yolda vurulursa 130 px, 40×can çarpanı alan hasarı; öncelik +200; son 260 px yanıp söner; oran %6+1·(n−8), en çok %14 | 8 |
 | Dev (boss) | 480 | 27 | 32 | 40 | zırh 2; 1.3 sn işaretli vuruş; %50 canda 2+2k koşucu; her k. Dev can ×(1+0.6(k−1)), hasar ×(1+0.35(k−1)) | 5, 10, 15… |
 - **Zırh formülü:** son hasar = max(hasar − zırh, hasar × 0.2). Düz çıkarma bilerek seçildi: Makineli (5.5) zırha çok takılır, Keskin Nişancı (34) neredeyse etkilenmez;
   böylece silah ve kart seçimi anlam kazanır. Zırh Delici kartı 4 puan siler, Titanyum evrimi tümünü.
@@ -210,6 +230,10 @@ Diken Kalesi (Sağlam Barikat 5 + Dikenli Tel 2). Kartlar bitince Altın Kesesi 
 - **Yorgunluk (0–100):** oynayan +10 + 1.6·dalga (tek kişilik ekipte yarısı), yedek −35/koşu, gerçek zamanla −12/saat. Etki: hasar ve ateş hızı −%0.15/puan (100'de −%15).
 - **Sakatlık:** barikat düşünce şans = %5 + yorgunluk×%0.2 (en çok %25), 1–3 koşu; sakat sahaya çıkamaz, en iyi sağlam yedek otomatik çıkar. Tek kişilik ekipte olmaz.
 
+## 16b. Ekip konuşması (Gece 2'de uygulandı)
+Beklenti = önceki en iyi dalga × 0.7 (en az 3). İyi ≥ beklenti×1.3, normal ≥ beklenti, altı kötü. İlk koşu normal.
+Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Profesyonel sert +2, Kararlı sert +3, Hırslı öv +2, Asabi sert −7, Tembel sert +2 öv −2. Üst üste aynı konuşmada olumlu etki yarıya iner. Lider ruhlu olumlu tepki verirse tüm ekip +1.
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -222,6 +246,15 @@ Diken Kalesi (Sağlam Barikat 5 + Dikenli Tel 2). Kartlar bitince Altın Kesesi 
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-06 (Gece 2)
+- Kingdom Rush kalıcı yükseltmeler: 6 ağaç, ağaç başı 5 yükseltme, tekil etki küçük (+%10 can, +%15 hasar), maliyet 1–4 yıldız. — [KR Upgrades](https://kingdomrushtd.fandom.com/wiki/Upgrades)
+- Meta çeşitlilik vs güç: Slay the Spire/Balatro taban güç vermez, Hades ortada; saf güç zorluğu kaydırır, saf çeşitlilik kısa oyunda ilerleme hissini zayıflatır. — [Meta as variety](https://saschb2b.github.io/game-mechanics/concepts/meta-as-variety-not-power)
+- Fark türü ve ölçeği: sayı artışı ancak oynamayı değiştirirse anlamlı. — [Escapist](https://www.escapistmagazine.com/roguelites-items-power-scale-game-development-vampire-survivors/)
+- FM konuşması: sonuç beklentiye göre okunur, tekrar etkiyi düşürür, bazen hiçbir şey dememek doğrudur. Kaynakta sayı yok; sayılarımız bizim seçimimiz. — [FM Scout rehberi](https://www.fmscout.com/a-team-talks-guide-managing-morale-and-confidence.html)
+- Hades Heat: kademe başına 1–3 puan (örn. Hard Labor kademe başına +%20 düşman hasarı), ödül yeni tepe için bir kez. — [RPG Site](https://rpgsite.net/feature/10287-hades-pact-of-punishment-heat-modifiers-and-how-to-maximize-your-rewards)
+- KR erken çağırma: taban bonus sayısı wikide bulunamadı; Vengeance yükseltmesi %80 ek altın veriyor. Sayılarımız kendi önerimiz. — [KR Gold](https://kingdomrushtd.fandom.com/wiki/Gold), [KR Upgrades](https://kingdomrushtd.fandom.com/wiki/Upgrades)
+- Godot: Compatibility'de parçacık için CPU tarafı; biz düğümsüz, sabit dizili kendi sistemimizi yazdık (`parcaciklar.gd`).
+
 ### 2026-11-05 (Gündüz turu)
 - Kingdom Rush: kulelerin yanında hero/oyuncu büyüleri bekleme süreli; para kule yerine, zamanlama büyüye gider. — [Hero Spell](https://kingdomrushtd.fandom.com/wiki/Hero_Spell), [Call Reinforcements](https://kingdomrushtd.fandom.com/wiki/Call_Reinforcements), [Tower defense kuralları](https://gamedeveloper.com/design/tower-defense-game-rules-part-2-)
 - Günlük görevler angaryaya dönüşebilir; kısa ve cezasız tutuldu. — [Daily quests or daily pests](https://www.universityxp.com/research/2024/2/24/daily-quests-or-daily-pests-the-benefits-and-pitfalls-of-engagement-rewards-in-games), [Metriklere etkisi](https://www.indiehackers.com/post/designing-with-data-what-daily-quests-actually-do-to-your-game-metrics-926d83be10)

@@ -99,7 +99,50 @@ const GOREVLER: Array[Dictionary] = [
 	{"id": "kule", "ad": "%d taret kur veya yükselt", "min": 2, "max": 3, "odul": 30},
 	{"id": "aktif", "ad": "Aktif yeteneği %d kez kullan", "min": 3, "max": 5, "odul": 30},
 	{"id": "evrim", "ad": "%d kart evrimleştir", "min": 1, "max": 1, "odul": 60},
+	{"id": "patlayan", "ad": "%d patlayan zombi öldür", "min": 6, "max": 10, "odul": 35},
 ]
+
+# ---------------------------------------------------------------- LABORATUVAR (hurdanın kalıcı yeri)
+# Düğüm: küçük kalıcı yüzde (Kingdom Rush ağacı gibi). Dal sonu: sayı değil, oynanışı değiştiren kural.
+# fiyat = LAB_TABAN × 1.5^seviye. Dal sonu, dalda LAB_FINAL_ESIK seviye toplanınca açılır.
+const LAB_TABAN := 40.0
+const LAB_FINAL_FIYAT := 500
+const LAB_FINAL_ESIK := 6
+const LAB: Array[Dictionary] = [
+	{"ad": "SALDIRI", "renk": Color("e8653c"), "dugumler": [
+		{"id": "l_hasar", "ad": "Keskin Barut", "etki": "Hasar +%%%s", "deger": 0.03, "max": 5},
+		{"id": "l_ates", "ad": "Yağlı Mekanizma", "etki": "Ateş hızı +%%%s", "deger": 0.02, "max": 5},
+		{"id": "l_kritik", "ad": "Soğuk Göz", "etki": "Kritik şansı +%%%s", "deger": 0.015, "max": 5},
+		{"id": "l_acilis", "ad": "Sert Açılış", "etki": "Koşu bir yetenek kartıyla başlar", "max": 1, "final": true},
+	]},
+	{"ad": "SAVUNMA", "renk": Color("4fa3d9"), "dugumler": [
+		{"id": "l_barikat", "ad": "Çelik Direk", "etki": "Barikat canı +%%%s", "deger": 0.04, "max": 5},
+		{"id": "l_onarim", "ad": "Hızlı Çimento", "etki": "Onarım gücü +%%%s", "deger": 0.06, "max": 5},
+		{"id": "l_direnc", "ad": "Asit Boyası", "etki": "Asit ve patlama hasarı -%%%s", "deger": 0.04, "max": 5},
+		{"id": "l_sans", "ad": "İkinci Şans", "etki": "Barikat düşünce koşu başına bir kez %25 canla kalkar", "max": 1, "final": true},
+	]},
+	{"ad": "EKONOMİ", "renk": Color("d9b23c"), "dugumler": [
+		{"id": "l_bas_altin", "ad": "Kasa Kilidi", "etki": "Koşuya +%s altınla başla", "deger": 12.0, "max": 5, "duz": true},
+		{"id": "l_hurda", "ad": "Hurdacı", "etki": "Koşu sonu hurda +%%%s", "deger": 0.04, "max": 5},
+		{"id": "l_altin", "ad": "Ganimet Torbası", "etki": "Zombilerden altın +%%%s", "deger": 0.03, "max": 5},
+		{"id": "l_cephane", "ad": "Hazır Cephanelik", "etki": "Koşu başına 2 ücretsiz yeniden çekme", "max": 1, "final": true},
+	]},
+]
+
+# Koşu sonu ekip konuşması (FM): performans (0 iyi, 1 normal, 2 kötü) → moral değişimi.
+const KONUSMALAR := {
+	"ov": {"ad": "Öv", "etki": [6, 2, -3]},
+	"sert": {"ad": "Sert konuş", "etki": [-4, 1, 5]},
+	"sessiz": {"ad": "Sessiz kal", "etki": [0, 0, 0]},
+}
+# kişiliğe göre ek moral: {kişilik: {konuşma: ek}}
+const KONUSMA_KISILIK := {
+	"profesyonel": {"sert": 2},
+	"kararli": {"sert": 3},
+	"hirsli": {"ov": 2},
+	"asabi": {"sert": -7},
+	"tembel": {"sert": 2, "ov": -2},
+}
 
 const ISIMLER := ["Ali", "Ayşe", "Mehmet", "Zeynep", "Mustafa", "Elif", "Emre", "Selin", "Burak", "Deniz",
 	"Kerem", "Ece", "Murat", "Derya", "Okan", "Gizem", "Cem", "Nazlı", "Tolga", "İrem", "Serkan", "Pınar",
@@ -297,6 +340,22 @@ static func moral_metni(m: int) -> String:
 	if m >= 25:
 		return "Düşük"
 	return "Çok düşük"
+
+
+static func lab_fiyat(d: Dictionary, sv: int) -> int:
+	if bool(d.get("final", false)):
+		return LAB_FINAL_FIYAT
+	return int(round(LAB_TABAN * pow(1.5, sv)))
+
+
+## "Hasar +%9" gibi: düğümün verilen seviyedeki etkisi. Sabit metinli dal sonlarında etkinin kendisi.
+static func lab_metni(d: Dictionary, sv: int) -> String:
+	if bool(d.get("final", false)):
+		return String(d["etki"])
+	var deger := float(d["deger"]) * maxi(sv, 1)
+	if bool(d.get("duz", false)):
+		return String(d["etki"]) % str(int(deger))
+	return String(d["etki"]) % str(snappedf(deger * 100.0, 0.1)).trim_suffix(".0")
 
 
 static func _uid() -> String:

@@ -54,6 +54,13 @@ static func _susleme_govde(ci: CanvasItem, tur: String, r: float) -> void:
 			ci.draw_circle(Vector2(r * 0.4, -r * 0.5), r * 0.28, kese.darkened(0.2))
 			ci.draw_circle(Vector2(-r * 0.48, -r * 0.5), r * 0.14, kese)
 			ci.draw_circle(Vector2(r * 0.36, -r * 0.56), r * 0.11, kese)
+		"patlayan":
+			# şişmiş, içi parlayan karın ve fitil
+			ci.draw_circle(Vector2(0, -r * 0.2), r * 0.72, Color("a8431c"))
+			ci.draw_circle(Vector2(-r * 0.1, -r * 0.28), r * 0.46, Color("e8791f"))
+			ci.draw_circle(Vector2(-r * 0.16, -r * 0.34), r * 0.22, Color("ffd24a"))
+			ci.draw_line(Vector2(r * 0.4, -r * 0.7), Vector2(r * 0.62, -r * 1.02), Color("2b2b2b"), 3.0, true)
+			ci.draw_circle(Vector2(r * 0.64, -r * 1.05), r * 0.12, Color("ffe08a"))
 		"dev":
 			# kaslı omuzlar, bel zinciri ve dikişler
 			var et := Color("6d7f4c")

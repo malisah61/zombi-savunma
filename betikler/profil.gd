@@ -22,6 +22,7 @@ const VARSAYILAN := {
 	"gorulen": [],  # tanıtımı yapılmış zombi türleri
 	"son_zaman": 0,  # gerçek zamanla dinlenme için
 	"gorevler": {"tarih": "", "liste": [], "bonus": false},
+	"lab": {},  # düğüm id -> seviye
 }
 
 var veri: Dictionary = {}
@@ -223,6 +224,7 @@ func kosu_istatistigi() -> Dictionary:
 			st["kule_fiyat"] = 0.8
 		"doktor":
 			st["yenilenme"] = 0.004
+	_lab_uygula(st)
 	st["kritik"] = clampf(st["kritik"], 0.0, 0.75)
 	st["altin_carpan"] = maxf(st["altin_carpan"], 0.5)
 	return st
@@ -231,7 +233,7 @@ func kosu_istatistigi() -> Dictionary:
 ## Koşu bitince çağrılır: ödüller, ganimet, gelişim (FM tarzı), moral. Özet sözlüğü döndürür.
 func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false) -> Dictionary:
 	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0, "sakat": {}, "yorgunluk": ""}
-	var kazanc := dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25
+	var kazanc := int(round((dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))))
 	hurda_ekle(kazanc)
 	ozet["hurda"] = kazanc
 
@@ -256,6 +258,9 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 
 	var h := aktif_kahraman()
 	var onceki_en_iyi := int(h.get("en_iyi_dalga", 0))
+	ozet["uid"] = h["uid"]
+	ozet["ad"] = String(h["ad"]).get_slice(" ", 0)
+	ozet["performans"] = _performans(dalga, onceki_en_iyi)
 	h["kosu"] = int(h.get("kosu", 0)) + 1
 	h["en_iyi_dalga"] = maxi(onceki_en_iyi, dalga)
 	h["xp"] = int(h["xp"]) + dalga * 10 + oldurme
@@ -396,6 +401,125 @@ func _gelistir(h: Dictionary, puan: float) -> Array:
 			if int(h["oz"][id]) > 1 and randf() < 0.5:
 				h["oz"][id] = int(h["oz"][id]) - 1
 	return gelisenler
+
+
+## Sonuç beklentiye göre (FM): 0 iyi, 1 normal, 2 kötü. Beklenti: en iyi dalganın %70'i, en az 3.
+func _performans(dalga: int, en_iyi: int) -> int:
+	if en_iyi <= 0:
+		return 1
+	var beklenti := maxf(en_iyi * 0.7, 3.0)
+	if dalga >= beklenti * 1.3:
+		return 0
+	return 1 if dalga >= beklenti else 2
+
+
+## Koşu sonu konuşması. Aynı konuşma üst üste etkisini yitirir; olumlu etki yarıya iner.
+## Sessiz kalmak moralı değiştirmez ama yorgunluğu biraz alır. {metin, moral} döndürür.
+func konusma_yap(uid: String, secim: String, performans: int) -> Dictionary:
+	var h := kahraman_bul(uid)
+	if h.is_empty():
+		return {}
+	var kisilik := String(h.get("kisilik", "dengeli"))
+	var d := int(Veri.KONUSMALAR[secim]["etki"][performans])
+	if secim != "sessiz":
+		d += int(Veri.KONUSMA_KISILIK.get(kisilik, {}).get(secim, 0))
+		if String(h.get("son_konusma", "")) == secim and d > 0:
+			d = int(d / 2.0)
+	var eski := int(h["moral"])
+	h["moral"] = clampi(eski + d, 5, 100)
+	h["son_konusma"] = secim
+	var metin := ""
+	var ad := String(h["ad"]).get_slice(" ", 0)
+	if secim == "sessiz":
+		h["yorgunluk"] = maxf(float(h.get("yorgunluk", 0.0)) - 8.0, 0.0)
+		metin = "%s bir süre tek başına oturdu. Yorgunluğu biraz azaldı." % ad
+	elif d >= 4:
+		metin = "%s dikleşti: \"Sonraki dalgalar benim.\"" % ad
+	elif d > 0:
+		metin = "%s başını salladı." % ad
+	elif d == 0:
+		metin = "%s pek oralı olmadı." % ad
+	elif secim == "ov":
+		metin = "%s inanmadı: \"Barikat düştü, neyi övüyorsun?\"" % ad
+	else:
+		metin = "%s sinirlendi: \"O kadar da değil!\"" % ad
+	if d > 0 and String(Veri.kisilik(h).get("ad", "")) == "Lider ruhlu":
+		for x in veri["ekip"]:
+			x["moral"] = mini(int(x["moral"]) + 1, 100)
+	kaydet()
+	return {"metin": metin, "moral": int(h["moral"]) - eski}
+
+
+# ================================================================ LABORATUVAR
+
+func lab_sv(id: String) -> int:
+	return int(veri["lab"].get(id, 0))
+
+
+## Düğümün toplam etkisi (ör. l_hasar 3. seviyede 0.09). Dal sonlarında 0 veya 1.
+func lab_deger(id: String) -> float:
+	for dal in Veri.LAB:
+		for d in dal["dugumler"]:
+			if d["id"] == id:
+				return float(d.get("deger", 1.0)) * lab_sv(id)
+	return 0.0
+
+
+func lab_dal_toplam(dal: Dictionary) -> int:
+	var t := 0
+	for d in dal["dugumler"]:
+		if not bool(d.get("final", false)):
+			t += lab_sv(d["id"])
+	return t
+
+
+func lab_acik(dal: Dictionary, d: Dictionary) -> bool:
+	return not bool(d.get("final", false)) or lab_dal_toplam(dal) >= Veri.LAB_FINAL_ESIK
+
+
+func lab_al(dal_i: int, dug_i: int) -> String:
+	var dal: Dictionary = Veri.LAB[dal_i]
+	var d: Dictionary = dal["dugumler"][dug_i]
+	var sv := lab_sv(d["id"])
+	var fiyat := Veri.lab_fiyat(d, sv)
+	if sv >= int(d["max"]):
+		return "En üst seviyede"
+	if not lab_acik(dal, d):
+		return "Önce bu dalda %d seviye topla" % Veri.LAB_FINAL_ESIK
+	if hurda() < fiyat:
+		return "Yeterli hurda yok"
+	hurda_ekle(-fiyat)
+	veri["lab"][d["id"]] = sv + 1
+	kaydet()
+	return ""
+
+
+## Bitiş ekranı ve menü için en ucuz sıradaki hedef: {ad, fiyat}.
+func lab_sonraki() -> Dictionary:
+	var en := {}
+	for dal in Veri.LAB:
+		for d in dal["dugumler"]:
+			var sv := lab_sv(d["id"])
+			if sv >= int(d["max"]) or not lab_acik(dal, d):
+				continue
+			var f := Veri.lab_fiyat(d, sv)
+			if en.is_empty() or f < int(en["fiyat"]):
+				en = {"ad": d["ad"], "fiyat": f}
+	return en
+
+
+func _lab_uygula(st: Dictionary) -> void:
+	st["hasar"] *= 1.0 + lab_deger("l_hasar")
+	st["ates_hizi"] *= 1.0 + lab_deger("l_ates")
+	st["kritik"] += lab_deger("l_kritik")
+	st["barikat_max"] *= 1.0 + lab_deger("l_barikat")
+	st["onarim"] *= 1.0 + lab_deger("l_onarim")
+	st["altin_carpan"] += lab_deger("l_altin")
+	st["direnc"] = lab_deger("l_direnc")
+	st["bas_altin"] = int(lab_deger("l_bas_altin"))
+	st["acilis_karti"] = lab_sv("l_acilis") > 0
+	st["ikinci_sans"] = lab_sv("l_sans") > 0
+	st["bedava_cekim"] = 2 if lab_sv("l_cephane") > 0 else 0
 
 
 # ================================================================ EKİP

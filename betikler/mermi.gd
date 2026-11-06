@@ -8,10 +8,11 @@ var hiz := 1100.0
 var hasar := 10.0
 var kritik := false
 var delme_kalan := 0
+var zirh_gec := false  # Ağır Taret mermisi zırhı yok sayar
 var _vurulanlar: Array = []
 
 
-func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int) -> void:
+func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int, zg: bool = false) -> void:
 	position = konum
 	yon = y
 	rotation = y.angle() + PI / 2
@@ -19,6 +20,7 @@ func baslat(konum: Vector2, y: Vector2, h: float, hs: float, k: bool, delme: int
 	hasar = hs
 	kritik = k
 	delme_kalan = delme
+	zirh_gec = zg
 	_vurulanlar.clear()
 	visible = true
 	set_process(true)
@@ -35,7 +37,7 @@ func _process(delta: float) -> void:
 			continue
 		if position.distance_squared_to(z.position) < z.yaricap * z.yaricap:
 			_vurulanlar.append(z)
-			oyun.isabet(z, hasar, kritik, position)
+			oyun.isabet(z, hasar, kritik, position, zirh_gec)
 			delme_kalan -= 1
 			if delme_kalan < 0:
 				oyun.mermi_birak(self)
@@ -43,7 +45,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var renk := Color(1.0, 0.55, 0.2) if kritik else Color(1.0, 0.9, 0.45)
+	var renk := Color(0.6, 0.85, 1.0) if zirh_gec else (Color(1.0, 0.55, 0.2) if kritik else Color(1.0, 0.9, 0.45))
 	var kuyruk := Vector2(0, 26)  # düğüm uçuş yönüne döndürülür; kuyruk arkada kalır
 	# yumuşatmasız çizgiler tek partiye sığar; çok mermide çizim çağrısı patlamaz
 	draw_line(Vector2.ZERO, kuyruk, Color(renk, 0.25), 9.0)

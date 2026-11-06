@@ -1,16 +1,20 @@
 extends Node2D
-## El bombası patlaması. Tek düğüm yeniden kullanılır.
+## Patlama halkası (el bombası, patlayan zombi, havan). Birkaç düğüm havuzda yeniden kullanılır.
+
+var _tw: Tween
 
 
 func patla(konum: Vector2, yaricap: float) -> void:
+	if _tw and _tw.is_valid():
+		_tw.kill()
 	position = konum
 	scale = Vector2.ONE * (yaricap / 100.0) * 0.3
 	modulate.a = 1.0
 	visible = true
-	var tw := create_tween()
-	tw.tween_property(self, "scale", Vector2.ONE * (yaricap / 100.0), 0.22).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(self, "modulate:a", 0.0, 0.3)
-	tw.tween_callback(func() -> void: visible = false)
+	_tw = create_tween()
+	_tw.tween_property(self, "scale", Vector2.ONE * (yaricap / 100.0), 0.22).set_ease(Tween.EASE_OUT)
+	_tw.parallel().tween_property(self, "modulate:a", 0.0, 0.3)
+	_tw.tween_callback(func() -> void: visible = false)
 
 
 func _draw() -> void:

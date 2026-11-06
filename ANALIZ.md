@@ -11,6 +11,34 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-06 — Gece 2
+
+### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)
+- **İlk 5 dakika:** Başlangıç ≈ 18–20 DPS. 5. dalga Dev'i: 480 × 1.48 ≈ 710 can, zırh 2.5 → tabancanın 10 hasarı 7.5'e düşer, net ≈ 15 DPS, yalın 47 sn. Dev barikata 37 sn'de varır, sonra 2.8 sn'de 32 hasar (≈ 11 DPS), 300 can 26 sn dayanır. 4 kartla kazanılır, ilk boss bilerek kolay: doğru. Sorun öğretimde: ipucu yalnız "kaydır" diyor; ONAR, aktif yetenek ve taret hiç anlatılmıyor. Bir de düğme tuzağı: taret düğmesi üstünden başlayan sürükleme askeri oynatmıyor, oyuncu parmağını doğal yerine koyunca oyun tepki vermiyor.
+- **5–15. dalga:** Dalga başı zombi 6 + 2n, tür başına altın 2–5. 15. dalgaya dek ≈ 900 altın; taretler (60+96+154)×3 = 930 ile bunu tam yutuyor. Tasarım burada iyi. **Ama tek tür düşman sınaması var: hepsi yürür, ya vurulur ya vurur.** Hedefleme de otomatik, yani konum hâlâ önemsiz. Kalabalıkta oyuncuyu "şunu şimdi öldür" ya da "şurada patlat" kararına sokan bir şey yok.
+- **Geç oyun (15–35):** 25. dalgada toplam altın ≈ 2200; taretler 930, onarım fiyatı artsa da 10 onarım ≈ 475. Yani ≈ 800 altın boşa birikiyor: **Gece 1'in ekonomi kırığı geç oyunda geri geldi.** Taret de tek tip (tekli hedef): dalga 25'te zırh 4 + 0.35·25 = 12.75, 3. seviye taretin 18×2.25 hasarı dert değil ama zırhlı yığına alan hasarı yok.
+- **Koşu sonu/meta (en önemli bulgu):** Dalga 12 koşusu 192 hurda veriyor. Hurdanın iki yeri var: silah geliştirme (Sıradan silahı Sv10'a ≈ 600 hurda) ve keşif. Ama silah değişince harcanan hurda boşa gider, oyuncu ödül ekranından sonra "şimdi ne alsam" diye kalmıyor; **koşular arası uzun vadeli, kalıcı, seçim isteyen bir hedef yok.** Laboratuvar iki gecedir "sıradaki" diye bekliyor. Bitiş ekranı ödülleri sayıyor ama **"neden öldüm" demiyor**: oyuncu kusana mı Dev'e mi yenildiğini bilmiyor, bir sonraki kart seçimi öğrenmiyor. Ekip tarafında moral otomatik; koşu sonu oyuncunun tek söz hakkı yok.
+- **Telefonda his / performans riski:** Kahraman her kare 13 daire + 2 yumuşatılmış çizgi: birleşmediği için ≈ 15 ayrı çizim çağrısı, tek karakter için. 52 ayrı CPUParticles2D düğümü var, her biri kendi çizim çağrısı ve işlem yükü. Bunlar yük testindeki 232 çağrının büyük parçası olmalı. Yol haritasında Performans v3 duruyor.
+
+### Analiz 2 — Karşılaştırma ve oyuncu psikolojisi
+- **Kingdom Rush kalıcı ağacı:** 6 ağaç, ağaç başı 5 yükseltme, tek yükseltme küçük (+%10 can, +%15 büyü). Yıldızı bölüm bitirerek kazanırsın. Ders: küçük adımlar, görünür ağaç, kaçırılmayan ilerleme.
+- **Meta çeşitlilik mi güç mü (Slay the Spire, Balatro, Hades):** Saf güç metası koşuyu değersizleştirir ve zorluk kayar; saf çeşitlilik ise bizim gibi kısa mobil koşuda "her ölüm ilerleme" hissini vermez. Hades ortada durur: az kalıcı güç, çok seçim. Bizim için doğru yer ortası: küçük yüzdeler + dal sonunda **oynanışı değiştiren** düğüm ("ikinci şans", "ücretsiz çekim").
+- **Fark türü vs fark ölçeği:** Escapist yazısının dersi: +5 hasar ancak oynamayı değiştiriyorsa anlamlı (iki vuruş → tek vuruş). "Kind" farklar daha akılda kalır. Taret uzmanlığı (alan vs zırh delme) tam bu; 4. seviye bir sayı artışı olmamalı.
+- **Football Manager takım konuşması:** Etkiyi belirleyen şey sonucun **beklentiye** göre durumu ve oyuncunun kişiliği; aynı konuşmayı tekrarlamak etkisini yitirir; bazen hiçbir şey dememek doğrudur. Bizde moral sadece dalgaya bağlı, konuşma yok. Küçük bir karar ekleyerek ekip "tablo" olmaktan çıkar, hikâye üretir.
+- **PvZ / Vampire Survivors patlayan düşman mantığı:** Patlayıcı düşman iki yönlü: yanlış yerde felaket, doğru yerde silah. Hedefleme otomatik olsa bile, kritik hedefi öncelikli yapmak ve patlamasının kalabalığı da vurması "güzel an" üretir.
+- **Ölüm özeti (roguelite ortak dili):** İyi roguelitelar ölüm anında "bir dahakine şunu yap" bilgisini verir. Oyuncu yenilgiyi kendi hatasına ve çözülebilir bir soruna bağlarsa bir tur daha başlatır.
+
+### Karar (bu gece)
+**3 geliştirme**
+1. **Performans v3** — parçacıklar tek düğümde toplu çizilir (52 düğüm → 1), kahraman dokuya pişirilir. *Gerekçe:* Mehmet Ali'nin 1 numaralı isteği; her kare ölçülebilir kazanç.
+2. **Kule v2: uzmanlık** — 3. seviye taret 240 altına Havan (alan, zırhı aşar) veya Ağır Taret'e (tek hedef, zırh deler) dönüşür. *Gerekçe:* Geç oyundaki 800 boş altın + "fark türü" kuralı.
+3. **Koşu sonu ekranı v2 + ilk koşu öğretimi** — ölüm özeti (barikatın canını en çok ne yedi, ne yapmalı), sonraki hedef, ipuçları ONAR/aktif/taret'i de anlatır, taret düğmesi üstünden sürükleme hatası kapanır. *Gerekçe:* Öğrenme döngüsü ve "bir tur daha".
+
+**3 yeni özellik**
+1. **Laboratuvar** — hurdanın kalıcı yeri: 3 dal, dal başı 3 düğüm (5 seviye) + oynanışı değiştiren dal sonu. *Gerekçe:* Analiz 1'in en önemli bulgusu, yol haritasında sıradaki.
+2. **Patlayan zombi** — 8. dalgada gelir, barikatta alan hasarı verir; yolda vurulursa çevresindeki zombileri patlatır. *Gerekçe:* Yol haritası; kalabalığa ilk konum/zamanlama kararı.
+3. **Koşu sonu ekip konuşması (FM v3 ilk parça)** — Öv / Sert konuş / Sessiz kal; sonuç performans-beklenti ve kişiliğe bağlı, tekrar edince zayıflar. *Gerekçe:* §0 FM isteği.
+
 ## 2026-11-05 — Gündüz turu (elle başlatılan 2. döngü)
 
 ### Analiz 1 — Oynanış simülasyonu

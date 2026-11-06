@@ -10,6 +10,7 @@ signal duraklat_istendi(duraklat: bool)
 signal yeniden_cek_istendi
 signal aktif_istendi
 signal kule_istendi(i: int)
+signal konusma_istendi(secim: String)
 
 const Veri := preload("res://betikler/veri.gd")
 const Kartlar := preload("res://betikler/kartlar.gd")
@@ -24,6 +25,7 @@ var _onar_dugme: Button
 var _afis: Label
 var _kart_paneli: Control
 var _kart_kutusu: VBoxContainer
+var _kart_baslik: Label
 var _duraklat_dugme: Button
 var _duraklat_paneli: Control
 var _fps_etiket: Label
@@ -43,6 +45,9 @@ var _aktif_dugme: Button
 var _aktif_ad := ""
 var _aktif_son := -1
 var _kule_dugmeler: Array[Button] = []
+var _konusma_kutu: VBoxContainer
+var _konusma_satir: HBoxContainer
+var _konusma_metin: Label
 
 
 func _ready() -> void:
@@ -206,11 +211,11 @@ func kule_dugmeleri_kur(konumlar: Array) -> void:
 		_kule_dugmeler.append(d)
 
 
-func kule_guncelle(fiyatlar: Array, altin: int, oyunda: bool) -> void:
+func kule_guncelle(fiyatlar: Array, altin: int, oyunda: bool, uzman: Array = []) -> void:
 	for i in _kule_dugmeler.size():
 		var f: int = fiyatlar[i]
 		_kule_dugmeler[i].visible = oyunda and f > 0 and altin >= f
-		_kule_dugmeler[i].text = "TARET %d" % f
+		_kule_dugmeler[i].text = ("UZMAN %d" if i < uzman.size() and uzman[i] else "TARET %d") % f
 
 
 func _afis_kur() -> void:
@@ -230,14 +235,14 @@ func _kart_paneli_kur() -> void:
 	(_kart_paneli as ColorRect).color = Color(0, 0, 0, 0.72)
 	add_child(_kart_paneli)
 	_kart_paneli.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var baslik := _etiket(48, Color(1, 0.9, 0.5))
-	baslik.text = "Bir yetenek seç"
-	_kart_paneli.add_child(baslik)
-	baslik.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	baslik.offset_left = -360
-	baslik.offset_right = 360
-	baslik.offset_top = 230
-	baslik.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_kart_baslik = _etiket(48, Color(1, 0.9, 0.5))
+	_kart_baslik.text = "Bir yetenek seç"
+	_kart_paneli.add_child(_kart_baslik)
+	_kart_baslik.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_kart_baslik.offset_left = -360
+	_kart_baslik.offset_right = 360
+	_kart_baslik.offset_top = 230
+	_kart_baslik.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_kart_kutusu = VBoxContainer.new()
 	_kart_kutusu.add_theme_constant_override("separation", 26)
 	_kart_paneli.add_child(_kart_kutusu)
@@ -403,7 +408,6 @@ func _duraklat_kur() -> void:
 	_fps_etiket.visible = false
 
 	_ipucu = _etiket(30, Color(1, 1, 0.85))
-	_ipucu.text = "Parmağını sağa sola kaydır.\nAsker en yakın zombiye kendisi ateş eder."
 	_ipucu.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_ipucu)
 	_ipucu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -414,7 +418,8 @@ func _duraklat_kur() -> void:
 	_ipucu.modulate.a = 0.0
 
 
-func ipucu_goster() -> void:
+func ipucu_goster(metin: String) -> void:
+	_ipucu.text = metin
 	var tw := create_tween()
 	tw.tween_property(_ipucu, "modulate:a", 1.0, 0.4)
 	tw.tween_interval(3.0)
@@ -444,7 +449,7 @@ func _bitis_kur() -> void:
 	baslik.offset_left = -360
 	baslik.offset_right = 360
 	baslik.offset_top = 90
-	_bitis_metin = _etiket(34)
+	_bitis_metin = _etiket(30)
 	_bitis_metin.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bitis.add_child(_bitis_metin)
 	_bitis_metin.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -453,13 +458,13 @@ func _bitis_kur() -> void:
 	_bitis_metin.offset_top = -440
 	_bitis_metin.offset_bottom = -270
 	_odul_kutusu = VBoxContainer.new()
-	_odul_kutusu.add_theme_constant_override("separation", 6)
+	_odul_kutusu.add_theme_constant_override("separation", 2)
 	_bitis.add_child(_odul_kutusu)
 	_odul_kutusu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_odul_kutusu.offset_left = -330
 	_odul_kutusu.offset_right = 330
-	_odul_kutusu.offset_top = -270
-	_odul_kutusu.offset_bottom = 300
+	_odul_kutusu.offset_top = -290
+	_odul_kutusu.offset_bottom = 220
 	var tekrar := _buyuk_dugme("TEKRAR", Color(0.6, 0.2, 0.15), func() -> void: basla_istendi.emit(), 230)
 	tekrar.offset_left = -330
 	tekrar.offset_right = -10
@@ -468,7 +473,47 @@ func _bitis_kur() -> void:
 	menu.offset_left = 10
 	menu.offset_right = 330
 	_bitis.add_child(menu)
+	_konusma_kur()
 	_bitis.visible = false
+
+
+## Koşu sonu ekip konuşması: TEKRAR/MENÜ'nün hemen üstünde, cevap aynı yere yazılır.
+func _konusma_kur() -> void:
+	_konusma_kutu = VBoxContainer.new()
+	_konusma_kutu.add_theme_constant_override("separation", 8)
+	_bitis.add_child(_konusma_kutu)
+	_konusma_kutu.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_konusma_kutu.offset_left = -330
+	_konusma_kutu.offset_right = 330
+	_konusma_kutu.offset_top = -405
+	_konusma_kutu.offset_bottom = -240
+	_konusma_metin = _etiket(25, Color(0.85, 0.85, 0.8))
+	_konusma_metin.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_konusma_metin.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_konusma_kutu.add_child(_konusma_metin)
+	_konusma_satir = HBoxContainer.new()
+	_konusma_satir.add_theme_constant_override("separation", 10)
+	_konusma_kutu.add_child(_konusma_satir)
+	for secim in Veri.KONUSMALAR:
+		var d := Button.new()
+		d.text = String(Veri.KONUSMALAR[secim]["ad"])
+		d.focus_mode = Control.FOCUS_NONE
+		d.custom_minimum_size.y = 72
+		d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		d.add_theme_font_size_override("font_size", 28)
+		var r := Color(0.28, 0.33, 0.42)
+		d.add_theme_stylebox_override("normal", _kutu_stili(r, r.lightened(0.4), 14))
+		d.add_theme_stylebox_override("hover", _kutu_stili(r, r.lightened(0.4), 14))
+		d.add_theme_stylebox_override("pressed", _kutu_stili(r.lightened(0.2), Color.WHITE, 14))
+		var s: String = secim
+		d.pressed.connect(func() -> void: konusma_istendi.emit(s))
+		_konusma_satir.add_child(d)
+
+
+func konusma_sonuc(metin: String, renk: Color) -> void:
+	_konusma_satir.visible = false
+	_konusma_metin.text = metin
+	_konusma_metin.add_theme_color_override("font_color", renk)
 
 
 func _buyuk_dugme(metin: String, renk: Color, eylem: Callable, alttan_ust: float) -> Button:
@@ -522,7 +567,8 @@ func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme
 	_tanitim.visible = false
 	for c in _kart_kutusu.get_children():
 		c.queue_free()
-	_cek_dugme.text = "Yeniden çek  %d altın  (%d var)" % [cekme_fiyat, altin]
+	_kart_baslik.text = "Bir yetenek seç"
+	_cek_dugme.text = "Yeniden çek: ücretsiz" if cekme_fiyat == 0 else "Yeniden çek  %d altın  (%d var)" % [cekme_fiyat, altin]
 	_cek_dugme.disabled = altin < cekme_fiyat
 	for k in secenekler:
 		var renk: Color = k["renk"]
@@ -556,6 +602,18 @@ func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme
 		create_tween().tween_property(_kart_paneli, "modulate:a", 1.0, 0.25)
 
 
+## Taret uzmanlığı aynı kart ekranını kullanır; alttaki düğme "Vazgeç" olur.
+func uzman_goster(secenekler: Array[Dictionary], fiyat: int) -> void:
+	kartlari_goster(secenekler, {}, 0, 0)
+	_kart_baslik.text = "Uzmanlık seç: %d altın" % fiyat
+	_cek_dugme.text = "Vazgeç"
+	_cek_dugme.disabled = false
+
+
+func kart_kapat() -> void:
+	_kart_paneli.visible = false
+
+
 func _kart_tiklandi(id: String) -> void:
 	_kart_paneli.visible = false
 	kart_secildi.emit(id)
@@ -569,16 +627,30 @@ func oyun_basladi() -> void:
 
 func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: Dictionary) -> void:
 	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün · En iyi: %d" % [dalga, oldurme, rekor]
+	_konusma_kutu.visible = ozet.has("uid")
+	_konusma_satir.visible = true
+	_konusma_metin.add_theme_color_override("font_color", Color(0.85, 0.85, 0.8))
+	_konusma_metin.text = "%s ile konuş:" % String(ozet.get("ad", "Ekip"))
 	if yeni_rekor:
 		metin += "\nYENİ REKOR!"
 	_bitis_metin.text = metin
 	for c in _odul_kutusu.get_children():
 		c.queue_free()
-	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 32)
-	_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 30)
-	for sl in ozet.get("silahlar", []):
+	if ozet.has("neden"):
+		_odul_ekle(String(ozet["neden"]), Color(1, 0.65, 0.5), 24)
+	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 28)
+	_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 28)
+	if ozet.has("hedef"):
+		_odul_ekle(String(ozet["hedef"]), Color(0.75, 0.85, 1.0), 24)
+	# en değerli 3 silah gösterilir, kalanı tek satırda (ekrana sığsın)
+	var silahlar: Array = ozet.get("silahlar", []).duplicate()
+	silahlar.sort_custom(func(a, b) -> bool: return int(a["nadirlik"]) > int(b["nadirlik"]))
+	for i in mini(silahlar.size(), 3):
+		var sl: Dictionary = silahlar[i]
 		var n: Dictionary = Veri.NADIRLIK[int(sl["nadirlik"])]
-		_odul_ekle("Silah: %s %s" % [n["ad"], Veri.SILAHLAR[sl["taban"]]["ad"]], n["renk"], 28)
+		_odul_ekle("Silah: %s %s" % [n["ad"], Veri.SILAHLAR[sl["taban"]]["ad"]], n["renk"], 26)
+	if silahlar.size() > 3:
+		_odul_ekle("+%d silah daha" % (silahlar.size() - 3), Color(0.8, 0.8, 0.75), 24)
 	var gelisen: Array = ozet.get("gelisim", [])
 	if not gelisen.is_empty():
 		var sayim := {}
@@ -588,9 +660,13 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 		for o in Veri.OZELLIKLER:
 			if sayim.has(o["id"]):
 				parcalar.append("%s +%d" % [o["ad"], sayim[o["id"]]])
-		_odul_ekle("Gelişim: " + ", ".join(parcalar), Color(0.55, 0.85, 1.0), 26)
+		_odul_ekle("Gelişim: " + ", ".join(parcalar), Color(0.55, 0.85, 1.0), 24)
+	var m := int(ozet.get("moral", 0))
+	var moral_yazi := ("Moral %s%d" % ["+" if m > 0 else "", m]) if m != 0 else ""
 	if bool(ozet.get("seviye_atladi", false)):
-		_odul_ekle("Seviye atladı!", Color(0.6, 1, 0.5), 28)
+		moral_yazi = "Seviye atladı!" + ("  ·  " + moral_yazi if moral_yazi != "" else "")
+	if moral_yazi != "":
+		_odul_ekle(moral_yazi, Color(0.6, 1, 0.5) if m >= 0 else Color(1, 0.55, 0.45), 24)
 	var sakat: Dictionary = ozet.get("sakat", {})
 	if not sakat.is_empty():
 		_odul_ekle("SAKATLIK: %s %d koşu oynayamaz" % [sakat["ad"], int(sakat["sure"])], Color(1, 0.45, 0.4), 26)
@@ -598,9 +674,6 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 			_odul_ekle("Sahaya %s çıkıyor" % sakat["yedek"], Color(0.8, 0.85, 0.75), 24)
 	elif String(ozet.get("yorgunluk", "")) in ["Yorgun", "Bitkin"]:
 		_odul_ekle("Durum: %s. Rotasyon yap, gücü düşüyor." % ozet["yorgunluk"], Color(1, 0.75, 0.4), 24)
-	var m := int(ozet.get("moral", 0))
-	if m != 0:
-		_odul_ekle("Moral %s%d" % ["+" if m > 0 else "", m], Color(0.6, 1, 0.5) if m > 0 else Color(1, 0.55, 0.45), 26)
 	_kart_paneli.visible = false
 	_duraklat_paneli.visible = false
 	_bitis.visible = true

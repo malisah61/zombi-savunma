@@ -17,12 +17,15 @@ const TURLER := {
 		"gomlek": [Color("2f3a4a"), Color("3a3f35")], "ten": Color("86a06a")},
 	"kusan": {"can": 26.0, "hiz": 44.0, "hasar": 9.0, "yaricap": 30.0, "altin": 5, "oncelik": 260.0, "durus": 330.0,
 		"gomlek": [Color("5c6b2c"), Color("6b5a2c")], "ten": Color("9cc25a")},
+	"patlayan": {"can": 20.0, "hiz": 78.0, "hasar": 34.0, "yaricap": 28.0, "altin": 6, "oncelik": 200.0, "patlar": true,
+		"gomlek": [Color("7a3b1f"), Color("6b2f2f")], "ten": Color("b5a55a")},
 	"dev": {"can": 480.0, "hiz": 27.0, "hasar": 32.0, "yaricap": 76.0, "altin": 40, "oncelik": 140.0, "boss": true,
 		"zirh": 2.0, "zirh_artis": 0.1, "gomlek": [Color("4d4436")], "ten": Color("7d9a58")},
 }
 const DEV_HAZIRLIK := 1.3  # Dev'in vuruşunu işaret ettiği süre: oyuncu görür, onarıma koşar
 const DEV_ARA := 1.5
 const KUSMA_ARA := 2.8
+const PATLAMA_UYARI := 260.0
 
 var oyun  # oyun.gd
 var tur := "yuruyen"
@@ -113,6 +116,9 @@ func _process(delta: float) -> void:
 	_yanma_isle(delta)
 	if cizim_gerek or _yakilmis:
 		_renk_guncelle()
+	if tur == "patlayan" and position.y > _durus_y - PATLAMA_UYARI:
+		# barikata yaklaşınca kırmızı yanıp söner: "şimdi vur" işareti
+		self_modulate = _taban_renk.lerp(Color(2.2, 0.5, 0.25), 0.5 + 0.5 * sin(_zaman * 14.0))
 	if position.y < _durus_y:
 		position.y = minf(position.y + hiz * oyun.zombi_hizi * delta, _durus_y)
 		position.x += sin(_zaman * 2.3 + _faz) * 14.0 * delta
@@ -123,6 +129,10 @@ func _process(delta: float) -> void:
 		if yeni_kare != _kare:
 			_kare = yeni_kare
 			cizim_gerek = true
+	elif tur == "patlayan":
+		olu = true
+		oyun.patlayan_barikatta(self)
+		return
 	elif boss:
 		_boss_saldir(delta)
 	elif tur == "kusan":

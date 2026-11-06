@@ -8,7 +8,7 @@ signal ayarlar_degisti
 const Veri := preload("res://betikler/veri.gd")
 const YildizBetik := preload("res://betikler/yildiz.gd")
 
-const SEKMELER := ["OYNA", "EKİP", "ENVANTER", "KEŞİF", "AYARLAR"]
+const SEKMELER := ["OYNA", "EKİP", "ENVANTER", "KEŞİF", "LAB", "AYARLAR"]
 const BOSLUK := 18
 
 var profil  # profil.gd
@@ -78,7 +78,7 @@ func _ready() -> void:
 		d.text = SEKMELER[i]
 		d.focus_mode = Control.FOCUS_NONE
 		d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		d.add_theme_font_size_override("font_size", 22)
+		d.add_theme_font_size_override("font_size", 20)
 		var idx := i
 		d.pressed.connect(func() -> void: sekme_ac(idx))
 		cubuk.add_child(d)
@@ -265,9 +265,9 @@ func sekme_ac(i: int) -> void:
 	for j in _sekme_dugmeleri.size():
 		var secili := j == i
 		var r := Color(0.45, 0.65, 0.25) if secili else Color(0.25, 0.27, 0.24)
-		_sekme_dugmeleri[j].add_theme_stylebox_override("normal", _stil(r.darkened(0.3), r, 12))
-		_sekme_dugmeleri[j].add_theme_stylebox_override("hover", _stil(r.darkened(0.3), r, 12))
-		_sekme_dugmeleri[j].add_theme_stylebox_override("pressed", _stil(r, Color.WHITE, 12))
+		_sekme_dugmeleri[j].add_theme_stylebox_override("normal", _sekme_stili(r.darkened(0.3), r))
+		_sekme_dugmeleri[j].add_theme_stylebox_override("hover", _sekme_stili(r.darkened(0.3), r))
+		_sekme_dugmeleri[j].add_theme_stylebox_override("pressed", _sekme_stili(r, Color.WHITE))
 	for c in _icerik.get_children():
 		c.queue_free()
 	_kesif_etiket = null
@@ -278,9 +278,18 @@ func sekme_ac(i: int) -> void:
 		1: _ekip_sekmesi()
 		2: _envanter_sekmesi()
 		3: _kesif_sekmesi()
-		4: _ayarlar_sekmesi()
+		4: _lab_sekmesi()
+		5: _ayarlar_sekmesi()
 	_etiketleri_duzenle(_icerik)
 	_kaydirma.scroll_vertical = 0
+
+
+## Altı sekme dar ekrana sığsın diye iç boşluğu az.
+func _sekme_stili(renk: Color, kenar: Color) -> StyleBoxFlat:
+	var s := _stil(renk, kenar, 12)
+	s.content_margin_left = 3
+	s.content_margin_right = 3
+	return s
 
 
 func _yenile() -> void:
@@ -325,6 +334,12 @@ func _oyna_sekmesi() -> void:
 	b.add_child(_dugme("SAVAŞA BAŞLA", Color(0.35, 0.65, 0.2), func() -> void: oyna_istendi.emit(), 44))
 	b.add_child(_etiket("En iyi: %d. dalga · Toplam %d zombi" % [int(profil.veri["rekor"]),
 		int(profil.veri["istatistik"]["oldurme"])], 24, Color(1, 0.85, 0.4)))
+
+	var hedef: Dictionary = profil.lab_sonraki()
+	if not hedef.is_empty():
+		var eksik: int = int(hedef["fiyat"]) - profil.hurda()
+		b.add_child(_etiket("Laboratuvar: %s %s" % [hedef["ad"], "alınabilir!" if eksik <= 0 else "için %d hurda kaldı" % eksik],
+			22, Color(0.7, 0.85, 1.0)))
 
 	_gorev_karti()
 
@@ -635,6 +650,48 @@ func _rapor_karti(r: Dictionary) -> void:
 			var hata: String = profil.rapor_silah_al(ruid)
 			bildir("Envantere eklendi" if hata == "" else hata, Color(0.5, 1, 0.5) if hata == "" else Color(1, 0.5, 0.4))
 			_yenile(), 24))
+
+
+# ---------------------------------------------------------------- LABORATUVAR
+
+func _lab_sekmesi() -> void:
+	_icerik.add_child(_etiket("Hurdanı kalıcı gelişime çevir. Her seviye küçük ama hiç kaybolmaz. Dalın sonundaki büyük buluş, o dalda %d seviye toplayınca açılır ve oyunun kuralını değiştirir." % Veri.LAB_FINAL_ESIK, 22, Color(0.75, 0.75, 0.7)))
+	for i in Veri.LAB.size():
+		var dal: Dictionary = Veri.LAB[i]
+		var k := _kart(dal["renk"])
+		k.add_child(_etiket(String(dal["ad"]), 28, dal["renk"]))
+		var dugumler: Array = dal["dugumler"]
+		for j in dugumler.size():
+			_lab_dugumu(k, dal, dugumler[j], i, j)
+
+
+func _lab_dugumu(k: VBoxContainer, dal: Dictionary, d: Dictionary, dal_i: int, dug_i: int) -> void:
+	var sv: int = profil.lab_sv(d["id"])
+	var en: int = int(d["max"])
+	var final: bool = bool(d.get("final", false))
+	var acik: bool = profil.lab_acik(dal, d)
+	var satir := _satir(k)
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	satir.add_child(v)
+	var noktalar := "" if final else "   " + "●".repeat(sv) + "○".repeat(en - sv)
+	v.add_child(_etiket(String(d["ad"]) + noktalar, 25, Color(1, 0.85, 0.45) if final else Color.WHITE))
+	var metin: String = Veri.lab_metni(d, sv)
+	if not acik:
+		metin += " (%d/%d seviye)" % [profil.lab_dal_toplam(dal), Veri.LAB_FINAL_ESIK]
+	v.add_child(_etiket(metin, 21, Color(0.75, 0.85, 0.7)))
+	var dolu := sv >= en
+	var fiyat := Veri.lab_fiyat(d, sv)
+	var dg := _dugme("Tamam" if dolu else str(fiyat), dal["renk"], func() -> void:
+		var hata: String = profil.lab_al(dal_i, dug_i)
+		if hata == "":
+			bildir("%s geliştirildi" % d["ad"], Color(0.5, 1, 0.5))
+		else:
+			bildir(hata, Color(1, 0.5, 0.4))
+		_yenile(), 24, not dolu and acik and profil.hurda() >= fiyat)
+	dg.size_flags_horizontal = Control.SIZE_SHRINK_END
+	dg.custom_minimum_size.x = 120
+	satir.add_child(dg)
 
 
 # ---------------------------------------------------------------- AYARLAR
