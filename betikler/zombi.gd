@@ -9,15 +9,15 @@ const ZombiCizim := preload("res://betikler/zombi_cizim.gd")
 # zirh: mermi başına düşülen düz hasar (dalgayla artar, en az %20 hasar geçer).
 # oncelik: kahramanın hedef seçiminde "barikata bu kadar piksel daha yakınmış" gibi sayılır.
 const TURLER := {
-	"yuruyen": {"can": 30.0, "hiz": 52.0, "hasar": 6.0, "yaricap": 30.0, "altin": 2,
+	"yuruyen": {"can": 30.0, "hiz": 52.0, "hasar": 6.0, "yaricap": 30.0, "altin": 2, "zeka": 0.3,
 		"gomlek": [Color("5d6b7a"), Color("7a5c4d"), Color("4f6b4a"), Color("6b4f6b")], "ten": Color("8fae6b")},
-	"kosucu": {"can": 15.0, "hiz": 135.0, "hasar": 4.0, "yaricap": 24.0, "altin": 3,
+	"kosucu": {"can": 15.0, "hiz": 135.0, "hasar": 4.0, "yaricap": 24.0, "altin": 3, "zeka": 0.9,
 		"gomlek": [Color("8c3b3b"), Color("a35a2a")], "ten": Color("a7b86d")},
-	"zirhli": {"can": 46.0, "hiz": 40.0, "hasar": 9.0, "yaricap": 32.0, "altin": 5, "zirh": 4.0, "zirh_artis": 0.35,
+	"zirhli": {"can": 46.0, "hiz": 40.0, "hasar": 9.0, "yaricap": 32.0, "altin": 5, "zirh": 4.0, "zirh_artis": 0.35, "zeka": 0.5,
 		"gomlek": [Color("2f3a4a"), Color("3a3f35")], "ten": Color("86a06a")},
-	"kusan": {"can": 26.0, "hiz": 44.0, "hasar": 9.0, "yaricap": 30.0, "altin": 5, "oncelik": 260.0, "durus": 330.0,
+	"kusan": {"can": 26.0, "hiz": 44.0, "hasar": 9.0, "yaricap": 30.0, "altin": 5, "oncelik": 260.0, "durus": 330.0, "zeka": 0.7,
 		"gomlek": [Color("5c6b2c"), Color("6b5a2c")], "ten": Color("9cc25a")},
-	"patlayan": {"can": 20.0, "hiz": 78.0, "hasar": 34.0, "yaricap": 28.0, "altin": 6, "oncelik": 200.0, "patlar": true,
+	"patlayan": {"can": 20.0, "hiz": 78.0, "hasar": 34.0, "yaricap": 28.0, "altin": 6, "oncelik": 200.0, "patlar": true, "zeka": 1.0,
 		"gomlek": [Color("7a3b1f"), Color("6b2f2f")], "ten": Color("b5a55a")},
 	"dev": {"can": 480.0, "hiz": 27.0, "hasar": 32.0, "yaricap": 76.0, "altin": 40, "oncelik": 140.0, "boss": true,
 		"zirh": 2.0, "zirh_artis": 0.1, "gomlek": [Color("4d4436")], "ten": Color("7d9a58")},
@@ -39,6 +39,13 @@ const DEV_OFKE_HIZ := 1.5
 const DEV_SICRAMA_SURE := 0.9   # uyarı halkasının dolma süresi
 const DEV_SICRAMA_MESAFE := 240.0
 const KRALICE_HIZLI_ARA := 2.5
+# A2 / A3: zayıf noktaya yönelme, sürü, kaçma
+const YAN_HIZ := 0.6          # yana kayma hızı, ileri hızın oranı
+const KARAR_ARA := Vector2(0.9, 1.5)  # hedef bölümünü yeniden düşünme aralığı (sn)
+const KACIS_HIZ := 170.0      # kusan hedef alınınca bu hızla yana kayar
+const KACIS_SURE := 0.45
+const KACIS_BEKLEME := 3.0
+const ITME_DUVAR := 0.5       # barikata dayanmış zombi sürü itmesini bu oranda alır (duvar boyunca yayılır)
 
 var oyun  # oyun.gd
 var tur := "yuruyen"
@@ -60,6 +67,14 @@ var _dogurma_ara := KRALICE_ARA
 var asama := 0  # 0 normal, 1 (%66 altı), 2 (%33 altı)
 var _sicrama := 0.0  # Dev: >0 iken iniş yeri işaretli, dolunca oraya sıçrar
 var _sicrama_y := 0.0
+var zeka := 0.0  # A2: karar anında en zayıf bölüme yönelme olasılığı
+var itme := Vector2.ZERO  # A3: sürü ayrılması (oyun.gd ızgarayla saniyede 10 kez hesaplar), px/sn
+var kalkan  # A3: koşucunun arkasına saklandığı zırhlı (yoksa null)
+var _hedef_x := -1.0
+var _karar_sayac := 0.0
+var _kacis := 0.0
+var _kacis_yon := 1.0
+var _kacis_bekleme := 0.0
 
 var _gomlek := Color.GRAY
 var _ten := Color.GREEN
@@ -119,6 +134,13 @@ func kur(o, t: String, can_carpani: float, hasar_carpani: float = 1.0) -> void:
 	_dogurma_ara = KRALICE_ARA
 	asama = 0
 	_sicrama = 0.0
+	zeka = float(veri.get("zeka", 0.0))
+	itme = Vector2.ZERO
+	kalkan = null
+	_hedef_x = -1.0
+	_karar_sayac = randf_range(0.2, 0.8)
+	_kacis = 0.0
+	_kacis_bekleme = 0.0
 	var gomlekler: Array = veri["gomlek"]
 	_varyant = randi() % gomlekler.size()
 	_gomlek = gomlekler[_varyant]
@@ -156,8 +178,18 @@ func _process(delta: float) -> void:
 		# barikata yaklaşınca kırmızı yanıp söner: "şimdi vur" işareti
 		self_modulate = _taban_renk.lerp(Color(2.2, 0.5, 0.25), 0.5 + 0.5 * sin(_zaman * 14.0))
 	if position.y < _durus_y:
-		position.y = minf(position.y + hiz * oyun.zombi_hizi * delta, _durus_y)
-		position.x += sin(_zaman * 2.3 + _faz) * 14.0 * delta
+		var h: float = hiz * oyun.zombi_hizi
+		_yon_sec(delta)
+		if kalkan != null:
+			# A3: zırhlının arkasında onun hızıyla yürür; zırhlı ölünce dağılır (tam hız, kendi kararı)
+			if kalkan.olu or kalkan.tur != "zirhli":
+				kalkan = null
+			else:
+				h = minf(h, kalkan.hiz * oyun.zombi_hizi * 1.05)
+				_hedef_x = kalkan.position.x
+		position.y = minf(position.y + h * delta + minf(itme.y, 0.0) * delta * 0.5, _durus_y)
+		position.x = move_toward(position.x, _hedef_x, h * YAN_HIZ * delta)
+		position.x += (sin(_zaman * 2.3 + _faz) * 8.0 + itme.x) * delta
 		position.x = clampf(position.x, 40.0, oyun.genislik - 40.0)
 		# yürüme karesi: yalnızca değişince yeniden çiz
 		var evre := fposmod(_zaman * (hiz / 9.0) + _faz, TAU)
@@ -174,12 +206,15 @@ func _process(delta: float) -> void:
 	elif boss:
 		_boss_saldir(delta)
 	elif tur == "kusan":
+		_kusan_kac(delta)
 		_saldiri_sayac -= delta
 		if _saldiri_sayac <= 0.0:
 			_saldiri_sayac = KUSMA_ARA * randf_range(0.85, 1.15)
 			_hamle = 1.0
 			oyun.asit_at(position + Vector2(0, yaricap), hasar)
 	else:
+		if itme.x != 0.0:
+			position.x = clampf(position.x + itme.x * ITME_DUVAR * delta, 40.0, oyun.genislik - 40.0)
 		_saldiri_sayac -= delta
 		if _saldiri_sayac <= 0.0:
 			_saldiri_sayac = 1.0
@@ -187,6 +222,35 @@ func _process(delta: float) -> void:
 			oyun.barikat_vuruldu(hasar, position.x, self)
 	if cizim_gerek or oyun.atlas == null or not oyun.atlas.hazir:
 		queue_redraw()
+
+
+## A2 Zayıf nokta: belli aralıkla "zekâ" olasılığıyla barikatın en zayıf yakın bölümünü hedefler.
+## Yürüyen (0.3) çoğunlukla düz gelir; koşucu (0.9) ve patlayan (1.0) gediği kollar. Boss düz yürür.
+func _yon_sec(delta: float) -> void:
+	if _hedef_x < 0.0:
+		_hedef_x = position.x
+	_karar_sayac -= delta
+	if _karar_sayac > 0.0 or boss or kalkan != null:
+		return
+	_karar_sayac = randf_range(KARAR_ARA.x, KARAR_ARA.y)
+	if randf() < zeka:
+		var b: int = oyun.barikat.hedef_bolum(position.x)
+		var gen: float = oyun.genislik / 6.0
+		_hedef_x = oyun.barikat.bolum_merkez(b) + randf_range(-0.3, 0.3) * gen
+
+
+## A3: kusan menzilde dururken üstüne mermi geldiğini görürse (beklenen hasar) yana kayar.
+func _kusan_kac(delta: float) -> void:
+	_kacis_bekleme -= delta
+	if _kacis > 0.0:
+		_kacis -= delta
+		position.x = clampf(position.x + _kacis_yon * KACIS_HIZ * delta, 40.0, oyun.genislik - 40.0)
+	elif beklenen > 0.0 and _kacis_bekleme <= 0.0:
+		_kacis = KACIS_SURE
+		_kacis_bekleme = KACIS_BEKLEME * randf_range(0.8, 1.2)
+		_kacis_yon = -1.0 if position.x > oyun.genislik * 0.5 else 1.0
+		if randf() < 0.3:
+			_kacis_yon = -_kacis_yon
 
 
 func _boss_saldir(delta: float) -> void:

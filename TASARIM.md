@@ -124,20 +124,21 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
   "Güç seviyesi" altınla artar (hasar +%10/sv, maliyet 50·1.18^sv). FM özellikleri (antrenman) ayrı eksen kalır.
 
 **Gece C: akıllı zombiler**
-- [ ] **A2 Zayıf nokta hedefleme:** Barikat 6 bölüme ayrılır, her bölümün canı ayrı ve görünür. Zombiler en zayıf
+- [x] **A2 Zayıf nokta hedefleme** (2026-11-07, Gece 4 — gedik "üs canı" yerine yanlara ×1.5 taşan hasar olarak yapıldı; bkz. §16e): Barikat 6 bölüme ayrılır, her bölümün canı ayrı ve görünür. Zombiler en zayıf
   bölüme yönelir; bölüm kırılırsa zombi oradan geçip "üs canı"na vurur. Oyuncu kararı: hangi bölüme dokunup onaracak.
-- [ ] **A3 Sürü davranışı:** hafif boids (ayrılma + hizalanma, komşu araması ızgara ile, O(n)); koşucular askerin
+- [x] **A3 Sürü davranışı** (2026-11-07, Gece 4 — ayrılma + zırhlı kalkanı + kusan kaçışı; "askerin tersinden kanat" yönetmenin kanat sürprizinde zaten var; bkz. §16e): hafif boids (ayrılma + hizalanma, komşu araması ızgara ile, O(n)); koşucular askerin
   baktığı tarafın tersinden kanat açar; kusan menzilde kalır, hedef alınınca yana kayar; zırhlılar önde sıra olur,
   arkalarına koşucular saklanır (zırhlı ölünce dağılırlar).
 - [x] **A4 Boss aşamaları** (2026-11-06, gündüz ek turu 1; bkz. §16d): can %66 / %33'te davranış değişir (hızlanma, çağırma, barikata sıçrama + uyarı işareti).
 
 **Gece D: rahat oyun (Grow Castle hissi)**
-- [ ] **B4 Otomatik savaş + çevrimdışı kazanç:** Kampanyada geçilmiş dalgayı otomatik tekrarla (ekip yapay zekâsıyla,
+- [x] **B4 Otomatik savaş + çevrimdışı kazanç** (2026-11-07, Gece 4 — OTO geçilmiş dalgalarda, TEKRAR ile altın kasma; çevrimdışı kazanç Hurda Madeni'nden; Çiftlik sonra; bkz. §16e): Kampanyada geçilmiş dalgayı otomatik tekrarla (ekip yapay zekâsıyla,
   lider de otomatik nişan alır). Kasaba binaları (Hurda Madeni, Çiftlik) saatte üretir, en fazla 8 saat birikir;
   açılışta "Sen yokken: +X hurda" ekranı. Saat hilesine karşı: geri giden saat → 0 kazanç.
-- [ ] **A6 Akıllı otomatik kart seçimi:** oto modda kartı yapay zekâ seçer: karşılaşılan zombi karışımına göre
+- [x] **A6 Akıllı otomatik kart seçimi** (2026-11-07, Gece 4 — elle oynarken de "★ ÖNERİ" gösterir; bkz. §16e): oto modda kartı yapay zekâ seçer: karşılaşılan zombi karışımına göre
   (zırhlı oranı yüksek → Zırh Delici), evrim yoluna ve ekonomiye göre puanlar. Oyuncu kapatabilir.
 - [ ] **B6 Kasaba sekmesi:** Atölye, Antrenman Sahası, Revir, Gözcü Kulesi, Maden (§16'daki tesislerle birleşir).
+  (2026-11-07, Gece 4: ilk bina **Hurda Madeni** OYNA sekmesinde "KASABA" kartı olarak yapıldı; ayrı sekme ve diğer binalar sırada.)
 - [x] **B7 Hız kilitleri** (2026-11-06, gündüz ek turu 1 — Hayatta Kalma rekoru 10 da açar; eski kayıtta x3 seçiliyse açık kalır): x2 baştan açık, x3 kampanyada 10. dalgayı geçince açılır (hedef duygusu).
 - [x] (2026-11-05) Telefon performansı ve görüntü kalitesi: kasma, hata, donma olmasın. → v1 yapıldı (bkz. §12).
 - [x] (2026-11-05) Ana menü. → Oyna / Ekip / Envanter / Keşif / Ayarlar.
@@ -151,6 +152,9 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
+- **Yeni araştırılan (Gece 4):**
+  - **Bölüm tuzakları (Orcs Must Die tuzakları + A2 bölümleri):** her barikat bölümünün önüne kampanya altınıyla tek tuzak: Çivi (önünden geçene saniyede 4 × can çarpanı hasar), Katran (önündeki zombiler −%35 hız, zırhlıya etkisi yarım), Patlayıcı Varil (bölüm ilk kez %50'ye inince 120 px alan, dalga başına 1). Tuzak seviyesi 1–10, fiyat 60·1.25^sv altın. Gedik açılan bölümün tuzağı dalga sonuna dek kapanır (onarım değerli). Teknik: barikat bölüm sayısı kadar sabit dizi, zombi `_process`'inde y > barikat_y − 140 iken tek bölüm sorgusu; çizim barikat dokusuna eklenen dikdörtgenler (yeni çizim çağrısı yok).
+  - **Günlük meydan okuma (Slay the Spire Daily Climb):** her gün aynı tohumlu (tarih → `seed`) Hayatta Kalma koşusu + 2 rastgele kural (ör. "kartlar 2 seçenekli", "zombiler +%20 hızlı ama +%50 altın", "yalnız Pompalı"). Günde 1 ödüllü deneme; ödül ulaşılan dalga × 8 hurda + 10. dalgada Nadir+ silah. Kendi en iyi 7 günlük sonucu menüde liste (çevrimdışı, lider tablosu yok). Teknik: `seed(hash(tarih))` yalnız dalga bileşimi ve kart çekimi için ayrı `RandomNumberGenerator` (görsel rastgelelik etkilenmez), `profil.gunluk_meydan` {tarih, en_iyi, deneme}.
 - **Yeni araştırılan (gündüz ek turu 1):**
   - **Kampanya yıldızları (Kingdom Rush gibi):** her kampanya dalgasına 1–3 yıldız: barikat %100 → 3, %50+ → 2, geçti → 1. Toplam yıldız eşiklerinde (30/60/100) kalıcı ödül (Destansı silah, +1 Lab düğüm sınırı). Geçilmiş dalgayı yeniden oynamaya sebep verir ve B4 otomatik tekrarla birleşir: oto tekrar yalnız 3 yıldızlı dalgalarda açılır. Teknik: `kampanya.yildiz` sözlüğü (dalga → 0–3), zafer ekranında yıldız çizimi.
   - **Kasaba okçuları (Grow Castle "town archers"):** surun önünde nöbetçi olmayan, altınla seviye alan tek bir okçu birliği: 3 okçu, her biri 4 hasar × 1.2 atış/sn, seviye başı +%12 (fiyat 80·1.2^sv altın). Ekibi olmayan yeni oyuncuya erken güç verir, ekip büyüyünce önemi azalır. Teknik: nöbetçi düğüm havuzu kullanılır (yuva dışı), ayrı kaynak no −3.
@@ -208,7 +212,8 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [x] (Gece 2) Kule v2: 3. seviyeden sonra 240 altına iki dal: Havan (45×güç alan, 105 px, 2.6 sn, zırhı aşar), Ağır Taret (43×güç, 1.2 sn, zırh yok sayar, 1 delme). Seçim oyunu durdurur, Vazgeç var.
 - [ ] Kule v3: alev kulesi, onarım istasyonu.
 - [x] (Gündüz ek turu 1) §0 Gece B: Kampanya, Sur, Güç seviyesi; A4 boss aşamaları; B7 x3 kilidi; nöbetçiye silah verme.
-- [ ] **Sıradaki öncelik:** §0 Gece C kalanı (A2 zayıf nokta, A3 sürü), Gece D (B4 otomatik savaş + çevrimdışı, A6 akıllı kart, B6 kasaba), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi.
+- [x] (Gece 4) §0 Gece C (A2 zayıf nokta, A3 sürü), Gece D'den B4 otomatik savaş + çevrimdışı kazanç, A6 akıllı kart, B6'nın ilk binası (Hurda Madeni); Kampanya v2 (yıldız, tekrar, zafer ekranında yükseltme).
+- [ ] **Sıradaki öncelik:** B6 Kasaba sekmesi (Atölye, Antrenman Sahası, Revir; Çiftlik = altın üretimi), Bölüm tuzakları (Fikir Havuzu, Gece 4), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi, Başarımlar, Günlük meydan okuma.
 - [x] (Gece 2) Laboratuvar: bkz. §7b.
 - [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
 - [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
@@ -326,6 +331,21 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Boss aşamaları:** Dev %66 öfke (hız ×1.5), %33 iniş yerini 0.9 sn işaretleyip 240 px ileri sıçrar (barikata inerse yarım vuruş hasarı; zaten barikattaysa vuruşu hemen gelir). Kraliçe %66'da 2.5 sn'de bir doğurur, %33'te doğurmayı bırakıp hız ×1.6 saldırır. %50 çağrısı sürer.
 - **Bot:** `--bot_kampanya=60` (önizleme iş akışında): her savaştan sonra Sur ve lider Gücü alınabildiğince yükseltilir, 10 savaşta bir durum yazılır.
 
+## 16e. Zayıf nokta, sürü, otomatik savaş, kampanya v2, Hurda Madeni (Gece 4'te uygulandı)
+- **A2 Barikat bölümleri:** 6 bölüm, her biri max_can/6. Zombi vurduğu x'in bölümüne hasar verir; Dev/Kraliçe vuruşu üç bölüme bölünür. Kırılan bölüm **GEDİK**: oraya gelen hasar ×1.5 olarak en yakın sağlam bölüme taşar (eşitlikte rastgele taraf). Bütün bölümler kırılınca barikat düşer (toplam can = 0, eski kural aynı). `barikat.can` okunur/yazılır (yazınca bölümler aynı orana gelir: eski kod bozulmadı).
+  Bölüm üstünde 8 px can çubuğu (yeşil → kırmızı), gedikte kırmızı çerçeve + koyu bölge, "GEDİK!" yazısı, +15 gerilim.
+- **Zombi zekâsı:** 0.9–1.5 sn'de bir, `zeka` olasılığıyla hedef bölüm seçer: puan = bölüm oranı + 0.12 × bölüm uzaklığı (en düşük). Yürüyen 0.3, zırhlı 0.5, kusan 0.7, koşucu 0.9, patlayan 1.0; boss düz yürür. Yana kayma hızı ileri hızın %60'ı.
+- **ONAR v2 (akıllı onarım):** onarım, Tamirci/Doktor yenilenmesi ve nöbetçi onarımı bölüm canının %5'lik dilimleriyle hep en zayıf bölüme gider; "ONARILDI" yazısı onarılan bölümün üstünde çıkar.
+- **A3 Sürü:** 80 px ızgara (bağlı liste, PackedInt32Array; her güncellemede yeni dizi yok), saniyede 10 (Düşük kalite 5) güncelleme. Ayrılma: (r₁+r₂)·0.8'den yakın komşu, örtüşme oranıyla itme × 150 px/sn, en çok 170; boss itilmez. Barikata dayanmış zombi itmenin yarısını alır (duvar boyunca yayılır).
+  Kalkan: koşucu, önünde 20–170 px ve yanda 110 px içinde zırhlı görürse onun hızında (×1.05) arkasından yürür; zırhlı ölünce dağılır. Kusan: menzildeyken üstüne mermi geldiğinde (beklenen hasar > 0) 0.45 sn 170 px/sn yana kayar, 3 sn bekleme.
+- **B4 OTO savaş:** kampanyada geçilmiş dalgalarda (≤ en yüksek) HUD'da "OTO" düğmesi, seçim kaydedilir. Saniyede 5 karar: lider en tehlikeli zombinin hizasına gider (oyuncu dokunursa 1.5 sn bırakır), en zayıf bölüm < %45 ya da toplam < %60 → ONAR, gerilim > 55 ya da boss → yetenek, onarım parası ayrıldıktan sonra taret (uzmanlık: orta havan, yanlar ağır). Kart 0.8 sn sonra A6 ile seçilir.
+- **Kampanya TEKRAR:** en son geçilen dalga yeniden oynanır: ödül ×0.5, boss ganimeti yok, ilerletmez, yıldız yükseltilebilir.
+- **A6 akıllı kart:** taban (Hasar/Ateş 10, Namlu 8, Kritik 7, Barikat/Yanma 6, Delme/Tamirci 5, Menzil/Altın/Diken 4, Zırh Delici 3, Kese 2, Tam Onarım 1) + Zırh Delici 40×zırhlı oranı, Delme/Namlu 10×koşucu oranı, barikat kartları 10×(1−can), Tam Onarım 22×(1−can), boss öncesi Yanma +4, evrim eşi +3/sv, kampanyada altın kartları ×0.3, evrim kartı hep ilk. Oran = gelecek dalganın formülü (koşuda 20+ zombi görüldüyse görülenle ortalaması). Kart ekranında "★ ÖNERİ (neden)".
+- **Kampanya v2 yıldızları:** barikat %90+ → 3, %50+ → 2, yoksa 1; dalga başına en iyi saklanır (`kampanya.yildiz`). Eşikler: 15 ★ 120 hurda, 30 ★ Destansı silah, 60 ★ 400 hurda, 90 ★ Efsanevi silah, sonra her 45 ★ 500 hurda.
+  Zafer/yenilgi ekranında "SUR n→n+1 (hurda)" ve "<lider> GÜÇ n→n+1 (altın)" düğmeleri + kasa satırı.
+- **Hurda Madeni (Kasaba, B6 ilk bina):** kurulum 80 hurda, seviye fiyatı 80·1.45^sv (en çok 20). Üretim (6 + 4·sv) × (1 + 0.03 × kampanya en yüksek dalga) hurda/saat, en çok 8 saat birikir. Açılışta 15 dk+ birikim varsa OYNA'nın en üstünde "SEN YOKKEN … TOPLA". Saat geri alınırsa kazanç yok (yalnız referans düzelir).
+  Örnek: Sv 1, 10. dalga → 13/sa (8 saatte 104); Sv 5, 20. dalga → 42/sa; Sv 10, 30. dalga → 87/sa (8 saatte ≈ 700).
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -338,6 +358,12 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-07 (Gece 4)
+- **Grow Castle** (App Store sayfası, r/GrowCastle rehberleri): kısa dalga, savaş ekranından yükseltme, geçilmiş dalgada otomatik savaş ve kasma. Wiki sayfaları yine açılamadı; sayılar bizim. https://apps.apple.com/gb/app/grow-castle/id1133478462
+- **Clicker Heroes çevrimdışı ilerleme:** çıkışta boşta DPS kaydedilir, dönünce kazanç hesaplanır ve elle toplanır; aktif yetenek sayılmaz; sınır yok (biz 8 saat sınırı koyduk ki günde birkaç kez dönülsün; saat hilesi yazıda geçmiyor, bizim kuralımız). https://blog.clickerheroes.com/offline-progression-in-clicker-heroes/
+- **Kingdom Rush yıldızları:** kalan cana göre 1–3 yıldız, yıldızla kalıcı yükseltme (wiki sayfası bu oturumdan açılamadı; 18+/6+ eşiği bilinen kural). https://kingdomrushtd.fandom.com/wiki/Star
+- **Sürü optimizasyonu (Godot forumu, pikmin benzeri):** fizik düğümleri yerine kendi CPU ızgarası (50 varlık 7 FPS → özel ızgarayla 200 varlık ≈ 90 FPS), mesafe önbelleği, çizimde MultiMesh. https://forum.godotengine.org/t/boid-behavior-and-optimization-for-a-pikmin-like/71608
+- **Fikir Havuzu için:** Orcs Must Die tuzak türleri (çivi, katran yavaşlatması, patlayıcı varil) https://orcsmustdie.wiki.gg/wiki/Traps ; Slay the Spire Daily Climb (günlük tohum + kurallar) https://saschb2b.github.io/game-mechanics/games/slay-the-spire/daily-climb
 ### 2026-11-06 (gündüz ek turu 1)
 - Grow Castle rehber sayfaları (fandom Guide/Basics) bu oturumdan açılamadı; kale, kahraman yuvası ve altınla yükseltme döngüsü genel oyun bilgisi, sayılar bizim. — [Grow Castle Wiki: Guide](https://grow-castle.fandom.com/wiki/Guide), [LDPlayer başlangıç rehberi](https://www.ldplayer.net/blog/grow-castle-guide-for-all-the-beginners.html)
 - Boss aşama tasarımı: can eşiklerinde davranış değişimi, büyük saldırıdan önce görünür uyarı, son aşamada artan baskı ama adil okunabilirlik. — [Boss Phase Transitions](https://starship-survivors-wiki.pages.dev/gameplay/concepts/boss-phase-transitions), [Wayline: boss savaşları](https://www.wayline.io/blog/crafting-legendary-boss-battles)

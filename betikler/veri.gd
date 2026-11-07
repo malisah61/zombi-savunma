@@ -208,6 +208,49 @@ static func kampanya_hurda(dalga: int) -> int:
 	return 4 + dalga + (25 if dalga % KAMPANYA_BOSS == 0 else 0)
 
 
+# ---------------------------------------------------------------- KAMPANYA v2: yıldız, tekrar (Gece 4)
+# Kingdom Rush gibi: kazanılan dalgaya barikatın kalan canına göre 1–3 yıldız. Yıldız eşiklerinde ödül.
+const YILDIZ_3 := 0.9   # barikat %90+ → 3 yıldız
+const YILDIZ_2 := 0.5   # %50+ → 2 yıldız, altı 1
+const YILDIZ_ESIKLERI := [
+	{"yildiz": 15, "hurda": 120},
+	{"yildiz": 30, "silah": 3},   # Destansı silah
+	{"yildiz": 60, "hurda": 400},
+	{"yildiz": 90, "silah": 4},   # Efsanevi silah
+]
+const YILDIZ_SONRASI := 45      # son eşikten sonra her 45 yıldızda 500 hurda
+const TEKRAR_ODUL := 0.5        # geçilmiş dalgayı tekrar oynamak (altın kasma): ödülün yarısı
+
+
+static func yildiz_hesapla(barikat_orani: float) -> int:
+	return 3 if barikat_orani >= YILDIZ_3 else (2 if barikat_orani >= YILDIZ_2 else 1)
+
+
+## sira: alınmış ödül sayısı. Sıradaki eşiğin sözlüğü (yildiz + hurda ya da silah nadirliği).
+static func yildiz_esigi(sira: int) -> Dictionary:
+	if sira < YILDIZ_ESIKLERI.size():
+		return YILDIZ_ESIKLERI[sira]
+	var son: int = int(YILDIZ_ESIKLERI[-1]["yildiz"])
+	return {"yildiz": son + YILDIZ_SONRASI * (sira - YILDIZ_ESIKLERI.size() + 1), "hurda": 500}
+
+
+# ---------------------------------------------------------------- KASABA: Hurda Madeni (B6 ilk bina, Gece 4)
+# Çevrimdışı kazanç (Clicker Heroes / Grow Castle): saatte hurda üretir, en çok MADEN_SAAT saat birikir.
+# Üretim kampanyadaki en yüksek dalgayla büyür (oyun içi güce bağlı). Saat geri alınırsa kazanç yok.
+const MADEN_MAX := 20
+const MADEN_SAAT := 8.0
+
+
+static func maden_fiyat(sv: int) -> int:
+	return int(round(80.0 * pow(1.45, sv)))  # sv 0 → 80 (kurulum), 1 → 116, 5 → 513, 10 → 3290
+
+
+static func maden_uretim(sv: int, kampanya_en_yuksek: int) -> float:
+	if sv <= 0:
+		return 0.0
+	return (6.0 + 4.0 * sv) * (1.0 + 0.03 * kampanya_en_yuksek)  # saatte hurda
+
+
 # Ekip yapay zekâsı hedef modları (Bloons TD hedefleme seçenekleri gibi). "rol": rolüne göre karar verir.
 const HEDEF_MODLARI := {
 	"rol": {"ad": "Rolüne göre", "aciklama": "Avcı boss/zırhlı/kusan, diğerleri barikata en yakın"},

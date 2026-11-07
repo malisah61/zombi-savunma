@@ -12,6 +12,8 @@ signal yeniden_cek_istendi
 signal aktif_istendi
 signal kule_istendi(i: int)
 signal konusma_istendi(secim: String)
+signal oto_istendi
+signal yukselt_istendi(tur: String)  # kampanya sonu: "sur" ya da "guc"
 
 const Veri := preload("res://betikler/veri.gd")
 const Kartlar := preload("res://betikler/kartlar.gd")
@@ -52,6 +54,12 @@ var _kule_dugmeler: Array[Button] = []
 var _konusma_kutu: VBoxContainer
 var _konusma_satir: HBoxContainer
 var _konusma_metin: Label
+var _oto_dugme: Button
+var _oto_izin := false
+var _yukselt_kutu: VBoxContainer
+var _yukselt_sur: Button
+var _yukselt_guc: Button
+var _yukselt_bilgi: Label
 
 
 func _ready() -> void:
@@ -376,6 +384,17 @@ func hiz_goster(h: int) -> void:
 	_hiz_dugme.add_theme_color_override("font_hover_color", renk)
 
 
+## izin: bu savaşta otomatik savaş kullanılabilir mi (kampanyada geçilmiş dalga).
+func oto_goster(izin: bool, acik: bool) -> void:
+	_oto_izin = izin
+	_oto_dugme.visible = izin
+	_oto_dugme.text = "OTO: AÇIK" if acik else "OTO: KAPALI"
+	var renk := Color(0.5, 1, 0.6) if acik else Color(0.85, 0.85, 0.8)
+	_oto_dugme.add_theme_color_override("font_color", renk)
+	_oto_dugme.add_theme_color_override("font_pressed_color", renk)
+	_oto_dugme.add_theme_color_override("font_hover_color", renk)
+
+
 func _duraklat_kur() -> void:
 	_duraklat_dugme = Button.new()
 	_duraklat_dugme.text = "II"
@@ -408,6 +427,20 @@ func _duraklat_kur() -> void:
 	_hiz_dugme.offset_top = _ust_bosluk + 4
 	_hiz_dugme.offset_bottom = _ust_bosluk + 80
 	_hiz_dugme.pressed.connect(func() -> void: hiz_istendi.emit())
+
+	# B4 Otomatik savaş: kampanyada geçilmiş dalgalarda, üst şeridin hemen altında solda
+	_oto_dugme = Button.new()
+	_oto_dugme.text = "OTO"
+	_oto_dugme.focus_mode = Control.FOCUS_NONE
+	_oto_dugme.add_theme_font_size_override("font_size", 24)
+	_oto_dugme.add_theme_stylebox_override("normal", st)
+	_oto_dugme.add_theme_stylebox_override("hover", st)
+	_oto_dugme.add_theme_stylebox_override("pressed", _kutu_stili(Color(0.3, 0.3, 0.3, 0.7), Color.WHITE, 14))
+	add_child(_oto_dugme)
+	_oto_dugme.position = Vector2(20, _ust_bosluk + 106)
+	_oto_dugme.size = Vector2(170, 58)
+	_oto_dugme.visible = false
+	_oto_dugme.pressed.connect(func() -> void: oto_istendi.emit())
 
 	_duraklat_paneli = _tam_ekran_panel(Color(0, 0, 0, 0.7))
 	var baslik := _etiket(80, Color(0.9, 0.9, 0.9))
@@ -504,7 +537,57 @@ func _bitis_kur() -> void:
 	menu.offset_right = 330
 	_bitis.add_child(menu)
 	_konusma_kur()
+	_yukselt_kur()
 	_bitis.visible = false
+
+
+## Kampanya v2: zafer/yenilgi ekranında hemen yükseltme (Grow Castle: "bir yükseltme, bir dalga").
+## Konuşma kutusuyla aynı yerde durur; kampanyada konuşma yok, ikisi birlikte görünmez.
+func _yukselt_kur() -> void:
+	_yukselt_kutu = VBoxContainer.new()
+	_yukselt_kutu.add_theme_constant_override("separation", 8)
+	_bitis.add_child(_yukselt_kutu)
+	_yukselt_kutu.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_yukselt_kutu.offset_left = -330
+	_yukselt_kutu.offset_right = 330
+	_yukselt_kutu.offset_top = -405
+	_yukselt_kutu.offset_bottom = -240
+	_yukselt_bilgi = _etiket(24, Color(0.85, 0.85, 0.8))
+	_yukselt_bilgi.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_yukselt_bilgi.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_yukselt_kutu.add_child(_yukselt_bilgi)
+	var satir := HBoxContainer.new()
+	satir.add_theme_constant_override("separation", 10)
+	_yukselt_kutu.add_child(satir)
+	_yukselt_sur = _yukselt_dugmesi(Color(0.45, 0.38, 0.25), "sur")
+	satir.add_child(_yukselt_sur)
+	_yukselt_guc = _yukselt_dugmesi(Color(0.55, 0.3, 0.15), "guc")
+	satir.add_child(_yukselt_guc)
+	_yukselt_kutu.visible = false
+
+
+func _yukselt_dugmesi(r: Color, tur: String) -> Button:
+	var d := Button.new()
+	d.focus_mode = Control.FOCUS_NONE
+	d.custom_minimum_size.y = 84
+	d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	d.add_theme_font_size_override("font_size", 24)
+	d.add_theme_stylebox_override("normal", _kutu_stili(r, r.lightened(0.4), 14))
+	d.add_theme_stylebox_override("hover", _kutu_stili(r, r.lightened(0.4), 14))
+	d.add_theme_stylebox_override("pressed", _kutu_stili(r.lightened(0.2), Color.WHITE, 14))
+	d.add_theme_stylebox_override("disabled", _kutu_stili(Color(0.2, 0.2, 0.2, 0.8), Color(0.4, 0.4, 0.4), 14))
+	d.pressed.connect(func() -> void: yukselt_istendi.emit(tur))
+	return d
+
+
+## Yükseltme düğmelerinin metni ve etkinliği (oyun.gd her alımdan sonra yeniden çağırır).
+func yukselt_guncelle(sur_metin: String, sur_etkin: bool, guc_metin: String, guc_etkin: bool, bilgi: String) -> void:
+	_yukselt_kutu.visible = true
+	_yukselt_sur.text = sur_metin
+	_yukselt_sur.disabled = not sur_etkin
+	_yukselt_guc.text = guc_metin
+	_yukselt_guc.disabled = not guc_etkin
+	_yukselt_bilgi.text = bilgi
 
 
 ## Koşu sonu ekip konuşması: TEKRAR/MENÜ'nün hemen üstünde, cevap aynı yere yazılır.
@@ -579,6 +662,7 @@ func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bo
 	dolu.bg_color = Color(0.85, 0.2, 0.2).lerp(Color(0.3, 0.8, 0.35), can_orani)
 	_onar_dugme.visible = oyunda
 	_aktif_dugme.visible = oyunda
+	_oto_dugme.visible = oyunda and _oto_izin
 	_onar_dugme.disabled = altin < onar_fiyat or can_orani >= 0.999
 
 
@@ -594,7 +678,8 @@ func dalga_afisi(metin: String) -> void:
 	tw.tween_property(_afis, "modulate:a", 0.0, 0.5)
 
 
-func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme_fiyat: int = 15, altin: int = 0) -> void:
+## oneri: A6 akıllı kart seçiminin en yüksek puanlı kartı; kartın üstünde "★ ÖNERİ" yazar.
+func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme_fiyat: int = 15, altin: int = 0, oneri: String = "", oneri_neden: String = "") -> void:
 	_tanitim.visible = false
 	for c in _kart_kutusu.get_children():
 		c.queue_free()
@@ -619,6 +704,8 @@ func kartlari_goster(secenekler: Array[Dictionary], seviyeler: Dictionary, cekme
 			d.text = "%s   %s\n%s" % [k["ad"], "●".repeat(sv) + "○".repeat(int(k["max"]) - sv), k["aciklama"]]
 		if ipucu != "":
 			d.text += "\n" + ipucu
+		if oneri != "" and k["id"] == oneri and not evrim:
+			d.text = "★ ÖNERİ%s\n%s" % ["  (" + oneri_neden + ")" if oneri_neden != "" else "", d.text]
 		d.add_theme_font_size_override("font_size", 34 if evrim else 28)
 		var dolgu := renk.darkened(0.25 if evrim else 0.55)
 		d.add_theme_stylebox_override("normal", _kutu_stili(dolgu, Color.WHITE if evrim else renk, 22))
@@ -661,6 +748,7 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 	_bitis_baslik.add_theme_color_override("font_color", Color(1, 0.3, 0.25))
 	(_bitis as ColorRect).color = Color(0.12, 0.0, 0.0, 0.78)
 	_tekrar_dugme.text = "TEKRAR"
+	_yukselt_kutu.visible = false
 	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün · En iyi: %d" % [dalga, oldurme, rekor]
 	_konusma_kutu.visible = ozet.has("uid")
 	_konusma_satir.visible = true
@@ -679,6 +767,12 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 		for p in ozet["puanlar"]:
 			parca.append("%s %.1f%s" % [p["ad"], float(p["puan"]), " ★" if p.has("yildiz") else ""])
 		_odul_ekle("Puan: " + "  ·  ".join(parca), Color(0.95, 0.9, 0.6), 24)
+	if ozet.has("yildiz"):
+		var y := int(ozet["yildiz"])
+		_odul_ekle("%s  %d/3%s" % ["★".repeat(y), y, "  YENİ!" if bool(ozet.get("yildiz_yeni", false)) else ""],
+			Color(1, 0.85, 0.2), 34)
+	for yo in ozet.get("yildiz_odulleri", []):
+		_odul_ekle(String(yo), Color(1, 0.75, 1.0), 26)
 	_odul_ekle("ÖDÜLLER", Color(1, 0.85, 0.4), 28)
 	if ozet.has("kampanya"):
 		_odul_ekle("+%d altın  ·  +%d hurda" % [int(ozet.get("altin", 0)), int(ozet.get("hurda", 0))], Color(1, 0.8, 0.35), 28)
@@ -740,6 +834,10 @@ func kampanya_sonu_goster(kazandi: bool, dalga: int, oldurme: int, sonraki: int,
 	else:
 		_bitis_metin.text = "Kampanya %d. dalga\nCeza yok: Sur'u ve Güç seviyelerini\nyükseltip yeniden dene." % dalga
 		_tekrar_dugme.text = "YENİDEN"
+
+
+func tekrar_metni(metin: String) -> void:
+	_tekrar_dugme.text = metin
 
 
 func bitis_gizle() -> void:

@@ -16,7 +16,7 @@ const VARSAYILAN := {
 	"envanter": [],
 	"aktif": "",
 	"kesif": {"aktif": {}, "raporlar": []},
-	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true, "hiz": 1},
+	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true, "hiz": 1, "oto": false},
 	"rekor": 0,
 	"istatistik": {"kosu": 0, "oldurme": 0, "boss": 0},
 	"gorulen": [],  # tanıtımı yapılmış zombi türleri
@@ -26,11 +26,13 @@ const VARSAYILAN := {
 	"nobetciler": [],  # surdaki ekip: hayatta kalan uid'leri (Grow Castle kale yuvaları)
 	"sur": 1,  # Sur (kale) seviyesi
 	"altin": 0,  # kalıcı kampanya altını (koşu içi altından ayrı); Güç seviyesine harcanır
-	"kampanya": {"dalga": 1, "en_yuksek": 0, "zafer": 0, "yenilgi": 0},
+	"kampanya": {"dalga": 1, "en_yuksek": 0, "zafer": 0, "yenilgi": 0, "yildiz": {}, "yildiz_odul": 0},
 	"x3_acik": false,
+	"maden": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba: Hurda Madeni (çevrimdışı kazanç)
 }
 
 var veri: Dictionary = {}
+var cevrimdisi: Dictionary = {}  # açılışta "Sen yokken": {"saat", "miktar"} (menü bir kez gösterir)
 
 
 func _ready() -> void:
@@ -56,6 +58,10 @@ func yukle() -> void:
 	_hayatta_kalanlari_tamamla()
 	hiz3_kontrol()
 	gorevleri_hazirla()
+	var once := float(veri["maden"]["birikim"])
+	var saat := maden_guncelle()
+	if saat >= 0.25 and float(veri["maden"]["birikim"]) - once >= 1.0:
+		cevrimdisi = {"saat": saat, "miktar": int(float(veri["maden"]["birikim"]) - once)}
 
 
 ## Dizi içindeki kayıtları _tamamla göremez: eski hayatta kalanlara yeni alanları burada ekle.
@@ -811,15 +817,30 @@ func hiz3_kontrol() -> bool:
 
 ## Kampanya savaşı bitti. Kazanınca altın + hurda + sıradaki dalga; kaybedince aynı dalga ve teselli
 ## (altının %25'i, hurdanın yarısı): ceza yok, Grow Castle'daki gibi geliştirip yeniden dene.
-func kampanya_bitti(kazandi: bool, dalga: int, oldurme: int, boss_sayisi: int, katki: Dictionary) -> Dictionary:
+## tekrar: geçilmiş dalgayı yeniden oynama (altın kasma) — ilerletmez, ödülün yarısı, yıldız yükseltebilir.
+## barikat_orani: kazanınca kalan can oranı → 1–3 yıldız (Kampanya v2).
+func kampanya_bitti(kazandi: bool, dalga: int, oldurme: int, boss_sayisi: int, katki: Dictionary,
+		barikat_orani: float = 1.0, tekrar: bool = false) -> Dictionary:
 	var k: Dictionary = veri["kampanya"]
 	var ozet := {"altin": 0, "hurda": 0, "silahlar": [], "gelisim": [], "kampanya": true, "x3": false}
 	var a := Veri.kampanya_altin(dalga)
 	var hu := Veri.kampanya_hurda(dalga)
+	if tekrar:
+		a = int(a * Veri.TEKRAR_ODUL)
+		hu = int(hu * Veri.TEKRAR_ODUL)
+		boss_sayisi = 0  # boss ganimeti yalnızca ilk geçişte (kasma ile silah yağmasın)
 	if kazandi:
-		k["dalga"] = dalga + 1
+		if not tekrar:
+			k["dalga"] = dalga + 1
 		k["en_yuksek"] = maxi(int(k["en_yuksek"]), dalga)
 		k["zafer"] = int(k["zafer"]) + 1
+		var y := Veri.yildiz_hesapla(barikat_orani)
+		var eski := kampanya_yildiz(dalga)
+		ozet["yildiz"] = y
+		ozet["yildiz_yeni"] = y > eski
+		if y > eski:
+			k["yildiz"][str(dalga)] = y
+		ozet["yildiz_odulleri"] = _yildiz_odulleri()
 	else:
 		a = int(a * 0.25)
 		hu = int(hu / 2.0)
@@ -857,6 +878,99 @@ func kampanya_bitti(kazandi: bool, dalga: int, oldurme: int, boss_sayisi: int, k
 	ozet["x3"] = hiz3_kontrol()
 	kaydet()
 	return ozet
+
+
+func kampanya_yildiz(dalga: int) -> int:
+	return int(veri["kampanya"]["yildiz"].get(str(dalga), 0))
+
+
+func toplam_yildiz() -> int:
+	var t := 0
+	for d in veri["kampanya"]["yildiz"]:
+		t += int(veri["kampanya"]["yildiz"][d])
+	return t
+
+
+## Eşiği geçilmiş, alınmamış yıldız ödüllerini verir; ödül yazılarını döndürür.
+func _yildiz_odulleri() -> Array:
+	var yazilar: Array = []
+	var k: Dictionary = veri["kampanya"]
+	var top := toplam_yildiz()
+	var esik := Veri.yildiz_esigi(int(k["yildiz_odul"]))
+	while top >= int(esik["yildiz"]):
+		k["yildiz_odul"] = int(k["yildiz_odul"]) + 1
+		if esik.has("silah"):
+			var sl := Veri.silah_uret("", int(esik["silah"]))
+			if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
+				veri["envanter"].append(sl)
+			else:
+				hurda_ekle(silah_satis_degeri(sl))
+			var n: Dictionary = Veri.NADIRLIK[int(sl["nadirlik"])]
+			yazilar.append("%d YILDIZ ÖDÜLÜ: %s %s" % [int(esik["yildiz"]), n["ad"], Veri.SILAHLAR[sl["taban"]]["ad"]])
+		else:
+			hurda_ekle(int(esik["hurda"]))
+			yazilar.append("%d YILDIZ ÖDÜLÜ: +%d hurda" % [int(esik["yildiz"]), int(esik["hurda"])])
+		esik = Veri.yildiz_esigi(int(k["yildiz_odul"]))
+	return yazilar
+
+
+# ================================================================ KASABA: HURDA MADENİ (B6, çevrimdışı kazanç)
+
+func maden_sv() -> int:
+	return clampi(int(veri["maden"]["sv"]), 0, Veri.MADEN_MAX)
+
+
+func maden_uretim() -> float:
+	return Veri.maden_uretim(maden_sv(), int(veri["kampanya"]["en_yuksek"]))
+
+
+func maden_birikim() -> int:
+	return int(float(veri["maden"]["birikim"]))
+
+
+func maden_dolu() -> bool:
+	return maden_sv() > 0 and float(veri["maden"]["birikim"]) >= maden_uretim() * Veri.MADEN_SAAT - 0.5
+
+
+## Geçen gerçek zamanı birikime çevirir (en çok 8 saatlik üretim). Saat geri alınmışsa kazanç yok,
+## yalnızca referans zaman düzelir. Geçen saati döndürür (gösterim için). Kaydetmez.
+func maden_guncelle() -> float:
+	var m: Dictionary = veri["maden"]
+	var simdi := int(Time.get_unix_time_from_system())
+	var son := int(m["son"])
+	m["son"] = simdi
+	if maden_sv() <= 0 or son <= 0 or simdi <= son:
+		return 0.0
+	var saat := (simdi - son) / 3600.0
+	var tavan := maden_uretim() * Veri.MADEN_SAAT
+	m["birikim"] = minf(float(m["birikim"]) + saat * maden_uretim(), tavan)
+	return saat
+
+
+func maden_topla() -> int:
+	maden_guncelle()
+	var miktar := maden_birikim()
+	if miktar <= 0:
+		return 0
+	veri["maden"]["birikim"] = float(veri["maden"]["birikim"]) - miktar
+	hurda_ekle(miktar)
+	gorev_ilerlet("maden", miktar)
+	kaydet()
+	return miktar
+
+
+func maden_yukselt() -> String:
+	var sv := maden_sv()
+	if sv >= Veri.MADEN_MAX:
+		return "Maden en üst seviyede"
+	var f := Veri.maden_fiyat(sv)
+	if hurda() < f:
+		return "Yeterli hurda yok"
+	maden_guncelle()  # eski hızla biriken kaybolmasın
+	hurda_ekle(-f)
+	veri["maden"]["sv"] = sv + 1
+	kaydet()
+	return ""
 
 
 # ================================================================ ENVANTER

@@ -4,6 +4,7 @@ extends CanvasLayer
 
 signal oyna_istendi
 signal kampanya_istendi
+signal kampanya_tekrar_istendi
 signal ayarlar_degisti
 
 const Veri := preload("res://betikler/veri.gd")
@@ -24,6 +25,8 @@ var _kesif_etiket: Label
 var _kesif_cubuk: ProgressBar
 var _ust_bosluk := 24.0
 var _acik_kart := ""  # ekipte detayı açık olan hayatta kalan
+var _maden_etiket: Label
+var _maden_dugme: Button
 
 
 func _ready() -> void:
@@ -99,6 +102,7 @@ func goster() -> void:
 	profil.zaman_dinlenmesi()
 	profil.kesif_kontrol()
 	profil.gorevleri_hazirla()
+	profil.maden_guncelle()
 	sekme_ac(_sekme)
 
 
@@ -119,6 +123,9 @@ func _process(delta: float) -> void:
 			sekme_ac(_sekme)
 	elif is_instance_valid(_kesif_etiket):
 		_kesif_guncelle()
+	if is_instance_valid(_maden_etiket):
+		profil.maden_guncelle()
+		_maden_guncelle()
 
 
 # ================================================================ YARDIMCILAR
@@ -273,6 +280,8 @@ func sekme_ac(i: int) -> void:
 		c.queue_free()
 	_kesif_etiket = null
 	_kesif_cubuk = null
+	_maden_etiket = null
+	_maden_dugme = null
 	_hurda_etiket.text = "%d HURDA" % profil.hurda()
 	match i:
 		0: _oyna_sekmesi()
@@ -303,6 +312,18 @@ func _yenile() -> void:
 # ---------------------------------------------------------------- OYNA
 
 func _oyna_sekmesi() -> void:
+	if not profil.cevrimdisi.is_empty():
+		# B6: uygulama dışında madenin ürettiği (bir kez gösterilir; birikim TOPLA'ya dek madende durur)
+		var sk := _kart(Color(1.0, 0.8, 0.3))
+		sk.add_child(_etiket("SEN YOKKEN", 22, Color(1, 0.85, 0.45)))
+		var dk := int(float(profil.cevrimdisi["saat"]) * 60.0)
+		var sure := ("%d saat %d dk" % [dk / 60, dk % 60]) if dk >= 60 else "%d dk" % dk
+		var ek := " (8 saat sınırı doldu)" if float(profil.cevrimdisi["saat"]) > Veri.MADEN_SAAT else ""
+		var e := _etiket("%s boyunca Hurda Madeni +%d hurda çıkardı%s." % [sure, int(profil.cevrimdisi["miktar"]), ek], 28)
+		e.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sk.add_child(e)
+		sk.add_child(_dugme("TOPLA", Color(0.7, 0.55, 0.15), _maden_topla, 32))
+		profil.cevrimdisi = {}
 	var h: Dictionary = profil.aktif_kahraman()
 	var rol: Dictionary = Veri.ROLLER[h["rol"]]
 	var k := _kart(rol["renk"])
@@ -354,6 +375,7 @@ func _oyna_sekmesi() -> void:
 
 	_kampanya_karti()
 	_sur_karti()
+	_maden_karti()
 	_gorev_karti()
 
 	var kk := _kart()
@@ -373,6 +395,16 @@ func _kampanya_karti() -> void:
 		func() -> void: kampanya_istendi.emit(), 36))
 	k.add_child(_etiket("Kazan: +%d altın, +%d hurda. Tek dalga, 1 kart. Kaybedersen aynı dalga, ceza yok." % [
 		Veri.kampanya_altin(n), Veri.kampanya_hurda(n)], 22, Color(1, 0.85, 0.6)))
+	# Kampanya v2: yıldızlar ve geçilmiş dalgayı tekrar (altın kasma, OTO savaş)
+	var son: int = int(profil.veri["kampanya"]["en_yuksek"])
+	var esik: Dictionary = Veri.yildiz_esigi(int(profil.veri["kampanya"]["yildiz_odul"]))
+	var odul_metin := "%s silah" % Veri.NADIRLIK[int(esik["silah"])]["ad"] if esik.has("silah") else "%d hurda" % int(esik["hurda"])
+	k.add_child(_etiket("★ %d yıldız · %d ★ olunca: %s. Barikat %%90+ ile kazan: 3 ★" % [profil.toplam_yildiz(),
+		int(esik["yildiz"]), odul_metin], 22, Color(1, 0.85, 0.3)))
+	if son >= 1:
+		var y: int = profil.kampanya_yildiz(son)
+		k.add_child(_dugme("TEKRAR: DALGA %d  %s  (½ ödül · OTO)" % [son, "★".repeat(y)], Color(0.45, 0.32, 0.2),
+			func() -> void: kampanya_tekrar_istendi.emit(), 26))
 	if not bool(profil.veri["x3_acik"]):
 		k.add_child(_etiket("x3 oyun hızı: %d. dalgayı geçince açılır" % Veri.HIZ3_DALGA, 22, Color(0.6, 0.9, 1.0)))
 
@@ -400,6 +432,55 @@ func _sur_karti() -> void:
 		else:
 			bildir(neden, Color(1, 0.55, 0.45))
 		_yenile(), 28, not en_ust))
+
+
+## B6 Kasaba ilk binası: Hurda Madeni. Saatte hurda üretir, en çok 8 saat birikir (çevrimdışı kazanç).
+func _maden_karti() -> void:
+	var sv: int = profil.maden_sv()
+	var k := _kart(Color(0.7, 0.55, 0.3))
+	k.add_child(_etiket("KASABA · HURDA MADENİ%s" % ("" if sv == 0 else " · Seviye %d/%d" % [sv, Veri.MADEN_MAX]), 22, Color(0.7, 0.7, 0.65)))
+	if sv == 0:
+		k.add_child(_etiket("Sen oyunda yokken de hurda çıkarır (en çok 8 saat birikir).", 24))
+	_maden_etiket = _etiket("", 24, Color(1, 0.85, 0.5))
+	k.add_child(_maden_etiket)
+	var satir := _satir(k)
+	_maden_dugme = _dugme("TOPLA", Color(0.7, 0.55, 0.15), _maden_topla, 26)
+	_maden_dugme.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_maden_dugme.visible = sv > 0
+	satir.add_child(_maden_dugme)
+	var en_ust := sv >= Veri.MADEN_MAX
+	var y := _dugme("En üst seviye" if en_ust else ("Kur: %d hurda" if sv == 0 else "Yükselt: %d hurda") % Veri.maden_fiyat(sv),
+		Color(0.5, 0.42, 0.28), func() -> void:
+			var neden: String = profil.maden_yukselt()
+			if neden == "":
+				bildir("Maden %d. seviye!" % profil.maden_sv(), Color(1, 0.85, 0.45))
+			else:
+				bildir(neden, Color(1, 0.55, 0.45))
+			_yenile(), 26, not en_ust)
+	y.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	satir.add_child(y)
+	_maden_guncelle()
+
+
+func _maden_guncelle() -> void:
+	var sv: int = profil.maden_sv()
+	if sv == 0:
+		_maden_etiket.text = "Üretim: kurunca saatte %d hurda" % int(Veri.maden_uretim(1, int(profil.veri["kampanya"]["en_yuksek"])))
+		return
+	var ur: float = profil.maden_uretim()
+	var b: int = profil.maden_birikim()
+	_maden_etiket.text = "Saatte %d hurda · Birikti: %d / %d%s" % [int(round(ur)), b, int(ur * Veri.MADEN_SAAT),
+		"  DOLU!" if profil.maden_dolu() else ""]
+	if is_instance_valid(_maden_dugme):
+		_maden_dugme.disabled = b <= 0
+		_maden_dugme.text = "TOPLA +%d" % b
+
+
+func _maden_topla() -> void:
+	var m: int = profil.maden_topla()
+	if m > 0:
+		bildir("+%d hurda" % m, Color(1, 0.85, 0.4))
+		_yenile()
 
 
 func _gorev_karti() -> void:

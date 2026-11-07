@@ -11,6 +11,35 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-07 — Gece 4
+
+### Analiz 1 — Oynanış simülasyonu (kod, ekran görüntüsü ve sayılarla)
+- **İlk 5 dakika:** Barikat tek bir can havuzu (300 × Sur). 8. dalgada yürüyen 6 × 1.16 ≈ 7 hasar/sn vuruyor; hangi sütunda vurduğu hiç fark etmiyor. Asker parmakla sağa sola gidiyor ama konum yalnızca menzili etkiliyor: **barikatın neresinin tehlikede olduğu diye bir bilgi ve karar yok.** ONAR düğmesi "tüm barikata %25" verdiği için onarım da yer seçmiyor. Kingdom Rush'ta "şu yol sızıyor" hissi oyunun yarısı; bizde yok.
+- **5–15. dalga:** `11_kalabalik.png`'de zombiler üst üste biniyor (sol kenarda 4–5 zombi tek yığın); 120 zombilik testte de aynı. Telefon ekranında yığın tek zombi gibi okunuyor, oyuncu kalabalığın boyunu ölçemiyor. Hareket yalnızca `sin` ile salınım: zombiler birbirini görmüyor, zırhlı ile koşucu arasında hiçbir ilişki yok; Analiz 3'ün (Gece 3) "düşmanlar hep aynı şeyi sınıyor" bulgusu hareket katmanında hâlâ geçerli.
+- **Kampanya döngüsü (en önemli bulgu):** Zafer ekranı (`30_kampanya_zafer.png`) "SONRAKİ / MENÜ" ve iki satır ödül. Yükseltme yapmak için: MENÜ → OYNA sekmesinde 760 px aşağı kaydır → Sur kartı → Yükselt → yukarı kaydır → Kampanya. Döngü başına ≈ 5 dokunuş + 2 kaydırma. Grow Castle'da yükseltme düğmeleri savaş ekranının hemen altında: "bir yükseltme, bir dalga" saniyeler sürer. Ayrıca zafer ekranı **nasıl** kazandığını söylemiyor: barikat %100 ile kazanmak ile %5 ile kazanmak aynı ödül → geçilmiş dalgayı daha iyi oynamak için sebep yok.
+- **Kampanya ekonomisi:** 20. dalgada zafer 140 altın; Güç 10→11 fiyatı 50·1.18^10 ≈ 262 altın → iki zafer = bir Güç seviyesi. Yenilgide %25 = 35 altın. Bot 50–60. savaşta 30. dalgaya takılıyor (Dev duvarı): 10 savaşlık takılmada oyuncu aynı dalgayı elle 10 kez oynuyor. Tekrarlı ve yorucu; Grow Castle bunu **otomatik savaş** ve geçilmiş dalgayı tekrar oynayarak altın kasma ile çözüyor.
+- **Uygulama dışı:** Oyunu açmak için tek sebep oynamak; keşif en çok 30 dk'lık bir sayaç. Oyuncu 8 saat sonra döndüğünde hiçbir şey birikmemiş. Idle türünün "dönünce birikmiş kazanç" kancası (Clicker Heroes, Grow Castle) yok.
+- **Performans riski:** Sürü davranışı her kare n² komşu araması yaparsa 120 zombide 14.400 mesafe/kare: yasak. Izgara (64 px hücre) + saniyede 10 güncelleme ile ≈ 120 × 9 hücre × birkaç komşu: önemsiz. Barikat bölümleri 6 dikdörtgen + bölüm başına can çubuğu: çizim çağrısı birleşir, yalnızca can değişince çizilir.
+
+### Analiz 2 — Karşılaştırma ve oyuncu psikolojisi
+- **Grow Castle:** Savaş ekranından çıkmadan yükseltme, otomatik savaş (geçilmiş dalgalarda), kale ve kahraman yükseltmesi; "kısa savaş + hemen yükselt" döngüsü. Bizim kampanyamız kısa savaşa sahip ama yükseltme 2 ekran uzakta: **ödülün hemen harcanabilmesi** (anında tatmin) eksik.
+- **Kingdom Rush yıldızları:** Bölüm sonunda kalan cana göre 1–3 yıldız (bilinen kural: 20 candan 18+ → 3, 6+ → 2, yoksa 1; wiki bu oturumdan açılamadı). Yıldızlar kalıcı yükseltmeye harcanır; oyuncu 2 yıldızlı bölüme mükemmel oynamak için geri döner. Bizde kampanyada "daha iyi kazanma" sebebi yok.
+- **Clicker Heroes çevrimdışı ilerleme:** Çıkışta "boşta DPS" kaydedilir, dönünce kazanç hesaplanıp **elle toplanır** (topla düğmesi = ödül anı). Aktif yetenekler çevrimdışı sayılmaz. Bizde de çevrimdışı kazanç oyun içi güce bağlı olmalı (kampanyada ulaşılan dalga), sınırlı olmalı (8 saat) ki oyuncu günde 2–3 kez dönsün; saat geri alınırsa 0 (hile önleme).
+- **Vampire Survivors / Brotato kalabalıkları:** Düşmanlar birbirini iter (ayrılma), kalabalık şekli okunur; "duvar" ve "akın" ayrımı oyuncuya konum kararı verir. Godot forumunda (pikmin benzeri sürü) fizik motoru yerine kendi CPU ızgarası öneriliyor: fizik düğümleriyle 50 varlık 7 FPS, özel ızgara ile 200 varlık ≈ 90 FPS.
+- **Kingdom Rush / PvZ zayıf nokta:** Düşmanın en zayıf şeridi seçmesi oyuncuya "hangi şeridi güçlendireyim" kararı verir. Bizim barikatta şerit yok; 6 bölüm + "en zayıfa saldır" yapay zekâsı bu kararı getirir, ONAR da "en zayıf bölümü önce" yaparsa tek düğme akıllı kalır.
+- **Oyuncu psikolojisi özeti:** (1) Ödül → harcama mesafesi kısalmalı. (2) Geçilmiş içeriğe dönme sebebi (yıldız, kasma) lazım. (3) Uygulama dışında birikim, dönüş kancası. (4) Düşman hareketi okunur ve anlamlı olmalı.
+
+### Karar (bu gece)
+**3 geliştirme**
+1. **A3 Sürü davranışı (zombi hareketi):** ızgaralı ayrılma (üst üste binme biter), koşucular yakındaki zırhlının arkasına saklanır (zırhlı ölünce dağılır), kusan hedef alınınca yana kayar. *Gerekçe:* §0 Gece C; Analiz 1'deki okunabilirlik sorunu.
+2. **Kampanya v2: yıldızlar + zafer ekranında yükseltme:** dalga başına 1–3 yıldız (barikat %90+ → 3, %50+ → 2), yıldız eşiklerinde ödül; zafer/yenilgi ekranında doğrudan "Sur +1" ve "Güç +1" düğmeleri. *Gerekçe:* Analiz 1'in en önemli bulgusu; KR yıldızları ve Grow Castle'ın anında yükseltmesi.
+3. **ONAR v2 (akıllı onarım) + Performans v5:** onarım ve ekip/Doktor yenilenmesi önce en zayıf bölüme gider; barikat tahtaları bölüm başına çizilir, yalnızca değişince. *Gerekçe:* A2 ile birlikte; tek düğme akıllı kalır.
+
+**3 yeni özellik**
+1. **A2 Zayıf nokta hedefleme:** barikat 6 bölüm, her bölümün canı ve çubuğu görünür; zombiler (türüne göre zekâ) en zayıf bölüme yönelir; kırılan bölümde (GEDİK) hasar ×1.5 yanlara taşar. *Gerekçe:* §0 Gece C; konuma anlam.
+2. **B4 Otomatik savaş + A6 akıllı kart:** kampanyada geçilmiş dalgalarda OTO düğmesi; lider kendi gider, yetenek ve onarım kendiliğinden, kartı yapay zekâ seçer (zombi karışımına, evrim yoluna göre puan). Ayrıca "geçilmiş dalgayı tekrar oyna" (altın kasma, %50 ödül). *Gerekçe:* §0 Gece D; duvarda tekrar yorgunluğu.
+3. **B6 Kasaba ilk bina: Hurda Madeni + çevrimdışı kazanç:** seviyeli maden saatte hurda üretir, en çok 8 saat birikir, kazanç kampanya dalgasıyla büyür; açılışta "Sen yokken" kartı ve TOPLA düğmesi; saat geri giderse 0. *Gerekçe:* §0 Gece D; dönüş kancası.
+
 ## 2026-11-06 — Gündüz ek turu 1/3
 
 ### Analiz 1 — Oynanış simülasyonu (kod ve sayılarla)
