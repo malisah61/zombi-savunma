@@ -137,8 +137,9 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
   açılışta "Sen yokken: +X hurda" ekranı. Saat hilesine karşı: geri giden saat → 0 kazanç.
 - [x] **A6 Akıllı otomatik kart seçimi** (2026-11-07, Gece 4 — elle oynarken de "★ ÖNERİ" gösterir; bkz. §16e): oto modda kartı yapay zekâ seçer: karşılaşılan zombi karışımına göre
   (zırhlı oranı yüksek → Zırh Delici), evrim yoluna ve ekonomiye göre puanlar. Oyuncu kapatabilir.
-- [ ] **B6 Kasaba sekmesi:** Atölye, Antrenman Sahası, Revir, Gözcü Kulesi, Maden (§16'daki tesislerle birleşir).
+- [x] **B6 Kasaba sekmesi:** Atölye, Antrenman Sahası, Revir, Gözcü Kulesi, Maden (§16'daki tesislerle birleşir).
   (2026-11-07, Gece 4: ilk bina **Hurda Madeni** OYNA sekmesinde "KASABA" kartı olarak yapıldı; ayrı sekme ve diğer binalar sırada.)
+  (2026-11-08, Gece 5: ayrı **KASABA** sekmesi; Maden + **Çiftlik** (çevrimdışı kampanya altını) + **Antrenman Sahası**, **Revir**, **Atölye**; bkz. §16f. Gözcü Kulesi = Keşif v3 ile birlikte yol haritasında.)
 - [x] **B7 Hız kilitleri** (2026-11-06, gündüz ek turu 1 — Hayatta Kalma rekoru 10 da açar; eski kayıtta x3 seçiliyse açık kalır): x2 baştan açık, x3 kampanyada 10. dalgayı geçince açılır (hedef duygusu).
 - [x] (2026-11-05) Telefon performansı ve görüntü kalitesi: kasma, hata, donma olmasın. → v1 yapıldı (bkz. §12).
 - [x] (2026-11-05) Ana menü. → Oyna / Ekip / Envanter / Keşif / Ayarlar.
@@ -152,6 +153,10 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] (2026-11-05, sürekli) FM tarzı derinliği büyüt: personel, kişilik, sakatlık, tesisler, kısa liste… (bkz. §16).
 
 ## 10. Fikir Havuzu (her gece büyür)
+- **Yeni araştırılan (Gece 5):**
+  - **Kalkanlı zombi (PvZ Screen Door Zombie):** PvZ'de kapı düz atışı tutar, kapı kırılınca zombi normal yürür; lobut/alan hasarı kapıyı aşar. Bizde: 10. dalgadan (kampanyada 12.) çıkar, oran %6 + %1·(n−10), en çok %12. Can 34, hız 46, hasar 8; önden gelen mermiye karşı **kalkan canı 60 × can çarpanı** (kalkan bitince normal zombi, kalkan kırılma parçacığı). Alan hasarı (havan, el bombası, patlayan, yanma) ve **yandan** gelen mermi (yön vektörünün x bileşeni |x| > 0.5: kenardaki nöbetçiler 0.07/0.93 yuvaları) kalkanı aşar → sur yuvalarının konumu ve Havan anlam kazanır. Delici mermi kalkanda 1 delme hakkı harcar. Teknik: `zombi.kalkan_can`; `oyun.isabet`'te mermi yönü parametre olarak gelir; atlasta kalkanlı kare (ayrı tür bölgesi) — yeni çizim çağrısı yok. A6 akıllı kart: kalkanlı oranı → Havan/Yanma +puan.
+  - **Komutan Bilgisi (BTD6 Monkey Knowledge):** BTD6'da oyuncu seviyesi başına 1 bilgi puanı, puan seçmeli kalıcı ağaca harcanır (hurdadan ayrı para birimi = seçim, satın alma değil). Bizde: hesap seviyesi = toplam kazanılan XP (koşu dalga×10 + kampanya dalga×4); seviye fiyatı 200·1.12^sv XP; her seviye 1 Bilgi Puanı. 4 dal × 5 düğüm, her düğüm 1–3 puan: "Taretler +%5 menzil", "Nöbetçi verimi +%3 (0.45 → en çok 0.54)", "OTO kart seçimi 2 kart daha görür", "Gedik taşması ×1.3 → ×1.2", "Boss ganimeti +1 nadirlik şansı %10". Puanlar istenince ücretsiz sıfırlanır (BTD6 gibi deneme özgürlüğü). Teknik: `profil.bilgi` {xp, sv, harcanan: {}}; menüde LAB sekmesinin alt bölümü (yeni sekme yok).
+- **Uygulandı (Gece 5):** Tehdit Seviyesi, Başarımlar (Gece 2–3 taslaklarından; sayılar §16f'de).
 - **Yeni araştırılan (Gece 4):**
   - **Bölüm tuzakları (Orcs Must Die tuzakları + A2 bölümleri):** her barikat bölümünün önüne kampanya altınıyla tek tuzak: Çivi (önünden geçene saniyede 4 × can çarpanı hasar), Katran (önündeki zombiler −%35 hız, zırhlıya etkisi yarım), Patlayıcı Varil (bölüm ilk kez %50'ye inince 120 px alan, dalga başına 1). Tuzak seviyesi 1–10, fiyat 60·1.25^sv altın. Gedik açılan bölümün tuzağı dalga sonuna dek kapanır (onarım değerli). Teknik: barikat bölüm sayısı kadar sabit dizi, zombi `_process`'inde y > barikat_y − 140 iken tek bölüm sorgusu; çizim barikat dokusuna eklenen dikdörtgenler (yeni çizim çağrısı yok).
   - **Günlük meydan okuma (Slay the Spire Daily Climb):** her gün aynı tohumlu (tarih → `seed`) Hayatta Kalma koşusu + 2 rastgele kural (ör. "kartlar 2 seçenekli", "zombiler +%20 hızlı ama +%50 altın", "yalnız Pompalı"). Günde 1 ödüllü deneme; ödül ulaşılan dalga × 8 hurda + 10. dalgada Nadir+ silah. Kendi en iyi 7 günlük sonucu menüde liste (çevrimdışı, lider tablosu yok). Teknik: `seed(hash(tarih))` yalnız dalga bileşimi ve kart çekimi için ayrı `RandomNumberGenerator` (görsel rastgelelik etkilenmez), `profil.gunluk_meydan` {tarih, en_iyi, deneme}.
@@ -201,7 +206,7 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [x] (Gece 2) FM v3 ilk parça: koşu sonu ekip konuşması (Öv / Sert konuş / Sessiz kal), sonuç beklenti ve kişiliğe bağlı, tekrar yarım etki.
 - [x] (Gece 3) FM maç puanı ve form: lider + nöbetçilere 1–10 puan, koşunun yıldızı, son 5 puan form, puan → moral (bkz. §16c).
 - [ ] FM v3 kalanı: personel, tesisler, takım kimyası (Fikir Havuzu, Gece 3).
-- [ ] Başarımlar (Fikir Havuzu, Gece 3).
+- [x] (Gece 5) Başarımlar: 12 × Bronz/Gümüş/Altın, KASABA sekmesinde Onur Panosu (bkz. §16f).
 - [x] (Gündüz turu) Keşif v2 ilk parça: öneri yıldızı (3 + (değer − ekip en iyi)/6, bilgi azsa ±1.5 yanılır) ve kısa liste (raporu korur).
 - [ ] Keşif v3: gözlemci personeli (Yetenek / Potansiyel Değerlendirme).
 - [ ] Envanter v2: zırh + aksesuar yuvası, silah modları, set bonusları, kötü şans koruması.
@@ -213,16 +218,17 @@ Mevcut "koşu" modu (roguelike) **silinmez**; Grow Castle tarzı yapı onun yan�
 - [ ] Kule v3: alev kulesi, onarım istasyonu.
 - [x] (Gündüz ek turu 1) §0 Gece B: Kampanya, Sur, Güç seviyesi; A4 boss aşamaları; B7 x3 kilidi; nöbetçiye silah verme.
 - [x] (Gece 4) §0 Gece C (A2 zayıf nokta, A3 sürü), Gece D'den B4 otomatik savaş + çevrimdışı kazanç, A6 akıllı kart, B6'nın ilk binası (Hurda Madeni); Kampanya v2 (yıldız, tekrar, zafer ekranında yükseltme).
-- [ ] **Sıradaki öncelik:** B6 Kasaba sekmesi (Atölye, Antrenman Sahası, Revir; Çiftlik = altın üretimi), Bölüm tuzakları (Fikir Havuzu, Gece 4), Görsel kalite v2 (CC0 sprite), Tehdit Seviyesi, Başarımlar, Günlük meydan okuma.
+- [x] (Gece 5) B6 Kasaba sekmesi (Çiftlik, Antrenman Sahası, Revir, Atölye), Başarımlar, Tehdit Seviyesi; Barikat v3 (gedik ×1.3, HUD bölüm şeridi), Kampanya v3 (OTO TEKRAR), Menü v2 (modlar en üstte).
+- [ ] **Sıradaki öncelik (Gece 5 sonrası):** 1) Bölüm tuzakları (Fikir Havuzu, Gece 4) — gedik dengesiyle birlikte; 2) Görsel kalite v2 (CC0 sprite); 3) Günlük meydan okuma; 4) Kalkanlı zombi (Fikir Havuzu, Gece 5); 5) Keşif v3 + Gözcü Kulesi; 6) Komutan Bilgisi (Fikir Havuzu, Gece 5); 7) Erken dalga çağırma.
 - [x] (Gece 2) Laboratuvar: bkz. §7b.
 - [x] (Gündüz turu) Rol aktif yetenekleri: Asker el bombası (170 px, 8×hasar+25, zırhı aşar, 22 sn), Avcı ölümcül nişan (5 sn, 25 sn), Mühendis acil onarım (%30, 30 sn), Doktor aşı (6 sn %40 yavaş, 28 sn).
-- [ ] Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
+- [x] (Gece 5) Tesisler: Atölye (silah geliştirme indirimi), Antrenman sahası (gelişim +), Revir (sakatlık süresi −).
 - [ ] Bölümler ve zorluk seçimi; sonsuz mod.
 - [x] (Gündüz turu) Günlük görevler: 3 görev, gece yarısı yenilenir, biten ödül kaybolmaz, üçü alınınca bonus Nadir+ silah.
 - [x] (Gece 2) Koşu sonu ekranı v2: barikatı en çok yiyen tür + öneri, sıradaki Laboratuvar hedefi; ilk 3 koşuda dalga dalga öğretici ipucu.
-- [ ] Tehdit Seviyesi (Fikir Havuzu, Gece 2).
+- [x] (Gece 5) Tehdit Seviyesi (Fikir Havuzu, Gece 2; bkz. §16f).
 - [ ] Erken dalga çağırma (Fikir Havuzu, Gece 2).
-- [ ] Başarımlar.
+- [x] Başarımlar. (Gece 5)
 - [ ] Bölüm 2: Orman.
 
 ## 3b. Zombi sayıları (Gece 1'de uygulandı)
@@ -346,6 +352,16 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Hurda Madeni (Kasaba, B6 ilk bina):** kurulum 80 hurda, seviye fiyatı 80·1.45^sv (en çok 20). Üretim (6 + 4·sv) × (1 + 0.03 × kampanya en yüksek dalga) hurda/saat, en çok 8 saat birikir. Açılışta 15 dk+ birikim varsa OYNA'nın en üstünde "SEN YOKKEN … TOPLA". Saat geri alınırsa kazanç yok (yalnız referans düzelir).
   Örnek: Sv 1, 10. dalga → 13/sa (8 saatte 104); Sv 5, 20. dalga → 42/sa; Sv 10, 30. dalga → 87/sa (8 saatte ≈ 700).
 
+## 16f. Kasaba v1, Başarımlar, Tehdit, Barikat v3, Oto Tekrar, Menü v2 (Gece 5'te uygulandı)
+- **Kasaba sekmesi (7. sekme, yazı 18 pt):** Hurda Madeni buraya taşındı (OYNA'da özet kart + TOPLA kaldı, "Sen yokken" OYNA'nın en üstünde).
+  - **Çiftlik:** kurulum 100 hurda, fiyat 100·1.45^sv (en çok 20). Üretim (5 + 3·sv) × (1 + 0.04 × kampanya en yüksek dalga) **kampanya altını**/saat, 8 saat sınırı, saat hilesi koruması Maden'le ortak (`_uretim_guncelle`). Örnek: Sv 2, 7. dalga → 14/sa; Sv 5, 20. dalga → 36/sa (8 saatte ≈ 290 altın ≈ Güç 9→10 fiyatı 50·1.18^9 = 221).
+  - **Tesisler** (en çok 10 seviye, fiyat taban·1.5^sv hurda): Antrenman Sahası (taban 100) sahada olmayanların koşu sonu antrenmanı 0.35 × (1 + 0.10·sv); Revir (taban 90) gerçek zaman dinlenmesi ve yedek dinlenmesi × (1 + 0.10·sv), sakatlık şansı × (1 − 0.06·sv); Atölye (taban 120) silah geliştirme fiyatı × (1 − 0.04·sv) (10. seviyede −%40). Tüm tesisler en üste ≈ 3 × 11 bin hurda: uzun vadeli hurda yeri.
+- **Başarımlar:** 12 başarım × 3 kademe (Bronz 40, Gümüş 100, Altın 250 hurda; toplam 4680). Eşikler: Dev 1/5/20, Kraliçe 1/5/15, Hayatta Kalma dalgası 15/25/40, kampanya dalgası 10/30/60, toplam zombi 1000/10000/50000, evrim 1/5/15, ekip 3/5/8, Sur 9/17/33, taret uzmanlığı 1/10/30, kampanya ★ 15/60/150, Kasaba toplama 200/2000/10000 hurda, Tehdit 3/6/10. Rekor, kampanya, öldürme, ekip, Sur, yıldız ve tehdit profilden hesaplanır (eski oyuncunun geçmişi sayılır); Dev/Kraliçe/evrim/uzmanlık/toplama Gece 5'ten sonra sayılır. Ödül elle alınır (görünür ödül anı), hazır olanlar listenin üstünde, OYNA'da "sıradaki başarım" satırı.
+- **Tehdit Seviyesi (Hayatta Kalma):** Hayatta Kalma rekoru 15 ile açılır. Kalabalık 3 × +%20 zombi sayısı, Dişli 3 × +%20 zombi hasarı (boss dahil), Kalın Deri 3 × +%15 can, Karaborsa 2 × +%40 onarım ve taret fiyatı; her kademe 1 puan, en çok 11. Hurda × (1 + 0.10·puan). 10. dalgaya ulaşan koşuda yeni en yüksek puan → garanti silah (1–3 Ender, 4–7 Destansı, 8+ Efsanevi), Hades'teki gibi puanı birer birer artırmak her adımda ödül verir. Kampanyayı etkilemez.
+- **Barikat v3:** gedik taşma çarpanı 1.5 → **1.3**. HUD'da can çubuğunun altında 6 bölümlü şerit (gedikte kırmızı yanıp söner; yalnız gedik varken kendi `_process`'i açık). Gedik varken ONAR düğmesi kırmızı "GEDİK! ONAR".
+- **Kampanya v3 — OTO TEKRAR:** TEKRAR savaşı OTO ile kazanılınca sonuç ekranının üstünde "OTO TEKRAR 3 sn (durdur) · seri n, +X altın"; 3 sn sonra aynı dalga kendiliğinden başlar. Yenilgide durur ve seriyi yazar. Düğme: sayarken durdurur (ayarı kapatır), kapalıyken açar (OTO kapalıysa onu da açar). Zafer ekranında yükseltme yapılırsa sayaç 3 sn'ye döner. Ayar `oto_tekrar` (varsayılan açık).
+- **Menü v2:** OYNA sırası: Sen yokken → Kampanya → Hayatta Kalma (+ Tehdit) → lider (silah satırı içine alındı) → surdaki ekip → Sur → Kasaba özeti → Görevler → Keşif. İki mod ilk ekranda.
+
 ## 16. FM Derinliği — Sıradaki Tasarımlar
 - **Kişilik (gizli özellikler):** Kararlılık ve Profesyonellik gelişim hızını ±%30 etkiler; Hırs moral tavanını.
   Keşif raporunda "Kişilik: Profesyonel / Tembel / Lider ruhlu" gibi tek kelimeyle görünür.
@@ -358,6 +374,13 @@ Moral: Öv +6/+2/−3, Sert −4/+1/+5, Sessiz 0 ve yorgunluk −8. Kişilik: Pr
 - **Kısa liste ve öneri:** gözlemci adaya 1–5 yıldız "öneri" verir; oyuncu kısa listeye alıp daha sonra işe alır.
 
 ## 17. Araştırma Notları
+### 2026-11-08 (Gece 5)
+- **Hades Pact of Punishment:** koşul başına kademe ve puan (Hard Labor 5 × +%20 düşman hasarı 1 puan, Jury Summons 3 × +%20 düşman, Calisthenics 2 × +%15 can, Convenience Fee 2 × +%40 fiyat). Ödüller silah başına her yeni Heat için; puanı birer birer artırmak önerilir (atlamak ara ödülleri kaybettirir). En yüksek Heat sayısı sayfalarda yok. — https://www.rpgsite.net/feature/10287-hades-pact-of-punishment-heat-modifiers-and-how-to-maximize-your-rewards , https://ludoatlas.pages.dev/hades/heat/
+- **Başarımlar (Kwak, WebSci 2022 — 13.792 PlayStation oyunu, 377.938 kupa):** Bronz 15 / Gümüş 30 / Altın 90 puan; Platin tamamlanma 2008'de %4.2 → 2021'de %39.2; tekrarlı şartlar tamamlanmayı düşürüyor; odak grubunda başarımlar kimine olumlu geri bildirim, kimine "ek iş". Ders: normal oynarken dolan, kademeli, angaryasız. — https://ar5iv.labs.arxiv.org/html/2205.15163
+- **Grow Castle kasabası / oto savaş:** kasaba binaları sayıları kaynaklarda bulunamadı (arama sonuçları başka oyunlara gitti); "seviye atlayan bina tek sayıyı büyütür" ilkesi ve tüm sayılar bizim. — https://www.apkmirror.com/apk/raon-games/grow-castle/grow-castle-1-22-1-release
+- **PvZ Screen Door Zombie (Kalkanlı zombi fikri):** kapı düz atışları tutar, lobut ve alan saldırıları aşar (sayfalar bu oturumda açılmadı, bilinen oyun bilgisi). — https://plantsvszombies.wiki.gg/wiki/Screen_Door_Zombie
+- **BTD6 Monkey Knowledge (Komutan Bilgisi fikri):** oyuncu seviyesi başına bilgi puanı, seçmeli kalıcı ağaç. — https://www.bloonswiki.com/Monkey_Knowledge_(BTD6) , https://www.bloonswiki.com/Monkey_Knowledge_Point
+- **Godot 4.3 tekniği:** HUD şeridi `Control._draw` + `draw_rect` (birleşen çizim), yanıp sönme için yalnız gerekince `set_process(true)`; menüde 4 şalter `GridContainer` (2 sütun). Yeni düğüm oyun sırasında oluşturulmuyor.
 ### 2026-11-07 (Gece 4)
 - **Grow Castle** (App Store sayfası, r/GrowCastle rehberleri): kısa dalga, savaş ekranından yükseltme, geçilmiş dalgada otomatik savaş ve kasma. Wiki sayfaları yine açılamadı; sayılar bizim. https://apps.apple.com/gb/app/grow-castle/id1133478462
 - **Clicker Heroes çevrimdışı ilerleme:** çıkışta boşta DPS kaydedilir, dönünce kazanç hesaplanır ve elle toplanır; aktif yetenek sayılmaz; sınır yok (biz 8 saat sınırı koyduk ki günde birkaç kez dönülsün; saat hilesi yazıda geçmiyor, bizim kuralımız). https://blog.clickerheroes.com/offline-progression-in-clicker-heroes/

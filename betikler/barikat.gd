@@ -3,7 +3,7 @@ extends Node2D
 ## Kum torbası, direk ve tel bir kez dokuya pişirilir (çok sayıda çokgen = çok çizim çağrısı);
 ## yalnızca tahtalar can değiştikçe yeniden çizilir.
 ## A2 Zayıf nokta (Gece 4): barikat 6 bölümdür; her bölümün canı ayrı, üstünde küçük çubuğu görünür.
-## Zombi vurduğu x'teki bölüme hasar verir. Bölüm kırılınca GEDİK olur: oraya gelen hasar ×1.5 olarak
+## Zombi vurduğu x'teki bölüme hasar verir. Bölüm kırılınca GEDİK olur: oraya gelen hasar ×1.3 (Gece 5'e dek 1.5) olarak
 ## en yakın sağlam bölümlere taşar. Toplam can (`can`) eskisi gibi tek sayı olarak okunur ve yazılır;
 ## dışarıdan `can = x` yazmak bütün bölümleri aynı orana getirir (eski kod bozulmaz).
 
@@ -15,7 +15,7 @@ var oyun  # oyun.gd
 var sadece_sabit := false  # pişirme kopyası
 var _doku: Texture2D
 const BOLUM := 6
-const GEDIK_CARPAN := 1.5
+const GEDIK_CARPAN := 1.3  # Gece 5: 1.5 kendi kendini büyüten çöküş yaratıyordu (bkz. ANALIZ 2026-11-08)
 const ONARIM_PAYI := 0.05  # akıllı onarım: en zayıf bölüme bölüm canının %5'i kadar dilimlerle
 
 var can: float:
@@ -103,6 +103,11 @@ func en_zayif() -> int:
 		if _bolum[i] < _bolum[en]:
 			en = i
 	return en
+
+
+## HUD bölüm şeridi için bölüm canları (kopyalanmaz: Packed dizi yazılınca kopyalanır).
+func bolumler() -> PackedFloat32Array:
+	return _bolum
 
 
 func gedik_sayisi() -> int:

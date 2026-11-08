@@ -16,7 +16,7 @@ const VARSAYILAN := {
 	"envanter": [],
 	"aktif": "",
 	"kesif": {"aktif": {}, "raporlar": []},
-	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true, "hiz": 1, "oto": false},
+	"ayarlar": {"grafik": 2, "fps": 60, "ses": true, "titresim": true, "fps_goster": false, "oto_kalite": true, "hiz": 1, "oto": false, "oto_tekrar": true},
 	"rekor": 0,
 	"istatistik": {"kosu": 0, "oldurme": 0, "boss": 0},
 	"gorulen": [],  # tanıtımı yapılmış zombi türleri
@@ -29,6 +29,11 @@ const VARSAYILAN := {
 	"kampanya": {"dalga": 1, "en_yuksek": 0, "zafer": 0, "yenilgi": 0, "yildiz": {}, "yildiz_odul": 0},
 	"x3_acik": false,
 	"maden": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba: Hurda Madeni (çevrimdışı kazanç)
+	"ciftlik": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba v1: Çiftlik (çevrimdışı kampanya altını)
+	"tesis": {"antrenman": 0, "revir": 0, "atolye": 0},  # Kasaba v1: FM tesisleri
+	"basarim": {"sayac": {}, "alinan": {}},  # başarım sayaçları ve alınmış kademe sayısı
+	"tehdit": {"kalabalik": 0, "disli": 0, "kalin": 0, "karaborsa": 0},  # Hayatta Kalma tehdit şalterleri
+	"tehdit_rekor": 0,  # 10. dalgaya ulaşılmış en yüksek tehdit puanı
 }
 
 var veri: Dictionary = {}
@@ -59,9 +64,12 @@ func yukle() -> void:
 	hiz3_kontrol()
 	gorevleri_hazirla()
 	var once := float(veri["maden"]["birikim"])
-	var saat := maden_guncelle()
-	if saat >= 0.25 and float(veri["maden"]["birikim"]) - once >= 1.0:
-		cevrimdisi = {"saat": saat, "miktar": int(float(veri["maden"]["birikim"]) - once)}
+	var once_a := float(veri["ciftlik"]["birikim"])
+	var saat := maxf(maden_guncelle(), ciftlik_guncelle())
+	var m := int(float(veri["maden"]["birikim"]) - once)
+	var a := int(float(veri["ciftlik"]["birikim"]) - once_a)
+	if saat >= 0.25 and (m >= 1 or a >= 1):
+		cevrimdisi = {"saat": saat, "miktar": m, "altin": a}
 
 
 ## Dizi içindeki kayıtları _tamamla göremez: eski hayatta kalanlara yeni alanları burada ekle.
@@ -251,11 +259,25 @@ func kosu_istatistigi() -> Dictionary:
 
 
 ## Koşu bitince çağrılır: ödüller, ganimet, gelişim (FM tarzı), moral. Özet sözlüğü döndürür.
-func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false, katki: Dictionary = {}) -> Dictionary:
+func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false, katki: Dictionary = {},
+		tehdit: int = 0) -> Dictionary:
 	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0, "sakat": {}, "yorgunluk": ""}
-	var kazanc := int(round((dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))))
+	var kazanc := int(round((dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))
+		* (1.0 + Veri.TEHDIT_HURDA * tehdit)))
 	hurda_ekle(kazanc)
 	ozet["hurda"] = kazanc
+	if tehdit > 0:
+		ozet["tehdit"] = tehdit
+	# Tehdit (Hades Heat): 10. dalgaya ulaşan koşuda yeni en yüksek puan ilk kez → garanti silah
+	if tehdit > int(veri["tehdit_rekor"]) and dalga >= Veri.TEHDIT_DALGA:
+		veri["tehdit_rekor"] = tehdit
+		var ts := Veri.silah_uret("", Veri.tehdit_odul_nadirlik(tehdit))
+		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
+			veri["envanter"].append(ts)
+		else:
+			hurda_ekle(silah_satis_degeri(ts))
+		var tn: Dictionary = Veri.NADIRLIK[int(ts["nadirlik"])]
+		ozet["tehdit_odul"] = "YENİ TEHDİT REKORU %d: %s %s" % [tehdit, tn["ad"], Veri.SILAHLAR[ts["taban"]]["ad"]]
 
 	# Ganimet: her 5 dalgada bir silah; nadirlik şansı dalgayla artar
 	for i in int(dalga / 5.0):
@@ -322,7 +344,7 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 				diger["xp"] = int(diger["xp"]) - int(diger["seviye"]) * 100
 				diger["seviye"] = int(diger["seviye"]) + 1
 		else:
-			_gelistir(diger, 0.35)
+			_gelistir(diger, 0.35 * (1.0 + tesis_deger("antrenman")))
 		# her 10 koşuda bir "sezon" geçer, herkes yaşlanır
 	veri["istatistik"]["kosu"] = int(veri["istatistik"]["kosu"]) + 1
 	veri["istatistik"]["oldurme"] = int(veri["istatistik"]["oldurme"]) + oldurme
@@ -348,7 +370,7 @@ func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dicti
 			# surda nöbet tutan dinlenmez, lider kadar olmasa da yorulur
 			x["yorgunluk"] = minf(float(x.get("yorgunluk", 0.0)) + 5.0 + dalga * 0.8, 100.0)
 		else:
-			x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - 35.0, 0.0)
+			x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - 35.0 * revir_carpani(), 0.0)
 		if lider:
 			x["moral"] = mini(int(x["moral"]) + 2, 100)
 		if String(x.get("kisilik", "")) == "hirsli":
@@ -358,7 +380,7 @@ func _ekip_kosu_sonu(h: Dictionary, dalga: int, barikat_dustu: bool, ozet: Dicti
 	var yorgunluk := minf(float(h.get("yorgunluk", 0.0)) + yorgun_artis, 100.0)
 	h["yorgunluk"] = yorgunluk
 	ozet["yorgunluk"] = Veri.yorgunluk_metni(yorgunluk)
-	if barikat_dustu and not tek_kisi and randf() < 0.05 + yorgunluk * 0.002:
+	if barikat_dustu and not tek_kisi and randf() < (0.05 + yorgunluk * 0.002) * (1.0 - Veri.REVIR_SAKATLIK * tesis_sv("revir")):
 		var sure := randi_range(1, 3)
 		h["sakat"] = sure
 		ozet["sakat"] = {"ad": h["ad"], "sure": sure}
@@ -422,7 +444,7 @@ func zaman_dinlenmesi() -> void:
 		return
 	var saat := float(simdi - son) / 3600.0
 	for x in veri["ekip"]:
-		x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - saat * 12.0, 0.0)
+		x["yorgunluk"] = maxf(float(x.get("yorgunluk", 0.0)) - saat * 12.0 * revir_carpani(), 0.0)
 		x["sakat"] = maxi(int(x.get("sakat", 0)) - int(saat / 4.0), 0)
 	var aktif := aktif_kahraman()
 	if int(aktif.get("sakat", 0)) > 0:
@@ -935,15 +957,19 @@ func maden_dolu() -> bool:
 ## Geçen gerçek zamanı birikime çevirir (en çok 8 saatlik üretim). Saat geri alınmışsa kazanç yok,
 ## yalnızca referans zaman düzelir. Geçen saati döndürür (gösterim için). Kaydetmez.
 func maden_guncelle() -> float:
-	var m: Dictionary = veri["maden"]
+	return _uretim_guncelle(veri["maden"], maden_sv(), maden_uretim())
+
+
+## Ortak çevrimdışı üretim (Maden ve Çiftlik): geçen gerçek zamanı en çok MADEN_SAAT saatlik birikime çevirir.
+## Saat geri alınmışsa kazanç yok, yalnızca referans düzelir. Geçen saati döndürür.
+func _uretim_guncelle(m: Dictionary, sv: int, uretim: float) -> float:
 	var simdi := int(Time.get_unix_time_from_system())
 	var son := int(m["son"])
 	m["son"] = simdi
-	if maden_sv() <= 0 or son <= 0 or simdi <= son:
+	if sv <= 0 or son <= 0 or simdi <= son:
 		return 0.0
 	var saat := (simdi - son) / 3600.0
-	var tavan := maden_uretim() * Veri.MADEN_SAAT
-	m["birikim"] = minf(float(m["birikim"]) + saat * maden_uretim(), tavan)
+	m["birikim"] = minf(float(m["birikim"]) + saat * uretim, uretim * Veri.MADEN_SAAT)
 	return saat
 
 
@@ -955,6 +981,7 @@ func maden_topla() -> int:
 	veri["maden"]["birikim"] = float(veri["maden"]["birikim"]) - miktar
 	hurda_ekle(miktar)
 	gorev_ilerlet("maden", miktar)
+	basarim_ilerlet("toplama", miktar)
 	kaydet()
 	return miktar
 
@@ -971,6 +998,192 @@ func maden_yukselt() -> String:
 	veri["maden"]["sv"] = sv + 1
 	kaydet()
 	return ""
+
+
+# ================================================================ KASABA v1: ÇİFTLİK ve TESİSLER (Gece 5)
+
+func ciftlik_sv() -> int:
+	return clampi(int(veri["ciftlik"]["sv"]), 0, Veri.CIFTLIK_MAX)
+
+
+func ciftlik_uretim() -> float:
+	return Veri.ciftlik_uretim(ciftlik_sv(), int(veri["kampanya"]["en_yuksek"]))
+
+
+func ciftlik_birikim() -> int:
+	return int(float(veri["ciftlik"]["birikim"]))
+
+
+func ciftlik_guncelle() -> float:
+	return _uretim_guncelle(veri["ciftlik"], ciftlik_sv(), ciftlik_uretim())
+
+
+func ciftlik_topla() -> int:
+	ciftlik_guncelle()
+	var miktar := ciftlik_birikim()
+	if miktar <= 0:
+		return 0
+	veri["ciftlik"]["birikim"] = float(veri["ciftlik"]["birikim"]) - miktar
+	veri["altin"] = altin() + miktar
+	kaydet()
+	return miktar
+
+
+func ciftlik_yukselt() -> String:
+	var sv := ciftlik_sv()
+	if sv >= Veri.CIFTLIK_MAX:
+		return "Çiftlik en üst seviyede"
+	var f := Veri.ciftlik_fiyat(sv)
+	if hurda() < f:
+		return "Yeterli hurda yok"
+	ciftlik_guncelle()
+	hurda_ekle(-f)
+	veri["ciftlik"]["sv"] = sv + 1
+	kaydet()
+	return ""
+
+
+func tesis_sv(id: String) -> int:
+	return clampi(int(veri["tesis"].get(id, 0)), 0, Veri.TESIS_MAX)
+
+
+func tesis_deger(id: String) -> float:
+	return float(Veri.TESISLER[id]["deger"]) * tesis_sv(id)
+
+
+func revir_carpani() -> float:
+	return 1.0 + tesis_deger("revir")
+
+
+func tesis_yukselt(id: String) -> String:
+	var sv := tesis_sv(id)
+	if sv >= Veri.TESIS_MAX:
+		return "En üst seviyede"
+	var f := Veri.tesis_fiyat(id, sv)
+	if hurda() < f:
+		return "Yeterli hurda yok"
+	hurda_ekle(-f)
+	veri["tesis"][id] = sv + 1
+	kaydet()
+	return ""
+
+
+## Atölye indirimi uygulanmış silah geliştirme fiyatı.
+func gelistirme_fiyati(s: Dictionary) -> int:
+	return maxi(1, int(round(Veri.gelistirme_fiyati(s) * (1.0 - tesis_deger("atolye")))))
+
+
+# ================================================================ BAŞARIMLAR (Gece 5)
+
+func basarim_ilerlet(id: String, miktar: int = 1) -> void:
+	var sayac: Dictionary = veri["basarim"]["sayac"]
+	sayac[id] = int(sayac.get(id, 0)) + miktar
+
+
+## Başarımın şu anki değeri: sayaçtan ya da profilin kendisinden (eski oyuncunun geçmişi de sayılır).
+func basarim_degeri(id: String) -> int:
+	match id:
+		"rekor":
+			return int(veri["rekor"])
+		"kampanya":
+			return int(veri["kampanya"]["en_yuksek"])
+		"oldurme":
+			return int(veri["istatistik"]["oldurme"])
+		"ekip":
+			return veri["ekip"].size()
+		"sur":
+			return sur_sv()
+		"yildiz":
+			return toplam_yildiz()
+		"tehdit":
+			return int(veri["tehdit_rekor"])
+	return int(veri["basarim"]["sayac"].get(id, 0))
+
+
+## Alınmış kademe sayısı (0–3).
+func basarim_kademe(id: String) -> int:
+	return clampi(int(veri["basarim"]["alinan"].get(id, 0)), 0, 3)
+
+
+func basarim_hazir(b: Dictionary) -> bool:
+	var k := basarim_kademe(String(b["id"]))
+	return k < 3 and basarim_degeri(String(b["id"])) >= int(b["esik"][k])
+
+
+func hazir_basarim_sayisi() -> int:
+	var n := 0
+	for b in Veri.BASARIMLAR:
+		if basarim_hazir(b):
+			n += 1
+	return n
+
+
+## Sıradaki kademenin ödülünü verir. Verilen hurdayı döndürür (0: hazır değil).
+func basarim_al(id: String) -> int:
+	for b in Veri.BASARIMLAR:
+		if String(b["id"]) == id and basarim_hazir(b):
+			var k := basarim_kademe(id)
+			var odul: int = Veri.BASARIM_ODUL[k]
+			veri["basarim"]["alinan"][id] = k + 1
+			hurda_ekle(odul)
+			kaydet()
+			return odul
+	return 0
+
+
+## Bitmeye en yakın (oranı en yüksek) alınmamış kademe: {"b", "oran", "deger", "esik", "kademe"}.
+func en_yakin_basarim() -> Dictionary:
+	var en := {}
+	for b in Veri.BASARIMLAR:
+		var k := basarim_kademe(String(b["id"]))
+		if k >= 3:
+			continue
+		var esik := int(b["esik"][k])
+		var d := basarim_degeri(String(b["id"]))
+		var oran := minf(float(d) / esik, 1.0)
+		if oran >= 1.0:
+			continue  # hazır olanlar ayrıca sayılır
+		if en.is_empty() or oran > float(en["oran"]):
+			en = {"b": b, "oran": oran, "deger": d, "esik": esik, "kademe": k}
+	return en
+
+
+# ================================================================ TEHDİT SEVİYESİ (Gece 5)
+
+func tehdit_acik() -> bool:
+	return int(veri["rekor"]) >= Veri.TEHDIT_ACILIS
+
+
+func tehdit_sv(id: String) -> int:
+	return int(veri["tehdit"].get(id, 0))
+
+
+## Etkin puan (açık değilse 0: şalter ayarlı kalsa bile işlemez).
+func tehdit_puani() -> int:
+	if not tehdit_acik():
+		return 0
+	var p := 0
+	for t in Veri.TEHDITLER:
+		p += clampi(tehdit_sv(String(t["id"])), 0, int(t["max"]))
+	return p
+
+
+func tehdit_deger(id: String) -> float:
+	if not tehdit_acik():
+		return 0.0
+	for t in Veri.TEHDITLER:
+		if String(t["id"]) == id:
+			return float(t["deger"]) * clampi(tehdit_sv(id), 0, int(t["max"]))
+	return 0.0
+
+
+## Şalteri bir kademe artırır, en üstten sonra 0'a döner.
+func tehdit_degistir(id: String) -> void:
+	for t in Veri.TEHDITLER:
+		if String(t["id"]) == id:
+			veri["tehdit"][id] = (tehdit_sv(id) + 1) % (int(t["max"]) + 1)
+			kaydet()
+			return
 
 
 # ================================================================ ENVANTER
@@ -996,7 +1209,7 @@ func silah_gelistir(uid: String) -> bool:
 	if s.is_empty():
 		return false
 	var max_sv := int(Veri.NADIRLIK[int(s["nadirlik"])]["max_sv"])
-	var fiyat := Veri.gelistirme_fiyati(s)
+	var fiyat := gelistirme_fiyati(s)
 	if int(s["seviye"]) >= max_sv or hurda() < fiyat:
 		return false
 	hurda_ekle(-fiyat)

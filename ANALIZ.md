@@ -11,6 +11,36 @@ bunlara dayandırır.
   uzun vadeli gelişim ve çeşitlilik açısından eksikler neler.
 - **Karar:** Analizlerden çıkan en değerli 3 geliştirme + 3 yeni özellik, gerekçeleriyle.
 
+## 2026-11-08 — Gece 5
+
+### Analiz 1 — Oynanış simülasyonu (kod, ekran görüntüsü ve sayılarla)
+- **İlk açılış (menü):** OYNA sekmesi yukarıdan aşağı: lider kartı, silah, surdaki ekip, Hayatta Kalma, Kampanya, Sur, Kasaba, Görevler, Keşif. Önizlemede Kampanya düğmesine ulaşmak için **760 px**, Kasaba'ya **1250 px** kaydırmak gerekiyor (`29_menu_kampanya_sur`, `38_kasaba_maden`). Telefonda oyuncu ilk ekranda iki oyun modundan yalnızca birini görüyor; asıl kararı (hangi mod) en alta itilmiş. Uygulamayı her açışta 2–3 kaydırma = sürtünme.
+- **İlk 5 dakika (gedik):** Sur 1'de barikat 300 can → bölüm başına **50**. 8. dalgada patlayan 34 × (1 + 0.02·8) ≈ **39** hasar = bir bölümün %79'u. İki patlayan aynı bölüme → gedik. Gedikte hasar ×1.5 yanlara taşıyor, üstelik zekâlı zombiler (koşucu 0.9, patlayan 1.0) en düşük orana = **gediğe** yöneliyor. Yani bir gedik, kendi kendini büyüten bir döngü: yürüyen 6 hasarlık vuruş gedikten 9 olarak komşuya gidiyor, komşu 50/9 ≈ 5.5 vuruşta düşüyor. `33_gedik_suru.png`'de tek aşırı hasar üç bölümü birden yıktı. Üstte HUD can çubuğu ise hâlâ %70 gösteriyor: **oyuncu hangi bölümün öldüğünü üst çubuktan okuyamıyor**, gözü aşağıdaki 8 px çubuklara gitmek zorunda.
+- **5–15. dalga (Hayatta Kalma):** Rekor bot verisi 35–45. dalga. Laboratuvar biten (≈ 6250 hurda) oyuncu için Hayatta Kalma her koşuda aynı zorlukta; "daha zor ama daha ödüllü" seçeneği yok. Geç oyunda koşu yalnızca rekor kovalamak; Hades'in Heat'i gibi bir zorluk merdiveni eksik.
+- **Kampanya döngüsü:** Gece 4 TEKRAR + OTO ile altın kasmayı açtı ama her tekrardan sonra oyuncu "TEKRAR" düğmesine basmak zorunda; 30. dalga duvarında 10 tekrar = 10 dokunuş + her seferinde 0.8 sn kart bekleyişi. Grow Castle oyuncusunun beklediği "bırak oynasın" döngüsü yarım. Sayı: 29. dalga tekrarı ½ × (20 + 6·29) = 97 altın; Güç 15→16 fiyatı 50·1.18^15 ≈ 600 altın → **≈ 6 tekrar** = 6 ekran dokunuşu + 6 bekleme.
+- **Meta ekonomisi:** Hurda tek yerde (Lab, Sur, maden, silah) birikiyor ama **kampanya altınının** tek kaynağı savaş. Kasaba'da yalnızca Hurda Madeni var; FM tarafındaki "tesisler" (antrenman, revir) hiç yok: yorgunluk saatte −12 sabit, antrenman 0.35 puan sabit, silah geliştirme fiyatı sabit. Ekip yönetimi kararlarına etki eden kalıcı bir yatırım yok.
+- **Uzun vadeli hedef:** Görevler günlük, yıldızlar kampanyaya özel. "Toplam 1000 zombi", "5 Dev", "Sur 17" gibi kilometre taşları yok; oyuncunun geçmişte yaptıkları hiçbir yerde birikmiş bir başarı olarak görünmüyor.
+- **Performans riski (bu gecenin işleri):** Kasaba ve başarımlar yalnızca menüde (oyun döngüsüne iş eklemez). Tehdit yalnız koşu başında çarpan. HUD bölüm şeridi 6 dikdörtgen, yalnızca can değişince yeniden çizilir. Oto tekrar sayacı tek bir float.
+
+### Analiz 2 — Karşılaştırma ve oyuncu psikolojisi
+- **Hades — Pact of Punishment (Heat):** 15 şalter, her kademe 1–3 puan (Hard Labor 5 kademe × +%20 düşman hasarı, Jury Summons 3 × +%20 düşman, Calisthenics 2 × +%15 can, Convenience Fee 2 × +%40 fiyat). Ödül silah başına **yeni Heat** için verilir; puanı birer birer artırmak ödüllendirilir, büyük atlamak ara ödülleri kaybettirir. Ders: zorluğu oyuncu seçer, ödül "yeni tepe" anına bağlıdır → bitmiş Hayatta Kalma'ya bir tur daha sebebi.
+- **Başarımlar (Kwak 2022, 13.792 PlayStation oyunu):** Bronz/Gümüş/Altın kademeli kupalar; tekrarlı şartlar tamamlanma oranını düşürüyor, oyuncuların bir kısmı başarımları "ek iş" olarak görüyor (Cruz 2017). Ders: normal oynarken kendiliğinden dolan, kademeli (her zaman "bir sonraki" görünen) ve ödülü hemen alınan başarımlar; angarya şartı yok.
+- **Grow Castle kasabası / FM tesisleri:** Kale dışında seviye atlayan binalar, her biri tek bir sayıyı (üretim, eğitim, iyileşme) büyütür; FM'de antrenman tesisi gelişimi, sağlık tesisi sakatlık süresini etkiler. Bizde FM tarafı derin ama tesis ekseni boş.
+- **Grow Castle oto savaş:** geçilmiş dalgada oyun kendini tekrarlar; oyuncu telefonu bırakır, döner, yükseltir. "Bırak oynasın" ile "dönünce yükselt" birleşimi idle türünün çekirdeği.
+- **PvZ Screen Door / BTD6 Monkey Knowledge (Fikir Havuzu için):** kalkan düz atışı keser, alan hasarı geçer; oyuncu seviyesi başına 1 bilgi puanı ile seçmeli kalıcı ağaç.
+- **Psikoloji özeti:** (1) En önemli karar ilk ekranda olmalı. (2) Zorluk seçme özgürlüğü + yeni tepe ödülü. (3) Geçmiş başarı görünür birikim olmalı. (4) Gedik gibi "felaket" anları adil, okunur ve geri çevrilebilir olmalı; kendi kendini besleyen döngü öfke yaratır.
+
+### Karar (bu gece)
+**3 geliştirme**
+1. **Barikat v3 — gedik dengesi ve okunurluk:** gedik taşma çarpanı 1.5 → 1.3; HUD can çubuğunun altında 6 bölümlü şerit (gedik kırmızı yanıp söner); gedik varken ONAR düğmesi kırmızı "GEDİK! ONAR" olur (akıllı onarım zaten önce gediği kapatıyor; ölçüm: tek onarım gediği 0 → %37'ye çıkardı). *Gerekçe:* Analiz 1'deki kendi kendini besleyen gedik döngüsü ve okunmayan HUD.
+2. **Kampanya v3 — OTO TEKRAR döngüsü:** TEKRAR + OTO zaferinden sonra 3 sn geri sayımla aynı dalga kendiliğinden yeniden başlar; yenilgide ya da düğmeyle durur; seri sayısı ve toplam altın gösterilir. *Gerekçe:* Grow Castle oto savaşı; 6 tekrar = 6 dokunuş sürtünmesi.
+3. **Menü v2 — OYNA sekmesi sadeleşir:** iki mod en üstte, lider kartı kısalır, Kasaba kendi sekmesine taşınır (OYNA'da tek satırlık özet + TOPLA kalır), en yakın başarım satırı. *Gerekçe:* Analiz 1, 760/1250 px kaydırma.
+
+**3 yeni özellik**
+1. **B6 Kasaba sekmesi:** Hurda Madeni (taşındı) + **Çiftlik** (çevrimdışı kampanya altını), **Antrenman Sahası** (yedek gelişimi +%10/sv), **Revir** (dinlenme +%10/sv, sakatlık şansı −%6/sv), **Atölye** (silah geliştirme −%4/sv). *Gerekçe:* §0 B6 son açık madde; FM tesisleri.
+2. **Başarımlar:** 12 başarım × Bronz/Gümüş/Altın, ödül 40/100/250 hurda, normal oyunla dolar, elle AL. *Gerekçe:* Analiz 2, kalıcı hedef zinciri (Yol Haritası Gece 3'ten beri).
+3. **Tehdit Seviyesi (Hayatta Kalma):** 4 şalter (Kalabalık, Dişli, Kalın Deri, Karaborsa), en çok 11 puan, puan başına +%10 hurda, yeni tepe (10. dalga+) ilk kez → garanti silah. 15. dalga rekoruyla açılır. *Gerekçe:* Hades Heat; bitmiş meta için zorluk merdiveni.
+
 ## 2026-11-07 — Gece 4
 
 ### Analiz 1 — Oynanış simülasyonu (kod, ekran görüntüsü ve sayılarla)

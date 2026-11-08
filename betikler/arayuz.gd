@@ -14,6 +14,7 @@ signal kule_istendi(i: int)
 signal konusma_istendi(secim: String)
 signal oto_istendi
 signal yukselt_istendi(tur: String)  # kampanya sonu: "sur" ya da "guc"
+signal oto_tekrar_istendi  # Kampanya v3: sonuç ekranında OTO TEKRAR aç/kapa/durdur
 
 const Veri := preload("res://betikler/veri.gd")
 const Kartlar := preload("res://betikler/kartlar.gd")
@@ -60,6 +61,9 @@ var _yukselt_kutu: VBoxContainer
 var _yukselt_sur: Button
 var _yukselt_guc: Button
 var _yukselt_bilgi: Label
+var _bolum_serit: BolumSeridi
+var _gedik := 0
+var _oto_tekrar_dugme: Button
 
 
 func _ready() -> void:
@@ -145,6 +149,15 @@ func _ust_cubuk_kur() -> void:
 	_can_cubugu.offset_right = -24
 	_can_cubugu.offset_top = _ust_bosluk + 54
 	_can_cubugu.offset_bottom = _ust_bosluk + 78
+	# Barikat v3: can çubuğunun altında 6 bölümlü şerit; gedik kırmızı yanıp söner
+	_bolum_serit = BolumSeridi.new()
+	_bolum_serit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_bolum_serit)
+	_bolum_serit.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_bolum_serit.offset_left = -300
+	_bolum_serit.offset_right = -24
+	_bolum_serit.offset_top = _ust_bosluk + 82
+	_bolum_serit.offset_bottom = _ust_bosluk + 92
 
 
 func _onar_kur() -> void:
@@ -538,6 +551,21 @@ func _bitis_kur() -> void:
 	_bitis.add_child(menu)
 	_konusma_kur()
 	_yukselt_kur()
+	_oto_tekrar_dugme = Button.new()
+	_oto_tekrar_dugme.focus_mode = Control.FOCUS_NONE
+	_oto_tekrar_dugme.add_theme_font_size_override("font_size", 24)
+	var ot := Color(0.2, 0.42, 0.5)
+	_oto_tekrar_dugme.add_theme_stylebox_override("normal", _kutu_stili(ot, ot.lightened(0.4), 14))
+	_oto_tekrar_dugme.add_theme_stylebox_override("hover", _kutu_stili(ot, ot.lightened(0.4), 14))
+	_oto_tekrar_dugme.add_theme_stylebox_override("pressed", _kutu_stili(ot.lightened(0.2), Color.WHITE, 14))
+	_bitis.add_child(_oto_tekrar_dugme)
+	_oto_tekrar_dugme.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_oto_tekrar_dugme.offset_left = -330
+	_oto_tekrar_dugme.offset_right = 330
+	_oto_tekrar_dugme.offset_top = _ust_bosluk
+	_oto_tekrar_dugme.offset_bottom = _ust_bosluk + 56
+	_oto_tekrar_dugme.pressed.connect(func() -> void: oto_tekrar_istendi.emit())
+	_oto_tekrar_dugme.visible = false
 	_bitis.visible = false
 
 
@@ -651,7 +679,7 @@ func _buyuk_dugme(metin: String, renk: Color, eylem: Callable, alttan_ust: float
 func guncelle(dalga: int, altin: int, oldurme: int, can_orani: float, oyunda: bool, fiyat: int = 25) -> void:
 	if fiyat != onar_fiyat:
 		onar_fiyat = fiyat
-		_onar_dugme.text = "ONAR  %d altın" % onar_fiyat
+		_onar_metni()
 	_duraklat_dugme.visible = oyunda
 	_hiz_dugme.visible = oyunda
 	_dalga_etiket.text = "DALGA %d" % dalga
@@ -737,6 +765,25 @@ func _kart_tiklandi(id: String) -> void:
 	kart_secildi.emit(id)
 
 
+## Barikat v3: bölüm canlarını şeride yazar; gedik varken ONAR düğmesi "GEDİĞİ KAPAT" olur.
+func bolum_guncelle(bolumler: PackedFloat32Array, bolum_max: float, gedik: int) -> void:
+	_bolum_serit.ayarla(bolumler, bolum_max)
+	if gedik != _gedik:
+		_gedik = gedik
+		_onar_metni()
+
+
+func _onar_metni() -> void:
+	_onar_dugme.text = ("GEDİK! ONAR %d" if _gedik > 0 else "ONAR  %d altın") % onar_fiyat
+	_onar_dugme.add_theme_color_override("font_color", Color(1, 0.55, 0.45) if _gedik > 0 else Color.WHITE)
+
+
+## Kampanya v3: sonuç ekranının üstündeki OTO TEKRAR düğmesi (yalnız TEKRAR savaşlarında görünür).
+func oto_tekrar_goster(gorunur: bool, metin: String) -> void:
+	_oto_tekrar_dugme.visible = gorunur
+	_oto_tekrar_dugme.text = metin
+
+
 func oyun_basladi() -> void:
 	_duraklat_paneli.visible = false
 	_bitis.visible = false
@@ -749,6 +796,7 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 	(_bitis as ColorRect).color = Color(0.12, 0.0, 0.0, 0.78)
 	_tekrar_dugme.text = "TEKRAR"
 	_yukselt_kutu.visible = false
+	_oto_tekrar_dugme.visible = false
 	var metin := "%d. dalgaya kadar dayandın\n%d zombi öldürdün · En iyi: %d" % [dalga, oldurme, rekor]
 	_konusma_kutu.visible = ozet.has("uid")
 	_konusma_satir.visible = true
@@ -778,6 +826,11 @@ func bitis_goster(dalga: int, oldurme: int, rekor: int, yeni_rekor: bool, ozet: 
 		_odul_ekle("+%d altın  ·  +%d hurda" % [int(ozet.get("altin", 0)), int(ozet.get("hurda", 0))], Color(1, 0.8, 0.35), 28)
 	else:
 		_odul_ekle("+%d hurda" % int(ozet.get("hurda", 0)), Color(1, 0.8, 0.35), 28)
+	if ozet.has("tehdit"):
+		_odul_ekle("Tehdit %d: hurda +%%%d" % [int(ozet["tehdit"]), int(round(Veri.TEHDIT_HURDA * int(ozet["tehdit"]) * 100))],
+			Color(1, 0.55, 0.4), 24)
+	if ozet.has("tehdit_odul"):
+		_odul_ekle(String(ozet["tehdit_odul"]), Color(1, 0.6, 1.0), 26)
 	if bool(ozet.get("x3", false)):
 		_odul_ekle("x3 OYUN HIZI AÇILDI!", Color(0.6, 1, 0.9), 28)
 	if ozet.has("hedef"):
@@ -852,3 +905,43 @@ func _odul_ekle(metin: String, renk: Color, boyut: int) -> void:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_odul_kutusu.add_child(l)
+
+
+## Barikat v3: HUD'daki 6 bölümlü can şeridi. Yalnızca can değişince çizilir; gedik varken yanıp sönmek için
+## kendi _process'i açılır (gedik kapanınca kapanır).
+class BolumSeridi extends Control:
+	var _bolum := PackedFloat32Array([1, 1, 1, 1, 1, 1])
+	var _max := 1.0
+	var _zaman := 0.0
+
+	func _ready() -> void:
+		set_process(false)
+
+	func ayarla(b: PackedFloat32Array, m: float) -> void:
+		_bolum = b
+		_max = maxf(m, 0.001)
+		var gedik := false
+		for x in _bolum:
+			if x <= 0.0:
+				gedik = true
+		set_process(gedik)
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		_zaman += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var n := _bolum.size()
+		if n == 0:
+			return
+		var w := size.x / n
+		for i in n:
+			var o := clampf(_bolum[i] / _max, 0.0, 1.0)
+			var r := Rect2(i * w + 2.0, 0.0, w - 4.0, size.y)
+			draw_rect(r, Color(0.12, 0.03, 0.03, 0.85))
+			if o > 0.0:
+				draw_rect(Rect2(r.position, Vector2(r.size.x * o, r.size.y)), Color(0.9, 0.2, 0.15).lerp(Color(0.35, 0.85, 0.3), o))
+			else:
+				var a := 0.45 + 0.45 * sin(_zaman * 10.0)
+				draw_rect(r, Color(1, 0.15, 0.1, a))

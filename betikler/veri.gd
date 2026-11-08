@@ -251,6 +251,76 @@ static func maden_uretim(sv: int, kampanya_en_yuksek: int) -> float:
 	return (6.0 + 4.0 * sv) * (1.0 + 0.03 * kampanya_en_yuksek)  # saatte hurda
 
 
+# ---------------------------------------------------------------- KASABA v1 (Gece 5): Çiftlik + tesisler (FM)
+# Çiftlik: Hurda Madeni gibi çevrimdışı üretir ama kampanya altını (Güç seviyesinin parası).
+# Tesisler tek bir FM eksenini büyütür; her biri en çok TESIS_MAX seviye, fiyat taban·1.5^sv hurda.
+const CIFTLIK_MAX := 20
+const TESIS_MAX := 10
+const TESISLER: Dictionary = {
+	"antrenman": {"ad": "ANTRENMAN SAHASI", "taban": 100.0, "deger": 0.10,
+		"aciklama": "Sahada olmayanların antrenman gelişimi +%%%d", "renk": Color("5fae4f")},
+	"revir": {"ad": "REVİR", "taban": 90.0, "deger": 0.10,
+		"aciklama": "Dinlenme hızı +%%%d, sakatlık şansı -%%%d", "renk": Color("d95f5f")},
+	"atolye": {"ad": "ATÖLYE", "taban": 120.0, "deger": 0.04,
+		"aciklama": "Silah geliştirme fiyatı -%%%d", "renk": Color("7fa3c9")},
+}
+const REVIR_SAKATLIK := 0.06  # Revir seviyesi başına sakatlık şansı çarpanı azalması
+
+
+static func ciftlik_fiyat(sv: int) -> int:
+	return int(round(100.0 * pow(1.45, sv)))  # 0 → 100 (kurulum)
+
+
+static func ciftlik_uretim(sv: int, kampanya_en_yuksek: int) -> float:
+	if sv <= 0:
+		return 0.0
+	return (5.0 + 3.0 * sv) * (1.0 + 0.04 * kampanya_en_yuksek)  # saatte kampanya altını
+
+
+static func tesis_fiyat(id: String, sv: int) -> int:
+	return int(round(float(TESISLER[id]["taban"]) * pow(1.5, sv)))
+
+
+# ---------------------------------------------------------------- BAŞARIMLAR (Gece 5)
+# 3 kademe (Bronz/Gümüş/Altın); hepsi normal oynarken dolar, ödül elle alınır (görünür ödül anı).
+# kaynak: "sayac" → profil.basarim sayaçları; diğerleri profilden hesaplanır (bkz. profil.basarim_degeri).
+const BASARIM_ODUL := [40, 100, 250]
+const BASARIM_KADEME := ["BRONZ", "GÜMÜŞ", "ALTIN"]
+const BASARIM_RENK := [Color("cd7f32"), Color("c9d1d9"), Color("ffcf4a")]
+const BASARIMLAR: Array[Dictionary] = [
+	{"id": "dev", "ad": "Dev Avcısı", "metin": "%d Dev öldür", "esik": [1, 5, 20]},
+	{"id": "kralice", "ad": "Kraliçe Katili", "metin": "%d Kraliçe öldür", "esik": [1, 5, 15]},
+	{"id": "rekor", "ad": "Hayatta Kalan", "metin": "Hayatta Kalma'da %d. dalgaya ulaş", "esik": [15, 25, 40]},
+	{"id": "kampanya", "ad": "Seferber", "metin": "Kampanyada %d. dalgayı geç", "esik": [10, 30, 60]},
+	{"id": "oldurme", "ad": "Yük", "metin": "Toplam %d zombi öldür", "esik": [1000, 10000, 50000]},
+	{"id": "evrim", "ad": "Evrim", "metin": "%d kart evrimleştir", "esik": [1, 5, 15]},
+	{"id": "ekip", "ad": "Kamp Lideri", "metin": "Ekibinde %d kişi olsun", "esik": [3, 5, 8]},
+	{"id": "sur", "ad": "Kale Ustası", "metin": "Sur'u %d. seviyeye çıkar", "esik": [9, 17, 33]},
+	{"id": "uzman", "ad": "Topçu", "metin": "%d taret uzmanlığı seç", "esik": [1, 10, 30]},
+	{"id": "yildiz", "ad": "Yıldız Toplayıcı", "metin": "Kampanyada %d ★ topla", "esik": [15, 60, 150]},
+	{"id": "toplama", "ad": "Kasabalı", "metin": "Kasabadan %d hurda topla", "esik": [200, 2000, 10000]},
+	{"id": "tehdit", "ad": "Cehennem Sözleşmesi", "metin": "Tehdit %d ile 10. dalgaya ulaş", "esik": [3, 6, 10]},
+]
+
+
+# ---------------------------------------------------------------- TEHDİT SEVİYESİ (Gece 5, Hades Heat gibi)
+# Yalnız Hayatta Kalma. Her kademe 1 puan. Ödül: puan başına hurda +%10; 10. dalgaya ulaşan koşuda
+# yeni en yüksek puan ilk kez → garanti silah (1–3 Ender, 4–7 Destansı, 8+ Efsanevi).
+const TEHDIT_ACILIS := 15  # Hayatta Kalma rekoru bu dalgaya ulaşınca açılır
+const TEHDIT_HURDA := 0.10
+const TEHDIT_DALGA := 10
+const TEHDITLER: Array[Dictionary] = [
+	{"id": "kalabalik", "ad": "Kalabalık", "etki": "+%d%% zombi", "deger": 0.20, "max": 3},
+	{"id": "disli", "ad": "Dişli", "etki": "+%d%% zombi hasarı", "deger": 0.20, "max": 3},
+	{"id": "kalin", "ad": "Kalın Deri", "etki": "+%d%% zombi canı", "deger": 0.15, "max": 3},
+	{"id": "karaborsa", "ad": "Karaborsa", "etki": "+%d%% onarım ve taret fiyatı", "deger": 0.40, "max": 2},
+]
+
+
+static func tehdit_odul_nadirlik(puan: int) -> int:
+	return 4 if puan >= 8 else (3 if puan >= 4 else 2)
+
+
 # Ekip yapay zekâsı hedef modları (Bloons TD hedefleme seçenekleri gibi). "rol": rolüne göre karar verir.
 const HEDEF_MODLARI := {
 	"rol": {"ad": "Rolüne göre", "aciklama": "Avcı boss/zırhlı/kusan, diğerleri barikata en yakın"},
