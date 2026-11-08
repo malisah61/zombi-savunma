@@ -9,12 +9,44 @@ permissions:
   contents: write
 
 jobs:
+  # C++ hızlandırıcı (yerel/): Android arm64 kütüphanesi. godot-cpp derlemesi önbellekte tutulur.
+  yerel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: yerel/godot-cpp
+          key: godot-cpp-4.3-android-arm64-v1
+      - name: godot-cpp (4.3)
+        run: test -d yerel/godot-cpp/src || git clone -q --depth 1 -b godot-4.3-stable https://github.com/godotengine/godot-cpp yerel/godot-cpp
+      - name: SCons ve NDK
+        run: |
+          pip install scons==4.8.1
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;23.2.8568313" > /dev/null
+      - name: Derle (android arm64)
+        working-directory: yerel
+        run: |
+          scons platform=android target=template_debug arch=arm64 -j4
+          ls -la ../bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yerel-android
+          path: bin/*.so
+
   android:
+    needs: yerel
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.3
     steps:
       - uses: actions/checkout@v4
+
+      - name: C++ hızlandırıcıyı al
+        uses: actions/download-artifact@v4
+        with:
+          name: yerel-android
+          path: bin
 
       - name: Android ayarlarını hazırla
         run: |

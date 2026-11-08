@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+# Zombi Savunma C++ hızlandırıcısı. Kullanım (yerel/ içinde, godot-cpp 4.3 klonu yerel/godot-cpp'de):
+#   scons platform=linux target=template_debug arch=x86_64
+#   scons platform=android target=template_debug arch=arm64
+env = SConscript("godot-cpp/SConstruct")
+env.Append(CPPPATH=["kaynak/"])
+kaynaklar = Glob("kaynak/*.cpp")
+kutuphane = env.SharedLibrary("../bin/libzombihiz{}{}".format(env["suffix"], env["SHLIBSUFFIX"]), source=kaynaklar)
+Default(kutuphane)

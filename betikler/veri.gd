@@ -182,10 +182,8 @@ const SUR_YUVA_ARALIK := 8
 const GUC_HASAR := 0.10
 const GUC_MAX := 30
 
-# ---------------------------------------------------------------- KAMPANYA (Grow Castle dalga ilerlemesi)
-# Her savaş tek dalga. Kazanınca sıradaki açılır, kaybedince aynı dalga (ceza yok, teselli ödülü).
-const KAMPANYA_BOSS := 10  # her 10. dalga boss (10 Dev, 20 Kraliçe, 30 Dev…)
-const HIZ3_DALGA := 10     # x3 hız: kampanyada bu dalgayı geçince ya da Hayatta Kalma rekoru bu kadarsa açılır
+# ---------------------------------------------------------------- SUR, GÜÇ, x3 HIZ
+const HIZ3_DALGA := 10     # x3 hız: Hayatta Kalma rekoru bu kadarsa açılır
 
 
 static func sur_fiyat(sv: int) -> int:
@@ -200,43 +198,9 @@ static func guc_fiyat(sv: int) -> int:
 	return int(round(50.0 * pow(1.18, sv)))
 
 
-static func kampanya_altin(dalga: int) -> int:
-	return (20 + 6 * dalga) * (3 if dalga % KAMPANYA_BOSS == 0 else 1)
-
-
-static func kampanya_hurda(dalga: int) -> int:
-	return 4 + dalga + (25 if dalga % KAMPANYA_BOSS == 0 else 0)
-
-
-# ---------------------------------------------------------------- KAMPANYA v2: yıldız, tekrar (Gece 4)
-# Kingdom Rush gibi: kazanılan dalgaya barikatın kalan canına göre 1–3 yıldız. Yıldız eşiklerinde ödül.
-const YILDIZ_3 := 0.9   # barikat %90+ → 3 yıldız
-const YILDIZ_2 := 0.5   # %50+ → 2 yıldız, altı 1
-const YILDIZ_ESIKLERI := [
-	{"yildiz": 15, "hurda": 120},
-	{"yildiz": 30, "silah": 3},   # Destansı silah
-	{"yildiz": 60, "hurda": 400},
-	{"yildiz": 90, "silah": 4},   # Efsanevi silah
-]
-const YILDIZ_SONRASI := 45      # son eşikten sonra her 45 yıldızda 500 hurda
-const TEKRAR_ODUL := 0.5        # geçilmiş dalgayı tekrar oynamak (altın kasma): ödülün yarısı
-
-
-static func yildiz_hesapla(barikat_orani: float) -> int:
-	return 3 if barikat_orani >= YILDIZ_3 else (2 if barikat_orani >= YILDIZ_2 else 1)
-
-
-## sira: alınmış ödül sayısı. Sıradaki eşiğin sözlüğü (yildiz + hurda ya da silah nadirliği).
-static func yildiz_esigi(sira: int) -> Dictionary:
-	if sira < YILDIZ_ESIKLERI.size():
-		return YILDIZ_ESIKLERI[sira]
-	var son: int = int(YILDIZ_ESIKLERI[-1]["yildiz"])
-	return {"yildiz": son + YILDIZ_SONRASI * (sira - YILDIZ_ESIKLERI.size() + 1), "hurda": 500}
-
-
 # ---------------------------------------------------------------- KASABA: Hurda Madeni (B6 ilk bina, Gece 4)
 # Çevrimdışı kazanç (Clicker Heroes / Grow Castle): saatte hurda üretir, en çok MADEN_SAAT saat birikir.
-# Üretim kampanyadaki en yüksek dalgayla büyür (oyun içi güce bağlı). Saat geri alınırsa kazanç yok.
+# Üretim Hayatta Kalma rekoruyla büyür (oyun içi güce bağlı). Saat geri alınırsa kazanç yok.
 const MADEN_MAX := 20
 const MADEN_SAAT := 8.0
 
@@ -245,14 +209,14 @@ static func maden_fiyat(sv: int) -> int:
 	return int(round(80.0 * pow(1.45, sv)))  # sv 0 → 80 (kurulum), 1 → 116, 5 → 513, 10 → 3290
 
 
-static func maden_uretim(sv: int, kampanya_en_yuksek: int) -> float:
+static func maden_uretim(sv: int, rekor: int) -> float:
 	if sv <= 0:
 		return 0.0
-	return (6.0 + 4.0 * sv) * (1.0 + 0.03 * kampanya_en_yuksek)  # saatte hurda
+	return (6.0 + 4.0 * sv) * (1.0 + 0.03 * rekor)  # saatte hurda
 
 
 # ---------------------------------------------------------------- KASABA v1 (Gece 5): Çiftlik + tesisler (FM)
-# Çiftlik: Hurda Madeni gibi çevrimdışı üretir ama kampanya altını (Güç seviyesinin parası).
+# Çiftlik: Hurda Madeni gibi çevrimdışı üretir ama altın (Güç seviyesinin parası).
 # Tesisler tek bir FM eksenini büyütür; her biri en çok TESIS_MAX seviye, fiyat taban·1.5^sv hurda.
 const CIFTLIK_MAX := 20
 const TESIS_MAX := 10
@@ -271,10 +235,10 @@ static func ciftlik_fiyat(sv: int) -> int:
 	return int(round(100.0 * pow(1.45, sv)))  # 0 → 100 (kurulum)
 
 
-static func ciftlik_uretim(sv: int, kampanya_en_yuksek: int) -> float:
+static func ciftlik_uretim(sv: int, rekor: int) -> float:
 	if sv <= 0:
 		return 0.0
-	return (5.0 + 3.0 * sv) * (1.0 + 0.04 * kampanya_en_yuksek)  # saatte kampanya altını
+	return (5.0 + 3.0 * sv) * (1.0 + 0.04 * rekor)  # saatte altın
 
 
 static func tesis_fiyat(id: String, sv: int) -> int:
@@ -291,13 +255,11 @@ const BASARIMLAR: Array[Dictionary] = [
 	{"id": "dev", "ad": "Dev Avcısı", "metin": "%d Dev öldür", "esik": [1, 5, 20]},
 	{"id": "kralice", "ad": "Kraliçe Katili", "metin": "%d Kraliçe öldür", "esik": [1, 5, 15]},
 	{"id": "rekor", "ad": "Hayatta Kalan", "metin": "Hayatta Kalma'da %d. dalgaya ulaş", "esik": [15, 25, 40]},
-	{"id": "kampanya", "ad": "Seferber", "metin": "Kampanyada %d. dalgayı geç", "esik": [10, 30, 60]},
 	{"id": "oldurme", "ad": "Yük", "metin": "Toplam %d zombi öldür", "esik": [1000, 10000, 50000]},
 	{"id": "evrim", "ad": "Evrim", "metin": "%d kart evrimleştir", "esik": [1, 5, 15]},
 	{"id": "ekip", "ad": "Kamp Lideri", "metin": "Ekibinde %d kişi olsun", "esik": [3, 5, 8]},
 	{"id": "sur", "ad": "Kale Ustası", "metin": "Sur'u %d. seviyeye çıkar", "esik": [9, 17, 33]},
 	{"id": "uzman", "ad": "Topçu", "metin": "%d taret uzmanlığı seç", "esik": [1, 10, 30]},
-	{"id": "yildiz", "ad": "Yıldız Toplayıcı", "metin": "Kampanyada %d ★ topla", "esik": [15, 60, 150]},
 	{"id": "toplama", "ad": "Kasabalı", "metin": "Kasabadan %d hurda topla", "esik": [200, 2000, 10000]},
 	{"id": "tehdit", "ad": "Cehennem Sözleşmesi", "metin": "Tehdit %d ile 10. dalgaya ulaş", "esik": [3, 6, 10]},
 ]
@@ -525,3 +487,18 @@ static func lab_metni(d: Dictionary, sv: int) -> String:
 
 static func _uid() -> String:
 	return "%d_%d" % [Time.get_ticks_usec(), randi() % 100000]
+
+
+## Sayıya Türkçe ayrılma eki: 10'DAN, 12'DEN, 3'TEN, 40'TAN (büyük harfli düğmeler için).
+static func den_eki(n: int) -> String:
+	var son := n % 10
+	var ek := ""
+	if son != 0:
+		ek = ["", "DEN", "DEN", "TEN", "TEN", "TEN", "DAN", "DEN", "DEN", "DAN"][son]
+	elif n % 100 != 0:
+		ek = ["", "DAN", "DEN", "DAN", "TAN", "DEN", "TAN", "TEN", "DEN", "DAN"][(n / 10) % 10]
+	elif n % 1000 != 0:
+		ek = "DEN"  # yüz
+	else:
+		ek = "DEN"  # bin
+	return "%d'%s" % [n, ek]

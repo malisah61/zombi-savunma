@@ -87,6 +87,18 @@ iki dallı uzmanlık (Kingdom Rush gibi).
 - Bulunamayan şeyler kodla çizilir / sesler kodla üretilir.
 
 ## 0. Oyuncu İstekleri (önce bunlar yapılır)
+
+### ★★ (2026-11-08) Mehmet Ali'nin kararı: KAMPANYA KALDIRILDI, yalnız Hayatta Kalma
+- [x] Kampanya modu silindi (menü kartı, tek dalgalık savaş, yıldızlar, OTO TEKRAR, kampanya ödülleri). Bundan sonra
+  kampanya ile ilgili hiçbir şey geri eklenmez; aşağıdaki eski Grow Castle maddeleri Hayatta Kalma'ya uyarlanır.
+- [x] **Kaldığın dalgadan devam:** her dalga başında kartlar (sırasıyla), taretler ve altın `profil.veri["devam"]`a yazılır;
+  menüde ve bitiş ekranında "DEVAM" ile o dalgadan sürer. Sürekli sıfırdan başlanmaz. Ödül yalnız bu koşuda oynanan dalgalardan.
+- [x] **Zombiler senin gücünle birlikte güçlenir:** `guc_orani()` (koşu başına göre ateş gücü + taretler) beklenenden
+  yüksekse can ×(oran)^0.6 (0.85–2.2), hasar ayrıca barikat büyüklüğüyle artar. Kalıcı yükseltmeler tabana girer, hissedilir.
+- [x] **Zombi sayısı artar:** `dalga_adedi(d) = 6 + 2,4d + 0,05d²` (üst sınır 260).
+- [x] **Kart iki dalgada bir** (`KART_ARALIK = 2`), arada dalga kendiliğinden başlar.
+- [x] **C++ hızlandırıcı** (GDExtension, `yerel/kaynak/`): sürü itmesi ve mermi yolu kontrolü. Yüklenemezse GDScript yolu çalışır.
+- OTO savaş rekorun altındaki dalgalarda izinli. Kalıcı altın artık koşulardan (dalga başına 6, boss 30) ve Çiftlikten gelir.
 Mehmet Ali'nin istekleri. Gece görevi bunları bitirmeden başka işe geçmez; bitenleri silmez, [x] yapar.
 
 ### ★ (2026-11-06) EN ÖNCELİKLİ: Yapay zekâ + Grow Castle tarzı + hızlandırma

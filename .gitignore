@@ -3,3 +3,8 @@ build/
 *.apk
 *.aab
 *.keystore
+yerel/godot-cpp/
+bin/*.so
+.sconsign.dblite
+*.os
+yerel/godot-cpp

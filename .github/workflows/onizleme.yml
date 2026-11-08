@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - "betikler/**"
+      - "yerel/**"
+      - "bin/**"
       - "project.godot"
       - "assets/**"
       - ".github/workflows/onizleme.yml"
@@ -29,6 +31,18 @@ jobs:
           unzip -q g.zip && mv Godot_v4.3-stable_linux.x86_64 godot && chmod +x godot && rm g.zip
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libxi6 libxrandr2 libxcursor1 libxinerama1 > /dev/null
 
+      - uses: actions/cache@v4
+        with:
+          path: yerel/godot-cpp
+          key: godot-cpp-4.3-linux-x86_64-v1
+
+      - name: C++ hızlandırıcı (linux)
+        run: |
+          test -d yerel/godot-cpp/src || git clone -q --depth 1 -b godot-4.3-stable https://github.com/godotengine/godot-cpp yerel/godot-cpp
+          pip install scons==4.8.1
+          cd yerel && scons platform=linux target=template_debug arch=x86_64 -j4 > /tmp/scons.log 2>&1 || (tail -40 /tmp/scons.log; exit 1)
+          ls -la ../bin
+
       - name: Varlıkları içe aktar
         run: |
           ./godot --headless --path . --editor --quit 2>&1 | grep -iE "error|warning" | head -30 || true
@@ -50,7 +64,7 @@ jobs:
           rm -rf ~/.local/share/godot/app_userdata
           timeout 420 ./godot --headless --path . --fixed-fps 60 -- --bot=2 --bot_ekip 2>&1 | grep -E "BOT|SCRIPT ERROR|Parse Error" || true
           rm -rf ~/.local/share/godot/app_userdata
-          timeout 500 ./godot --headless --path . --fixed-fps 60 -- --bot_kampanya=60 2>&1 | grep -E "BOTK|SCRIPT ERROR|Parse Error" || true
+          timeout 120 ./godot --headless --path . -- --hiz_testi 2>&1 | grep -E "HIZ TESTİ|C\+\+|SCRIPT ERROR|Parse Error" || true
 
       - name: Depoya kaydet
         run: |

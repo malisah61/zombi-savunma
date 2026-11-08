@@ -2,6 +2,14 @@
 
 Her gece görevi buraya en üste bir kayıt ekler: ne araştırdı, ne ekledi, ne kaldı, sorunlar.
 
+## 2026-11-08 — Mehmet Ali'nin istekleri (gündüz)
+- **Kampanya kaldırıldı**, yalnız Hayatta Kalma var. Kampanya kartı, tek dalgalık savaş, yıldızlar, OTO TEKRAR, kampanya ödülleri ve botu silindi.
+  Seferber ve Yıldız Toplayıcı başarımları da gitti. Maden ve Çiftlik üretimi artık Hayatta Kalma rekoruna bağlı. Kalıcı altın koşulardan gelir.
+- **Kaldığın dalgadan devam:** her dalga başında kayıt; menüde "DALGA N'DEN DEVAM ET", bitişte "DEVAM: N". Baştan başlamak isteğe bağlı.
+- **Güçle orantılı zorluk + daha kalabalık dalgalar + kart iki dalgada bir.** Bot (3 koşu): 30, 35, 32. dalga (önce her dalga kartla 40–45).
+- **C++ hızlandırıcı (GDExtension):** sürü itmesi ×16, mermi çarpışma araması ×29 hızlı (220 zombi, 120 mermi; sonuçlar GDScript ile birebir aynı).
+  APK için android arm64, önizleme için linux kütüphanesi bulutta derlenir. Kütüphane yüklenmezse oyun GDScript yoluyla çalışır.
+
 ## 2026-11-08 — Gece 5
 - **Analizler:** (1) OYNA sekmesinde Kampanya'ya 760 px, Kasaba'ya 1250 px kaydırmak gerekiyordu; gedik ×1.5 + zekâlı zombilerin gediğe yönelmesi kendi kendini büyüten çöküş yaratıyordu ve HUD can çubuğu hangi bölümün öldüğünü göstermiyordu; Lab'ı biten oyuncu için Hayatta Kalma'da zorluk merdiveni yok; altın kasmada her tekrar bir dokunuş (Güç 15→16 ≈ 6 tekrar); FM tarafında tesis ekseni ve uzun vadeli kilometre taşları yok. (2) Hades Heat (kademe/puan, yeni tepe ödülü), PlayStation kupa araştırması (kademeli, angaryasız başarım), Grow Castle kasaba + oto savaş, PvZ kalkanlı, BTD6 Monkey Knowledge.
 - **Araştırılanlar:** yukarıdakiler; Fikir Havuzu'na sayılarıyla **Kalkanlı zombi** ve **Komutan Bilgisi**. Grow Castle kasaba sayıları bulunamadı (sayılar bizim).

@@ -3,8 +3,7 @@ extends CanvasLayer
 ## üstte hurda, ortada kaydırılabilir içerik, altta sekme çubuğu. Her sekme koddan kurulur.
 
 signal oyna_istendi
-signal kampanya_istendi
-signal kampanya_tekrar_istendi
+signal devam_istendi  # Hayatta Kalma: kaldığın dalgadan devam
 signal ayarlar_degisti
 
 const Veri := preload("res://betikler/veri.gd")
@@ -341,7 +340,6 @@ func _oyna_sekmesi() -> void:
 		sk.add_child(_dugme("TOPLA", Color(0.7, 0.55, 0.15), _kasaba_topla, 32))
 		profil.cevrimdisi = {}
 
-	_kampanya_karti()
 	_hayatta_kalma_karti()
 
 	var h: Dictionary = profil.aktif_kahraman()
@@ -395,7 +393,14 @@ func _hayatta_kalma_karti() -> void:
 	var puan: int = profil.tehdit_puani()
 	b.add_child(_etiket("HAYATTA KALMA (roguelike koşu)%s" % ("" if puan == 0 else " · TEHDİT %d" % puan), 22,
 		Color(0.7, 0.7, 0.65) if puan == 0 else Color(1, 0.55, 0.4)))
-	b.add_child(_dugme("SAVAŞA BAŞLA", Color(0.35, 0.65, 0.2), func() -> void: oyna_istendi.emit(), 44))
+	var devam_dalga := int(profil.veri["devam"].get("dalga", 0))
+	if devam_dalga >= 2:
+		b.add_child(_dugme("DALGA %s DEVAM ET" % Veri.den_eki(devam_dalga), Color(0.35, 0.65, 0.2), func() -> void: devam_istendi.emit(), 44))
+		b.add_child(_etiket("Kartların, taretlerin ve altının kaldığı gibi gelir. Zombiler senin gücünle birlikte güçlenir.",
+			20, Color(0.75, 0.85, 0.7)))
+		b.add_child(_dugme("BAŞTAN BAŞLA (1. dalga)", Color(0.3, 0.4, 0.3), func() -> void: oyna_istendi.emit(), 30))
+	else:
+		b.add_child(_dugme("SAVAŞA BAŞLA", Color(0.35, 0.65, 0.2), func() -> void: oyna_istendi.emit(), 44))
 	b.add_child(_etiket("En iyi: %d. dalga · Toplam %d zombi" % [int(profil.veri["rekor"]),
 		int(profil.veri["istatistik"]["oldurme"])], 24, Color(1, 0.85, 0.4)))
 	var hedef: Dictionary = profil.lab_sonraki()
@@ -473,30 +478,6 @@ func _kasaba_topla() -> void:
 	_yenile()
 
 
-## Kampanya (Grow Castle): kalıcı dalga sayacı, her savaş tek dalga, kaybetmenin cezası yok.
-func _kampanya_karti() -> void:
-	var n: int = profil.kampanya_dalgasi()
-	var k := _kart(Color(0.85, 0.45, 0.3))
-	k.add_child(_etiket("KAMPANYA (kalıcı ilerleme · altın: %d)" % profil.altin(), 22, Color(0.7, 0.7, 0.65)))
-	var boss := n % Veri.KAMPANYA_BOSS == 0
-	k.add_child(_dugme("KAMPANYA · DALGA %d%s" % [n, "  (BOSS)" if boss else ""], Color(0.7, 0.32, 0.18),
-		func() -> void: kampanya_istendi.emit(), 36))
-	k.add_child(_etiket("Kazan: +%d altın, +%d hurda. Tek dalga, 1 kart. Kaybedersen aynı dalga, ceza yok." % [
-		Veri.kampanya_altin(n), Veri.kampanya_hurda(n)], 22, Color(1, 0.85, 0.6)))
-	# Kampanya v2: yıldızlar ve geçilmiş dalgayı tekrar (altın kasma, OTO savaş)
-	var son: int = int(profil.veri["kampanya"]["en_yuksek"])
-	var esik: Dictionary = Veri.yildiz_esigi(int(profil.veri["kampanya"]["yildiz_odul"]))
-	var odul_metin := "%s silah" % Veri.NADIRLIK[int(esik["silah"])]["ad"] if esik.has("silah") else "%d hurda" % int(esik["hurda"])
-	k.add_child(_etiket("★ %d yıldız · %d ★ olunca: %s. Barikat %%90+ ile kazan: 3 ★" % [profil.toplam_yildiz(),
-		int(esik["yildiz"]), odul_metin], 22, Color(1, 0.85, 0.3)))
-	if son >= 1:
-		var y: int = profil.kampanya_yildiz(son)
-		k.add_child(_dugme("TEKRAR: DALGA %d  %s  (½ ödül · OTO)" % [son, "★".repeat(y)], Color(0.45, 0.32, 0.2),
-			func() -> void: kampanya_tekrar_istendi.emit(), 26))
-	if not bool(profil.veri["x3_acik"]):
-		k.add_child(_etiket("x3 oyun hızı: %d. dalgayı geçince açılır" % Veri.HIZ3_DALGA, 22, Color(0.6, 0.9, 1.0)))
-
-
 ## Sur (kale) kalıcı yükseltmesi: can ve nöbetçi yuvası. Çizim seviyeyle büyür.
 func _sur_karti() -> void:
 	var sv: int = profil.sur_sv()
@@ -553,7 +534,7 @@ func _maden_karti() -> void:
 func _maden_guncelle() -> void:
 	var sv: int = profil.maden_sv()
 	if sv == 0:
-		_maden_etiket.text = "Üretim: kurunca saatte %d hurda" % int(Veri.maden_uretim(1, int(profil.veri["kampanya"]["en_yuksek"])))
+		_maden_etiket.text = "Üretim: kurunca saatte %d hurda" % int(Veri.maden_uretim(1, int(profil.veri["rekor"])))
 		return
 	var ur: float = profil.maden_uretim()
 	var b: int = profil.maden_birikim()
@@ -618,7 +599,7 @@ func _kesif_guncelle() -> void:
 ## Grow Castle kasabası + FM tesisleri: çevrimdışı üretim (Maden: hurda, Çiftlik: altın) ve ekip tesisleri.
 ## En altta başarımlar (Onur Panosu).
 func _kasaba_sekmesi() -> void:
-	_icerik.add_child(_etiket("Kasaba sen yokken de çalışır. Maden hurda, Çiftlik kampanya altını üretir (en çok 8 saat birikir, dönünce TOPLA). Tesisler ekibini kalıcı olarak güçlendirir.", 22, Color(0.75, 0.75, 0.7)))
+	_icerik.add_child(_etiket("Kasaba sen yokken de çalışır. Maden hurda, Çiftlik altın üretir (en çok 8 saat birikir, dönünce TOPLA). Tesisler ekibini kalıcı olarak güçlendirir.", 22, Color(0.75, 0.75, 0.7)))
 	_maden_karti()
 	_ciftlik_karti()
 	for id in Veri.TESISLER:
@@ -631,7 +612,7 @@ func _ciftlik_karti() -> void:
 	var k := _kart(Color(0.85, 0.75, 0.3))
 	k.add_child(_etiket("ÇİFTLİK%s" % ("" if sv == 0 else " · Seviye %d/%d" % [sv, Veri.CIFTLIK_MAX]), 22, Color(0.7, 0.7, 0.65)))
 	if sv == 0:
-		k.add_child(_etiket("Kampanya altını üretir: Güç seviyelerinin parası. Kampanyada ilerledikçe verim artar.", 24))
+		k.add_child(_etiket("Altın üretir: Güç seviyelerinin parası. Rekor dalgan yükseldikçe verim artar.", 24))
 	_ciftlik_etiket = _etiket("", 24, Color(1, 0.85, 0.4))
 	k.add_child(_ciftlik_etiket)
 	var satir := _satir(k)
@@ -655,7 +636,7 @@ func _ciftlik_karti() -> void:
 func _ciftlik_guncelle() -> void:
 	var sv: int = profil.ciftlik_sv()
 	if sv == 0:
-		_ciftlik_etiket.text = "Üretim: kurunca saatte %d altın" % int(Veri.ciftlik_uretim(1, int(profil.veri["kampanya"]["en_yuksek"])))
+		_ciftlik_etiket.text = "Üretim: kurunca saatte %d altın" % int(Veri.ciftlik_uretim(1, int(profil.veri["rekor"])))
 		return
 	var ur: float = profil.ciftlik_uretim()
 	var b: int = profil.ciftlik_birikim()
@@ -732,7 +713,7 @@ func _basarim_listesi() -> void:
 
 func _ekip_sekmesi() -> void:
 	var ekip: Array = profil.veri["ekip"]
-	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Lider maç deneyimiyle hızlı, surdakiler yarı hızla, diğerleri antrenmanla yavaş gelişir. Surda %d yuva var: oraya koyduğun kişi kendi silahıyla ateş eder. Kampanya altını: %d (Güç seviyesine harcanır)." % [ekip.size(), Veri.EKIP_SINIRI, profil.nobetci_yuva(), profil.altin()], 22, Color(0.75, 0.75, 0.7)))
+	_icerik.add_child(_etiket("Ekip (%d/%d) — Football Manager gibi: her hayatta kalanın özellikleri, potansiyeli ve moral durumu var. Lider maç deneyimiyle hızlı, surdakiler yarı hızla, diğerleri antrenmanla yavaş gelişir. Surda %d yuva var: oraya koyduğun kişi kendi silahıyla ateş eder. Altın: %d (Güç seviyesine harcanır; koşulardan ve Çiftlikten gelir)." % [ekip.size(), Veri.EKIP_SINIRI, profil.nobetci_yuva(), profil.altin()], 22, Color(0.75, 0.75, 0.7)))
 	for h in ekip:
 		_hayatta_kalan_karti(h)
 

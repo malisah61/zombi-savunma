@@ -41,18 +41,37 @@ func _process(delta: float) -> void:
 		return
 	# Çarpışma: bu karede gidilen yol (doğru parçası) zombiye değiyor mu? Oyun x2/x3 hızdayken
 	# mermi bir karede zombiden uzun yol alabilir; tek noktaya bakmak "içinden geçme" yaratır.
-	for z in oyun.zombiler:
-		if z.olu or _vurulanlar.has(z):
-			continue
-		var en_yakin: Vector2 = Geometry2D.get_closest_point_to_segment(z.position, once, position)
-		if en_yakin.distance_squared_to(z.position) < z.yaricap * z.yaricap:
-			_vurulanlar.append(z)
-			oyun.ayrimi_birak(self)
-			oyun.isabet(z, hasar, kritik, position, zirh_gec, kaynak)
-			delme_kalan -= 1
-			if delme_kalan < 0:
-				oyun.mermi_birak(self)
+	# C++ hızlandırıcı varsa önce yola yakın zombileri o bulur (kare başı konumlarla, payla); kesin kontrol yine burada.
+	var zl: Array = oyun.zombiler
+	if oyun.hizlandirici != null:
+		var adaylar: PackedInt32Array = oyun.hizlandirici.segment_aday(once, position, oyun.zpoz, oyun.zyar, 14.0 + 420.0 * delta)
+		for i in adaylar:
+			if i >= zl.size():
+				break
+			if _carp(zl[i], once):
 				return
+		for i in range(oyun.zsnap_n, zl.size()):  # bu karede yeni doğanlar anlık görüntüde yok
+			if _carp(zl[i], once):
+				return
+		return
+	for z in zl:
+		if _carp(z, once):
+			return
+
+
+## Zombiye değdiyse vurur; mermi bittiyse havuza döner ve true verir.
+func _carp(z, once: Vector2) -> bool:
+	if z.olu or _vurulanlar.has(z):
+		return false
+	var en_yakin: Vector2 = Geometry2D.get_closest_point_to_segment(z.position, once, position)
+	if en_yakin.distance_squared_to(z.position) < z.yaricap * z.yaricap:
+		_vurulanlar.append(z)
+		oyun.isabet(z, hasar, kritik, position, zirh_gec)
+		delme_kalan -= 1
+		if delme_kalan < 0:
+			oyun.mermi_birak(self)
+			return true
+	return false
 
 
 func _draw() -> void:

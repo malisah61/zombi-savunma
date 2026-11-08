@@ -25,11 +25,11 @@ const VARSAYILAN := {
 	"lab": {},  # düğüm id -> seviye
 	"nobetciler": [],  # surdaki ekip: hayatta kalan uid'leri (Grow Castle kale yuvaları)
 	"sur": 1,  # Sur (kale) seviyesi
-	"altin": 0,  # kalıcı kampanya altını (koşu içi altından ayrı); Güç seviyesine harcanır
-	"kampanya": {"dalga": 1, "en_yuksek": 0, "zafer": 0, "yenilgi": 0, "yildiz": {}, "yildiz_odul": 0},
+	"altin": 0,  # kalıcı altın (koşu içi altından ayrı): koşulardan ve Çiftlikten gelir, Güç seviyesine harcanır
+	"devam": {},  # Hayatta Kalma: kaldığın dalga {dalga, kartlar (sırayla), kuleler [[seviye, uzman]], altin}
 	"x3_acik": false,
 	"maden": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba: Hurda Madeni (çevrimdışı kazanç)
-	"ciftlik": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba v1: Çiftlik (çevrimdışı kampanya altını)
+	"ciftlik": {"sv": 0, "son": 0, "birikim": 0.0},  # Kasaba v1: Çiftlik (çevrimdışı altın)
 	"tesis": {"antrenman": 0, "revir": 0, "atolye": 0},  # Kasaba v1: FM tesisleri
 	"basarim": {"sayac": {}, "alinan": {}},  # başarım sayaçları ve alınmış kademe sayısı
 	"tehdit": {"kalabalik": 0, "disli": 0, "kalin": 0, "karaborsa": 0},  # Hayatta Kalma tehdit şalterleri
@@ -259,13 +259,19 @@ func kosu_istatistigi() -> Dictionary:
 
 
 ## Koşu bitince çağrılır: ödüller, ganimet, gelişim (FM tarzı), moral. Özet sözlüğü döndürür.
+## bas_dalga: koşu kayıtlı dalgadan devam ettiyse başladığı dalga. Hurda, ganimet ve deneyim yalnız bu koşuda
+## oynanan dalgalardan gelir (aynı dalgaları tekrar tekrar ödüllendirmemek için); rekor gerçek dalgaya bakar.
 func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: bool = false, katki: Dictionary = {},
-		tehdit: int = 0) -> Dictionary:
+		tehdit: int = 0, bas_dalga: int = 1) -> Dictionary:
 	var ozet := {"hurda": 0, "silahlar": [], "gelisim": [], "seviye_atladi": false, "moral": 0, "sakat": {}, "yorgunluk": ""}
-	var kazanc := int(round((dalga * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))
+	var oynanan := maxi(dalga - bas_dalga + 1, 1)
+	var kazanc := int(round((oynanan * 6 + int(oldurme / 2.0) + boss_sayisi * 25) * (1.0 + lab_deger("l_hurda"))
 		* (1.0 + Veri.TEHDIT_HURDA * tehdit)))
 	hurda_ekle(kazanc)
 	ozet["hurda"] = kazanc
+	var altin_k := oynanan * 6 + boss_sayisi * 30
+	veri["altin"] = altin() + altin_k
+	ozet["altin"] = altin_k
 	if tehdit > 0:
 		ozet["tehdit"] = tehdit
 	# Tehdit (Hades Heat): 10. dalgaya ulaşan koşuda yeni en yüksek puan ilk kez → garanti silah
@@ -280,7 +286,7 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 		ozet["tehdit_odul"] = "YENİ TEHDİT REKORU %d: %s %s" % [tehdit, tn["ad"], Veri.SILAHLAR[ts["taban"]]["ad"]]
 
 	# Ganimet: her 5 dalgada bir silah; nadirlik şansı dalgayla artar
-	for i in int(dalga / 5.0):
+	for i in maxi(int(dalga / 5.0) - int((bas_dalga - 1) / 5.0), 0):  # bu koşuda geçilen her 5'lik
 		var s := Veri.silah_uret("", Veri.nadirlik_sec(dalga * 0.05))
 		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
 			veri["envanter"].append(s)
@@ -307,7 +313,7 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 	_mac_puanlari(h, nobetciler, katki, int(ozet["performans"]), ozet)
 	h["kosu"] = int(h.get("kosu", 0)) + 1
 	h["en_iyi_dalga"] = maxi(onceki_en_iyi, dalga)
-	h["xp"] = int(h["xp"]) + dalga * 10 + oldurme
+	h["xp"] = int(h["xp"]) + oynanan * 10 + oldurme
 	while int(h["xp"]) >= int(h["seviye"]) * 100:
 		h["xp"] = int(h["xp"]) - int(h["seviye"]) * 100
 		h["seviye"] = int(h["seviye"]) + 1
@@ -333,7 +339,7 @@ func kosu_bitti(dalga: int, oldurme: int, boss_sayisi: int = 0, barikat_dustu: b
 	_ekip_kosu_sonu(h, dalga, barikat_dustu, ozet, nobetciler)
 
 	# Gelişim: oynayan hayatta kalan maç deneyimiyle, surdakiler yarı deneyimle, diğerleri antrenmanla gelişir
-	ozet["gelisim"] = _gelistir(h, 0.5 + dalga * 0.22)
+	ozet["gelisim"] = _gelistir(h, 0.5 + oynanan * 0.22)
 	for diger in veri["ekip"]:
 		if diger["uid"] == h["uid"]:
 			continue
@@ -780,7 +786,7 @@ func form(h: Dictionary) -> float:
 	return t / p.size()
 
 
-# ================================================================ SUR, GÜÇ SEVİYESİ, KAMPANYA (Grow Castle)
+# ================================================================ SUR, GÜÇ SEVİYESİ (kalıcı yükseltmeler)
 
 func sur_sv() -> int:
 	return clampi(int(veri["sur"]), 1, Veri.SUR_MAX)
@@ -816,124 +822,20 @@ func guc_yukselt(uid: String) -> String:
 		return "En üst güç seviyesi"
 	var f := Veri.guc_fiyat(sv)
 	if altin() < f:
-		return "Yeterli altın yok. Kampanya savaşları altın verir."
+		return "Yeterli altın yok. Koşular ve Çiftlik altın verir."
 	veri["altin"] = altin() - f
 	h["guc"] = sv + 1
 	kaydet()
 	return ""
 
 
-func kampanya_dalgasi() -> int:
-	return maxi(int(veri["kampanya"]["dalga"]), 1)
-
-
 ## x3 hız kilidi (B7). Eski oyuncuyu cezalandırmaz: rekoru yetiyorsa ya da x3 zaten seçiliyse açık kalır.
 func hiz3_kontrol() -> bool:
 	if not bool(veri["x3_acik"]):
-		if int(veri["rekor"]) >= Veri.HIZ3_DALGA or int(veri["kampanya"]["en_yuksek"]) >= Veri.HIZ3_DALGA \
-				or int(veri["ayarlar"].get("hiz", 1)) == 3:
+		if int(veri["rekor"]) >= Veri.HIZ3_DALGA or int(veri["ayarlar"].get("hiz", 1)) == 3:
 			veri["x3_acik"] = true
 			return true
 	return false
-
-
-## Kampanya savaşı bitti. Kazanınca altın + hurda + sıradaki dalga; kaybedince aynı dalga ve teselli
-## (altının %25'i, hurdanın yarısı): ceza yok, Grow Castle'daki gibi geliştirip yeniden dene.
-## tekrar: geçilmiş dalgayı yeniden oynama (altın kasma) — ilerletmez, ödülün yarısı, yıldız yükseltebilir.
-## barikat_orani: kazanınca kalan can oranı → 1–3 yıldız (Kampanya v2).
-func kampanya_bitti(kazandi: bool, dalga: int, oldurme: int, boss_sayisi: int, katki: Dictionary,
-		barikat_orani: float = 1.0, tekrar: bool = false) -> Dictionary:
-	var k: Dictionary = veri["kampanya"]
-	var ozet := {"altin": 0, "hurda": 0, "silahlar": [], "gelisim": [], "kampanya": true, "x3": false}
-	var a := Veri.kampanya_altin(dalga)
-	var hu := Veri.kampanya_hurda(dalga)
-	if tekrar:
-		a = int(a * Veri.TEKRAR_ODUL)
-		hu = int(hu * Veri.TEKRAR_ODUL)
-		boss_sayisi = 0  # boss ganimeti yalnızca ilk geçişte (kasma ile silah yağmasın)
-	if kazandi:
-		if not tekrar:
-			k["dalga"] = dalga + 1
-		k["en_yuksek"] = maxi(int(k["en_yuksek"]), dalga)
-		k["zafer"] = int(k["zafer"]) + 1
-		var y := Veri.yildiz_hesapla(barikat_orani)
-		var eski := kampanya_yildiz(dalga)
-		ozet["yildiz"] = y
-		ozet["yildiz_yeni"] = y > eski
-		if y > eski:
-			k["yildiz"][str(dalga)] = y
-		ozet["yildiz_odulleri"] = _yildiz_odulleri()
-	else:
-		a = int(a * 0.25)
-		hu = int(hu / 2.0)
-		k["yenilgi"] = int(k["yenilgi"]) + 1
-	veri["altin"] = altin() + a
-	hurda_ekle(hu)
-	ozet["altin"] = a
-	ozet["hurda"] = hu
-	# boss ganimeti: kampanyada da garanti Ender+ silah
-	for i in boss_sayisi:
-		var s := Veri.silah_uret("", maxi(2, Veri.nadirlik_sec(0.3 + dalga * 0.03)))
-		if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
-			veri["envanter"].append(s)
-			ozet["silahlar"].append(s)
-		else:
-			hurda_ekle(silah_satis_degeri(s))
-	veri["istatistik"]["boss"] = int(veri["istatistik"]["boss"]) + boss_sayisi
-	veri["istatistik"]["oldurme"] = int(veri["istatistik"]["oldurme"]) + oldurme
-	# Ekip: tek dalga kısa bir savaş; küçük deneyim, küçük yorgunluk
-	var h := aktif_kahraman()
-	var sur := nobetci_listesi()
-	ozet["gelisim"] = _gelistir(h, 0.15 + dalga * 0.02)
-	h["yorgunluk"] = minf(float(h.get("yorgunluk", 0.0)) + 3.0, 100.0)
-	h["xp"] = int(h["xp"]) + dalga * 2 + oldurme
-	while int(h["xp"]) >= int(h["seviye"]) * 100:
-		h["xp"] = int(h["xp"]) - int(h["seviye"]) * 100
-		h["seviye"] = int(h["seviye"]) + 1
-	for x in sur:
-		_gelistir(x, 0.08 + dalga * 0.01)
-		x["yorgunluk"] = minf(float(x.get("yorgunluk", 0.0)) + 2.0, 100.0)
-	if kazandi:
-		h["moral"] = mini(int(h["moral"]) + 1, 100)
-	if not katki.is_empty():
-		_mac_puanlari(h, sur, katki, 0 if kazandi else 2, ozet)
-	ozet["x3"] = hiz3_kontrol()
-	kaydet()
-	return ozet
-
-
-func kampanya_yildiz(dalga: int) -> int:
-	return int(veri["kampanya"]["yildiz"].get(str(dalga), 0))
-
-
-func toplam_yildiz() -> int:
-	var t := 0
-	for d in veri["kampanya"]["yildiz"]:
-		t += int(veri["kampanya"]["yildiz"][d])
-	return t
-
-
-## Eşiği geçilmiş, alınmamış yıldız ödüllerini verir; ödül yazılarını döndürür.
-func _yildiz_odulleri() -> Array:
-	var yazilar: Array = []
-	var k: Dictionary = veri["kampanya"]
-	var top := toplam_yildiz()
-	var esik := Veri.yildiz_esigi(int(k["yildiz_odul"]))
-	while top >= int(esik["yildiz"]):
-		k["yildiz_odul"] = int(k["yildiz_odul"]) + 1
-		if esik.has("silah"):
-			var sl := Veri.silah_uret("", int(esik["silah"]))
-			if veri["envanter"].size() < Veri.ENVANTER_SINIRI:
-				veri["envanter"].append(sl)
-			else:
-				hurda_ekle(silah_satis_degeri(sl))
-			var n: Dictionary = Veri.NADIRLIK[int(sl["nadirlik"])]
-			yazilar.append("%d YILDIZ ÖDÜLÜ: %s %s" % [int(esik["yildiz"]), n["ad"], Veri.SILAHLAR[sl["taban"]]["ad"]])
-		else:
-			hurda_ekle(int(esik["hurda"]))
-			yazilar.append("%d YILDIZ ÖDÜLÜ: +%d hurda" % [int(esik["yildiz"]), int(esik["hurda"])])
-		esik = Veri.yildiz_esigi(int(k["yildiz_odul"]))
-	return yazilar
 
 
 # ================================================================ KASABA: HURDA MADENİ (B6, çevrimdışı kazanç)
@@ -943,7 +845,7 @@ func maden_sv() -> int:
 
 
 func maden_uretim() -> float:
-	return Veri.maden_uretim(maden_sv(), int(veri["kampanya"]["en_yuksek"]))
+	return Veri.maden_uretim(maden_sv(), int(veri["rekor"]))
 
 
 func maden_birikim() -> int:
@@ -1007,7 +909,7 @@ func ciftlik_sv() -> int:
 
 
 func ciftlik_uretim() -> float:
-	return Veri.ciftlik_uretim(ciftlik_sv(), int(veri["kampanya"]["en_yuksek"]))
+	return Veri.ciftlik_uretim(ciftlik_sv(), int(veri["rekor"]))
 
 
 func ciftlik_birikim() -> int:
@@ -1085,16 +987,12 @@ func basarim_degeri(id: String) -> int:
 	match id:
 		"rekor":
 			return int(veri["rekor"])
-		"kampanya":
-			return int(veri["kampanya"]["en_yuksek"])
 		"oldurme":
 			return int(veri["istatistik"]["oldurme"])
 		"ekip":
 			return veri["ekip"].size()
 		"sur":
 			return sur_sv()
-		"yildiz":
-			return toplam_yildiz()
 		"tehdit":
 			return int(veri["tehdit_rekor"])
 	return int(veri["basarim"]["sayac"].get(id, 0))

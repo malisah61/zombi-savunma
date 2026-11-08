@@ -13,6 +13,11 @@
 - Kontrol: `onizleme.yml` oyunu bulutta açıp `onizleme/oyun/*.png` ekran görüntülerini depoya yazar.
   Görüntüleri mutlaka aç ve bak; derleme kaydında "SCRIPT ERROR" / "Parse Error" olmamalı.
   Yeni özellik eklersen `oyun.gd` içindeki `_onizleme()` akışına onu gösteren bir kare ekle.
+- **Kampanya modu yok (kullanıcı kararı, 2026-11-08).** Tek mod Hayatta Kalma; kaldığın dalgadan devam (`profil.veri["devam"]`).
+- **C++ hızlandırıcı:** `yerel/kaynak/*.cpp` (GDExtension, godot-cpp 4.3), `bin/zombi_hiz.gdextension`. `.so` dosyaları depoda değil,
+  iş akışları derler (android.yml: android arm64, onizleme.yml: linux). `oyun.hizlandirici` null ise GDScript yolu çalışır; ikisi aynı
+  sonucu vermeli (`godot --headless -- --hiz_testi` "en büyük itme farkı 0" ve aynı isabet sayısı). Yerel derleme: `yerel/` içinde
+  `scons platform=linux target=template_debug arch=x86_64` (godot-cpp'yi `yerel/godot-cpp`'ye klonla).
 - Kalıcı veri `profil.gd` (user://profil.json). Yeni alan eklerken `VARSAYILAN`'a ekle; eski kayıtlar
   otomatik tamamlanır. Var olan kayıtları bozacak değişiklik yapma (oyuncunun ilerlemesi gider).
 - İçerik tabloları `veri.gd` (silahlar, nadirlik, ekler, roller, özellikler, bölgeler), kartlar `kartlar.gd`.
